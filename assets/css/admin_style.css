@@ -1,0 +1,17 @@
+._billing_persontype_field,
+._billing_ie_field,
+._billing_birthdate_field,
+._billing_address_1_field,
+._billing_birthdate_field,
+._shipping_address_1_field {
+    float: left!important;
+}
+
+._billing_birthdate_field,
+._billing_sex,
+._billing_number_field,
+._billing_cnpj_field,
+._billing_cpf_field,
+._shipping_number_field {
+    float: right!important;
+}
