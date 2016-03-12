@@ -51,6 +51,24 @@ Acompanhe a emissão das Notas Fiscais em ```WooCommerce > Pedidos```. As notas 
 <img src="https://webmaniabr.com/wp-content/uploads/2016/03/5999F78B-C812-4294-9C56-1CDF37A41D94.png" height="200">
 </p>
 
+## Desenvolvedores
+
+- **emitir_nfe_produto**: No momento da emissão da NF-e é verificado o filtro para definir se o produto será incluso na Nota Fiscal. ```Exemplo de utilização: Não emitir Nota Fiscal com produtos de revendedores do marketplace.```
+
+```php
+function filter_function_name( $response, $post_id ) {
+  // Process content here
+  return $response;
+}
+add_filter( 'emitir_nfe_produto', 'filter_function_name', 10, 2 ); 
+```
+
+- **nfe**: Post meta onde registra todas as NF-e emitidas no pedido. ```Exemplo de utilização: Possibilidade de integrar com o seu sistema ou fazer aprimoramentos no plugin adicionando maiores funcionalidades. ```
+
+```php
+$response = get_post_meta( $post_id, 'nfe', true ); // Array
+```
+
 ## Controle das Notas Fiscais
 
 Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no painel da WebmaniaBR®. Simples e fácil.
