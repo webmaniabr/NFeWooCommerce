@@ -66,7 +66,7 @@ add_filter( 'emitir_nfe_produto', 'filter_function_name', 10, 2 );
 - **nfe**: Post meta onde registra todas as NF-e emitidas no pedido. ```Exemplo de utilização: Possibilidade de integrar com o seu sistema ou fazer aprimoramentos no plugin adicionando maiores funcionalidades. ```
 
 ```php
-$response = get_post_meta( $order_id, 'nfe', true ); // Array
+get_post_meta( $order_id, 'nfe', true ); // Array
 ```
 
 ## Controle das Notas Fiscais
