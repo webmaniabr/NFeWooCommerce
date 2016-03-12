@@ -29,8 +29,6 @@ class WooCommerceNFe {
     
     function init(){
         
-        /* REMOVER */ if ($_SERVER['REMOTE_ADDR'] != '192.168.0.9') return false; 
-        
         global $domain;
         
         // Verify WooCommerce Plugin
