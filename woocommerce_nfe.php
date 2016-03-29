@@ -5,7 +5,7 @@
  * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
  * Author: WebmaniaBR
  * Author URI: http://webmaniabr.com
- * Version: 1.0
+ * Version: 1.0.1
  * Copyright: © 2009-2016 WebmaniaBR.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -453,6 +453,7 @@ class WooCommerceNFe {
                 // Vars
                 $codigo_ean = get_post_meta($product_id, '_nfe_codigo_ean', true);
                 $codigo_ncm = get_post_meta($product_id, '_nfe_codigo_ncm', true);
+                $codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
                 $origem = get_post_meta($product_id, '_nfe_origem', true);
                 $imposto = get_post_meta($product_id, '_nfe_classe_imposto', true);
                 $peso = $product->get_weight();
@@ -460,6 +461,7 @@ class WooCommerceNFe {
                 
                 if (!$codigo_ean) $codigo_ean = get_option('wc_settings_woocommercenfe_ean');
                 if (!$codigo_ncm) $codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
+                if (!$codigo_cest) $codigo_cest = get_option('wc_settings_woocommercenfe_cest');
                 if (!$origem) $origem = get_option('wc_settings_woocommercenfe_origem');
                 if (!$imposto) $imposto = get_option('wc_settings_woocommercenfe_imposto');
 
@@ -484,6 +486,7 @@ class WooCommerceNFe {
                     'sku' => $product->get_sku(), // Código identificador - SKU
                     'ean' => $codigo_ean, // Código EAN
                     'ncm' => $codigo_ncm, // Código NCM
+                    'cest' => $codigo_cest, // Código CEST
                     'quantidade' => $item['qty'], // Quantidade de itens
                     'unidade' => 'UN', // Unidade de medida da quantidade de itens 
                     'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG

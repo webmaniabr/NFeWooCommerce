@@ -104,6 +104,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_ncm'
             ),
+            'cest' => array(
+                'name' => __( 'Código CEST', $domain ),
+                'type' => 'text',
+                'id'   => 'wc_settings_woocommercenfe_cest'
+            ),
             'origem' => array(
                 'name' => __( 'Origem dos Produtos', $domain ),
                 'type' => 'select',
@@ -198,6 +203,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código NCM</label>
         </p>
         <input type="text" name="codigo_ncm" value="<? echo get_post_meta( $post->ID, '_nfe_codigo_ncm', true ); ?>" style="width:100%;padding:5px;">
+    </div>
+    <div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código CEST</label>
+        </p>
+        <input type="text" name="codigo_cest" value="<? echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
@@ -634,6 +645,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             update_post_meta( $post_id, '_nfe_classe_imposto', $_POST['classe_imposto'] );
             update_post_meta( $post_id, '_nfe_codigo_ean', $_POST['codigo_ean'] );
             update_post_meta( $post_id, '_nfe_codigo_ncm', $_POST['codigo_ncm'] );
+            update_post_meta( $post_id, '_nfe_codigo_cest', $_POST['codigo_cest'] );
             update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
             
         }
