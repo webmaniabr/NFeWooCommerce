@@ -323,10 +323,10 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	}
 	
 	function process_order_meta_box_actions( $post ){
-		
+        
 		$order_id = $post->id;
 		$post_status = $post->post_status;
-		if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending') return false;
+		if ($post_status == 'trash' || $post_status == 'wc-cancelled') return false;
 		
 		parent::emitirNFe( array( $order_id ) );
 		

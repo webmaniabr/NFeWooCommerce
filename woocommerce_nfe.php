@@ -34,7 +34,7 @@ class WooCommerceNFe {
         // Verify WooCommerce Plugin
         if ( !class_exists( 'WooCommerce' ) ) {
             
-            $this->add_error( __('<strong>WooCommerce NF-e:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
+            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
             return false;
             
         }
@@ -45,7 +45,7 @@ class WooCommerceNFe {
         // Verify WooCommerce Version
         if ($vars['version'] < '2.0.0'){
             
-            $this->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce para a versão mais recente.', $domain) );
+            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce para a versão mais recente.', $domain) );
             return false;
             
         }
@@ -54,7 +54,8 @@ class WooCommerceNFe {
         $this->includes();
         $this->init_backend();
         $this->init_frontend();
-        WooCommerceNFe_Api::init();
+        $WooCommerceNFe_Api = new WooCommerceNFe_Api;
+        $WooCommerceNFe_Api->init();
         
         // Set Global Vars
         $oauth_access_token = get_option('wc_settings_woocommercenfe_access_token');
@@ -68,7 +69,7 @@ class WooCommerceNFe {
             !$consumer_secret
            ) {
             
-            $this->add_error( __('<strong>WooCommerce NF-e:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $domain) );
+            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $domain) );
             return false;
             
         }
@@ -177,27 +178,27 @@ class WooCommerceNFe {
 	
 	function display_messages(){
         
-        if (isset($_SESSION['error_messages'])){
+        if (get_option('woocommercenfe_error_messages')){
 			
 			?>
             <div class="error">
-                <? foreach ($_SESSION['error_messages'] as $message) { echo '<p>'.$message.'</p>'; } ?>
+                <? foreach (get_option('woocommercenfe_error_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
             </div>
             <?php
 			
-			unset($_SESSION['error_messages']);
+			delete_option('woocommercenfe_error_messages');
 			
 		}
         
-        if (isset($_SESSION['success_messages'])){
+        if (get_option('woocommercenfe_success_messages')){
 			
 			?>
             <div class="updated notice notice-success">
-                <? foreach ($_SESSION['success_messages'] as $message) { echo '<p>'.$message.'</p>'; } ?>
+                <? foreach (get_option('woocommercenfe_success_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
             </div>
             <?php
 			
-			unset($_SESSION['success_messages']);
+			delete_option('woocommercenfe_success_messages');
 			
 		}
 		
@@ -205,19 +206,21 @@ class WooCommerceNFe {
 	
 	function add_error( $message ){
 		
-		$messages = $_SESSION['error_messages'];
+		$messages = get_option('woocommercenfe_error_messages');
 		if (!$messages) $messages = array();
+        if ($messages && count($messages) > 0) { foreach ($messages as $msg){ if ($msg == $message) return false; } }
 		$messages[] = $message;
-		$_SESSION['error_messages'] = $messages;
+        update_option('woocommercenfe_error_messages', $messages);
 		
 	}
 	
 	function add_success( $message ){
 		
-		$messages = $_SESSION['success_messages'];
+		$messages = get_option('woocommercenfe_success_messages');
 		if (!$messages) $messages = array();
+        if ($messages && count($messages) > 0) { foreach ($messages as $msg){ if ($msg == $message) return false; } }
 		$messages[] = $message;
-		$_SESSION['success_messages'] = $messages;
+        update_option('woocommercenfe_success_messages', $messages);
 		
 	}
 	
@@ -370,8 +373,10 @@ class WooCommerceNFe {
 	function order_data( $post_id ){
 			
 		global $wpdb;
-		$order = new WC_Order( $post_id );
         
+        $WooCommerceNFe_Format = new WooCommerceNFe_Format;
+		$order = new WC_Order( $post_id );
+ 
         // Order
         $data = array(
             'ID' => $post_id, // Número do pedido
@@ -388,7 +393,7 @@ class WooCommerceNFe {
             'presenca' => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação 
             'modalidade_frete' => 0, // Modalidade do frete 
             'frete' => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete 
-            'desconto' => get_post_meta( $order->id, '_order_discount', true ), // Total do desconto 
+            'desconto' => $order->get_total_discount(), // Total do desconto 
             'total' => $order->order_total // Total do pedido - sem descontos
         );
         
@@ -398,7 +403,7 @@ class WooCommerceNFe {
         if ($tipo_pessoa == 1){
             
             $data['cliente'] = array(
-                'cpf' => WooCommerceNFe_Format::cpf(get_post_meta($post_id, '_billing_cpf', true)), // (pessoa fisica) Número do CPF
+                'cpf' => $WooCommerceNFe_Format->cpf(get_post_meta($post_id, '_billing_cpf', true)), // (pessoa fisica) Número do CPF
                 'nome_completo' => get_post_meta($post_id, '_billing_first_name', true).' '.get_post_meta($post_id, '_billing_last_name', true), // (pessoa fisica) Nome completo
                 'endereco' => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
                 'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
@@ -406,7 +411,7 @@ class WooCommerceNFe {
                 'bairro' => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
                 'cidade' => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
                 'uf' => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-                'cep' => WooCommerceNFe_Format::cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
+                'cep' => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
                 'telefone' => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
                 'email' => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
             );
@@ -416,7 +421,7 @@ class WooCommerceNFe {
         if ($tipo_pessoa == 2){
             
             $data['cliente'] = array(
-                'cnpj' => WooCommerceNFe_Format::cnpj(get_post_meta($post_id, '_billing_cnpj', true)), // (pessoa jurídica) Número do CNPJ
+                'cnpj' => $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)), // (pessoa jurídica) Número do CNPJ
                 'razao_social' => get_post_meta($post_id, '_billing_company', true), // (pessoa jurídica) Razão Social
                 'ie' => get_post_meta($post_id, '_billing_ie', true), // (pessoa jurídica) Número da Inscrição Estadual
                 'endereco' => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
@@ -425,7 +430,7 @@ class WooCommerceNFe {
                 'bairro' => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
                 'cidade' => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
                 'uf' => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-                'cep' => WooCommerceNFe_Format::cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
+                'cep' => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
                 'telefone' => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
                 'email' => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
             );
@@ -443,8 +448,7 @@ class WooCommerceNFe {
             
             if ($emitir){
                 
-                if ($variation_id) $product = new WC_Product_Variation( $variation_id );
-                else $product = new WC_Product( $product_id );
+                $product = $order->get_product_from_item( $item );
                 
                 // Vars
                 $codigo_ean = get_post_meta($product_id, '_nfe_codigo_ean', true);
@@ -484,8 +488,8 @@ class WooCommerceNFe {
                     'unidade' => 'UN', // Unidade de medida da quantidade de itens 
                     'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
                     'origem' => (int) $origem, // Origem do produto 
-                    'subtotal' => $product->get_price(), // Preço unitário do produto - sem descontos
-                    'total' => $item['line_total'], // Preço total (quantidade x preço unitário) - sem descontos 
+                    'subtotal' => $order->get_item_subtotal( $item, false, false ), // Preço unitário do produto - sem descontos
+                    'total' => $item['line_subtotal'], // Preço total (quantidade x preço unitário) - sem descontos 
                     'classe_imposto' => $imposto // Referência do imposto cadastrado 
                 );
                 
