@@ -31,8 +31,8 @@ Acesse ```WooCommerce > Configurações > Nota Fiscal``` para configurar os deta
 - **Configuração Padrão:** Defina se deseja a emissão automática sempre que confirmado um pagamento e informações importantes para a emissão correta da Nota Fiscal. Caso deseje, as informações de Classe de Imposto, NCM, EAN e Origem pode ser definido em cada produto de forma separada.
 
 <p align="center">
-<img src="https://webmaniabr.com/wp-content/uploads/2016/03/5DB8E906-7716-4F31-824F-FFEEC2E2B51B-1.png" height="300">
-<img src="https://webmaniabr.com/wp-content/uploads/2016/03/594F5A8D-2028-4FE1-A4A1-6B21F76D64F5.png" height="300">
+<img src="https://webmaniabr.com/atendimento/wp-content/uploads/sites/4/2016/03/img_56fa82f21138c.png" height="300">
+<img src="https://webmaniabr.com/atendimento/wp-content/uploads/sites/4/2016/03/img_56fa82c1ed0c1.png" height="300">
 </p>
 
 - **Campos Personalizados no Checkout**: Caso a página de Finalizar Compra da sua loja virtual não possua os campos CPF, CNPJ e preenchimento automático do endereço através do CEP, você pode ativar facilmente nessas opções.
