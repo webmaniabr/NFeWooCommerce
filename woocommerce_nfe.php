@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: Nota Fiscal Eletrônica para WooCommerce
+ * Plugin Name: Nota Fiscal Eletrônica WooCommerce
  * Plugin URI: webmaniabr.com
  * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
  * Author: WebmaniaBR
  * Author URI: http://webmaniabr.com
- * Version: 1.0.1
+ * Version: 1.0.2
  * Copyright: © 2009-2016 WebmaniaBR.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -462,7 +462,7 @@ class WooCommerceNFe {
                 if (!$codigo_ean) $codigo_ean = get_option('wc_settings_woocommercenfe_ean');
                 if (!$codigo_ncm) $codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
                 if (!$codigo_cest) $codigo_cest = get_option('wc_settings_woocommercenfe_cest');
-                if (!$origem) $origem = get_option('wc_settings_woocommercenfe_origem');
+                if (!is_numeric($origem)) $origem = get_option('wc_settings_woocommercenfe_origem');
                 if (!$imposto) $imposto = get_option('wc_settings_woocommercenfe_imposto');
 
                 // Attributes

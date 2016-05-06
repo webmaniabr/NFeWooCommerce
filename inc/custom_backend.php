@@ -113,7 +113,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'name' => __( 'Origem dos Produtos', $domain ),
                 'type' => 'select',
                 'options' => array(
-                    '' => 'Selecionar Origem dos Produtos',
+                    'null' => 'Selecionar Origem dos Produtos',
                     '0' => '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8',
                     '1' => '1 - Estrangeira - Importação direta, exceto a indicada no código 6',
                     '2' => '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7',
@@ -218,8 +218,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
           $origem = get_post_meta( $post->ID, '_nfe_origem', true );
         ?>
         <select name="origem">
-            <option value="" <? if (!$origem && $origem != "0") echo 'selected'; ?>><? _e( 'Selecionar Origem do Produto', $domain ); ?></option>
-            <option value="0" <? if ($origem == "0") echo 'selected'; ?>><? _e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', $domain ); ?></option>
+            <option value="null" <? if (!is_numeric($origem)) echo 'selected'; ?>><? _e( 'Selecionar Origem do Produto', $domain ); ?></option>
+            <option value="0" <? if (is_numeric($origem) && $origem == 0) echo 'selected'; ?>><? _e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', $domain ); ?></option>
             <option value="1" <? if ($origem == 1) echo 'selected'; ?>><? _e( '1 - Estrangeira - Importação direta, exceto a indicada no código 6', $domain ); ?></option>
             <option value="2" <? if ($origem == 2) echo 'selected'; ?>><? _e( '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7', $domain ); ?></option>
             <option value="3" <? if ($origem == 3) echo 'selected'; ?>><? _e( '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%', $domain ); ?></option>
@@ -642,11 +642,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         
         if (get_post_type($post_id) == 'product'){ 
             
-            update_post_meta( $post_id, '_nfe_classe_imposto', $_POST['classe_imposto'] );
-            update_post_meta( $post_id, '_nfe_codigo_ean', $_POST['codigo_ean'] );
-            update_post_meta( $post_id, '_nfe_codigo_ncm', $_POST['codigo_ncm'] );
-            update_post_meta( $post_id, '_nfe_codigo_cest', $_POST['codigo_cest'] );
-            update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
+            if ($_POST['classe_imposto']) update_post_meta( $post_id, '_nfe_classe_imposto', $_POST['classe_imposto'] );
+            if ($_POST['codigo_ean']) update_post_meta( $post_id, '_nfe_codigo_ean', $_POST['codigo_ean'] );
+            if ($_POST['codigo_ncm']) update_post_meta( $post_id, '_nfe_codigo_ncm', $_POST['codigo_ncm'] );
+            if ($_POST['codigo_cest']) update_post_meta( $post_id, '_nfe_codigo_cest', $_POST['codigo_cest'] );
+            if (is_numeric($_POST['origem']) || $_POST['origem']) update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
             
         }
         
