@@ -2,7 +2,8 @@
 
 Emissão automática ou Manual de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®. Emita as suas Nota Fiscais sempre que receber um pagamento ou somente no momento em que for enviar os produtos.
 
-Documentação: https://webmaniabr.com/docs/rest-api-nfe/ 
+- Plugin no Wordpress: https://wordpress.org/plugins/nota-fiscal-eletronica-woocommerce/
+- Documentação: https://webmaniabr.com/docs/rest-api-nfe/ 
 
 ## Requisitos
 
