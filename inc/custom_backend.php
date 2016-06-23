@@ -190,49 +190,49 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Classe de Imposto</label>
         </p>
-        <input type="text" name="classe_imposto" value="<? echo get_post_meta( $post->ID, '_nfe_classe_imposto', true ); ?>" style="width:100%;padding:5px;">
+        <input type="text" name="classe_imposto" value="<?php echo get_post_meta( $post->ID, '_nfe_classe_imposto', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código de Barras EAN</label>
         </p>
-        <input type="text" name="codigo_ean" value="<? echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
+        <input type="text" name="codigo_ean" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código NCM</label>
         </p>
-        <input type="text" name="codigo_ncm" value="<? echo get_post_meta( $post->ID, '_nfe_codigo_ncm', true ); ?>" style="width:100%;padding:5px;">
+        <input type="text" name="codigo_ncm" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ncm', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código CEST</label>
         </p>
-        <input type="text" name="codigo_cest" value="<? echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
+        <input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Origem</label>
         </p>
-        <? 
+        <?php 
           $origem = get_post_meta( $post->ID, '_nfe_origem', true );
         ?>
         <select name="origem">
-            <option value="null" <? if (!is_numeric($origem)) echo 'selected'; ?>><? _e( 'Selecionar Origem do Produto', $domain ); ?></option>
-            <option value="0" <? if (is_numeric($origem) && $origem == 0) echo 'selected'; ?>><? _e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', $domain ); ?></option>
-            <option value="1" <? if ($origem == 1) echo 'selected'; ?>><? _e( '1 - Estrangeira - Importação direta, exceto a indicada no código 6', $domain ); ?></option>
-            <option value="2" <? if ($origem == 2) echo 'selected'; ?>><? _e( '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7', $domain ); ?></option>
-            <option value="3" <? if ($origem == 3) echo 'selected'; ?>><? _e( '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%', $domain ); ?></option>
-            <option value="4" <? if ($origem == 4) echo 'selected'; ?>><? _e( '4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes', $domain ); ?></option>
-            <option value="5" <? if ($origem == 5) echo 'selected'; ?>><? _e( '5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%', $domain ); ?></option>
-            <option value="6" <? if ($origem == 6) echo 'selected'; ?>><? _e( '6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural', $domain ); ?></option>
-            <option value="7" <? if ($origem == 7) echo 'selected'; ?>><? _e( '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural' ,$domain ); ?></option>
-            <option value="8" <? if ($origem == 8) echo 'selected'; ?>><? _e( '8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%', $domain ); ?></option>
+            <option value="null" <?php if (!is_numeric($origem)) echo 'selected'; ?> ><?php _e( 'Selecionar Origem do Produto', $domain ); ?></option>
+            <option value="0" <?php if (is_numeric($origem) && $origem == 0) echo 'selected'; ?> ><?php _e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', $domain ); ?></option>
+            <option value="1" <?php if ($origem == 1) echo 'selected'; ?> ><?php _e( '1 - Estrangeira - Importação direta, exceto a indicada no código 6', $domain ); ?></option>
+            <option value="2" <?php if ($origem == 2) echo 'selected'; ?> ><?php _e( '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7', $domain ); ?></option>
+            <option value="3" <?php if ($origem == 3) echo 'selected'; ?> ><?php _e( '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%', $domain ); ?></option>
+            <option value="4" <?php if ($origem == 4) echo 'selected'; ?> ><?php _e( '4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes', $domain ); ?></option>
+            <option value="5" <?php if ($origem == 5) echo 'selected'; ?> ><?php _e( '5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%', $domain ); ?></option>
+            <option value="6" <?php if ($origem == 6) echo 'selected'; ?> ><?php _e( '6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural', $domain ); ?></option>
+            <option value="7" <?php if ($origem == 7) echo 'selected'; ?> ><?php _e( '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural' ,$domain ); ?></option>
+            <option value="8" <?php if ($origem == 8) echo 'selected'; ?> ><?php _e( '8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%', $domain ); ?></option>
        </select>
     </div>
     
 </div>
-<?
+<?php
         
     }
 	
@@ -290,11 +290,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			?>
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
-						  var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' )?>');
+						  var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
 						  $( 'select[name^="action"]' ).append( $emitir_nfe );
 					  });
 			</script>
-			<?
+			<?php
 			
 		}
 	}
@@ -310,7 +310,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		.nfe_danfe:hover { background:#FFF; }
 		.nfe_danfe a { color: #333; text-transform: uppercase; font-weight: bold; font-size: 11px; } 
 		</style>
-		<?
+		<?php
 		
 	}
 	

@@ -182,7 +182,7 @@ class WooCommerceNFe {
 			
 			?>
             <div class="error">
-                <? foreach (get_option('woocommercenfe_error_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
+                <?php foreach (get_option('woocommercenfe_error_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
             </div>
             <?php
 			
@@ -194,7 +194,7 @@ class WooCommerceNFe {
 			
 			?>
             <div class="updated notice notice-success">
-                <? foreach (get_option('woocommercenfe_success_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
+                <?php foreach (get_option('woocommercenfe_success_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
             </div>
             <?php
 			
