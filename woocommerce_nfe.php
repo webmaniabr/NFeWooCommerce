@@ -4,8 +4,8 @@
  * Plugin URI: webmaniabr.com
  * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
  * Author: WebmaniaBR
- * Author URI: http://webmaniabr.com
- * Version: 1.0.4
+ * Author URI: https://webmaniabr.com
+ * Version: 1.0.5
  * Copyright: © 2009-2016 WebmaniaBR.
  * License: GNU General Public License v3.0
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -31,10 +31,20 @@ class WooCommerceNFe {
         
         global $domain;
         
+        add_action( 'admin_notices', array($this, 'display_messages') );
+        
         // Verify WooCommerce Plugin
         if ( !class_exists( 'WooCommerce' ) ) {
             
             WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
+            return false;
+            
+        }
+        
+        // Verify if curl command exist
+        if (!function_exists('curl_version')){
+            
+            WC_NFe()->add_error( __('¢<strong>WooCommerce NF-e:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $domain) );
             return false;
             
         }
@@ -45,7 +55,7 @@ class WooCommerceNFe {
         // Verify WooCommerce Version
         if ($vars['version'] < '2.0.0'){
             
-            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce para a versão mais recente.', $domain) );
+            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce na versão mais recente.', $domain) );
             return false;
             
         }
@@ -96,7 +106,6 @@ class WooCommerceNFe {
     
     function init_backend(){
     
-        add_action( 'admin_notices', array($this, 'display_messages') );
         add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
         add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente') );
         add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_listar_nfe') );
