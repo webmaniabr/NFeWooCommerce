@@ -44,7 +44,7 @@ class WooCommerceNFe {
         // Verify if curl command exist
         if (!function_exists('curl_version')){
             
-            WC_NFe()->add_error( __('¢<strong>WooCommerce NF-e:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $domain) );
+            WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $domain) );
             return false;
             
         }
