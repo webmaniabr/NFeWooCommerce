@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.0
+* Version: 2.0.1
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -387,17 +387,62 @@ class WooCommerceNFe {
 
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
 		$order = new WC_Order( $post_id );
-
 		$coupons = $order->get_used_coupons();
 		$coupons_percentage = array();
+        $total_discount = 0;
+        $data = array();
 
-		foreach($coupons as $coupon_code){
-			$coupon_obj = new WC_Coupon($coupon_code);
-			if($coupon_obj->discount_type == 'percent'){
-				$coupons_percentage[] = $coupon_obj->coupon_amount;
-			}
-		}
-
+        if ($coupons){
+            
+            foreach($coupons as $coupon_code){
+                $coupon_obj = new WC_Coupon($coupon_code);
+                if($coupon_obj->discount_type == 'percent'){
+                    $coupons_percentage[] = $coupon_obj->coupon_amount;
+                }
+            }
+            
+        }
+        
+		if ($order->get_fees()){
+            
+            foreach ($order->get_fees() as $key => $item){
+            
+                if ($item['line_total'] < 0){
+                    
+                    $discount = $item['line_total']*-1;
+                    $total_discount = $discount + $total_discount;
+                    
+                } else {
+                    
+                    $codigo_ean = get_option('wc_settings_woocommercenfe_ean');
+                    $codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
+                    $codigo_cest = get_option('wc_settings_woocommercenfe_cest');
+                    $origem = get_option('wc_settings_woocommercenfe_origem');
+                    $imposto = get_option('wc_settings_woocommercenfe_imposto');
+                    
+                    $data['produtos'][] = array(
+                        'nome' => $item['name'], // Nome do produto
+                        'sku' => $product->get_sku(), // Código identificador - SKU
+                        'ean' => $codigo_ean, // Código EAN
+                        'ncm' => $codigo_ncm, // Código NCM
+                        'cest' => $codigo_cest, // Código CEST
+                        'quantidade' => 1, // Quantidade de itens
+                        'unidade' => 'UN', // Unidade de medida da quantidade de itens
+                        'peso' => '0.100', // Peso em KG. Ex: 800 gramas = 0.800 KG
+                        'origem' => (int) $origem, // Origem do produto
+                        'subtotal' => number_format($item['line_subtotal'], 2), // Preço unitário do produto - sem descontos
+                        'total' => number_format($item['line_total'], 2), // Preço total (quantidade x preço unitário) - sem descontos
+                        'classe_imposto' => $imposto // Referência do imposto cadastrado
+                    );
+                    
+                }
+            
+            }
+            
+        }
+        
+        $total_discount = $order->get_total_discount() + $total_discount;
+        
 		// Order
 		$data = array(
 			'ID' => $post_id, // Número do pedido
@@ -414,7 +459,7 @@ class WooCommerceNFe {
 			'presenca' => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => 0, // Modalidade do frete
 			'frete' => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete
-			'desconto' => $order->get_total_discount(), // Total do desconto
+			'desconto' => $total_discount, // Total do desconto
 			'total' => $order->order_total // Total do pedido - sem descontos
 		);
 
@@ -434,6 +479,7 @@ class WooCommerceNFe {
 
 		// Customer
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
+        if (!$tipo_pessoa) $tipo_pessoa = 1;
 
 		if ($tipo_pessoa == 1){
 
@@ -483,11 +529,15 @@ class WooCommerceNFe {
 			if($ignorar_nfe == 1 || $order->get_item_subtotal( $item, false, false ) == 0){
 
 				$data['pedido']['total'] -= $item['line_subtotal'];
-
-				foreach($coupons_percentage as $percentage){
-					$data['pedido']['total'] += ($percentage/100)*$item['line_subtotal'];
-					$data['pedido']['desconto'] -= ($percentage/100)*$item['line_subtotal'];
-				}
+                
+                if ($coupons_percentage){
+                    
+                    foreach($coupons_percentage as $percentage){
+                        $data['pedido']['total'] += ($percentage/100)*$item['line_subtotal'];
+                        $data['pedido']['desconto'] -= ($percentage/100)*$item['line_subtotal'];
+                    }
+                    
+                }
 
 				$data['pedido']['total'] = number_format($data['pedido']['total'], 2);
 				$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2);
@@ -543,7 +593,7 @@ class WooCommerceNFe {
 					'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
 					'origem' => (int) $origem, // Origem do produto
 					'subtotal' => number_format($order->get_item_subtotal( $item, false, false ), 2), // Preço unitário do produto - sem descontos
-					'total' => number_format($item['line_subtotal'], 2), // Preço total (quantidade x preço unitário) - sem descontos
+					'total' => number_format($order->get_line_total( $item, false, false ), 2), // Preço total (quantidade x preço unitário) - sem descontos
 					'classe_imposto' => $imposto // Referência do imposto cadastrado
 				);
 
