@@ -296,7 +296,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						background-color: #ce3737;
 					}
 
-					.nfe-status.processando,
+					.nfe-status.processamento,
 					.nfe-status.contingencia{
 						background-color: #eccb28;
 						color: #000;
