@@ -1,5 +1,5 @@
 jQuery( function ( $ ) {
-        
+
     load_billing = function(){
 
         data = {
@@ -85,5 +85,37 @@ jQuery( function ( $ ) {
     $( 'a.load_customer_billing' ).on( 'click', load_billing );
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
     $( '#customer_user' ).on( 'change', change_customer_user );
-        
+
+    $(document).ready(function(){
+      $('.single').click(function(e){
+        var target = $(e.target);
+        var block_classes = ['wrt', 'update-nfe', 'danfe-icon'];
+        var toggle = true;
+
+        block_classes.forEach(function(value, index){
+          console.log(value);
+          if(target.hasClass(value)){
+            toggle = false;
+          }
+        });
+
+        if(toggle){
+          var rotate = $(this).find('.extra').css('display');
+
+
+          if(rotate == 'none'){
+            $(this).find('.expand-nfe').css('transform', 'rotate(180deg)').css('-webkit-transform', 'rotate(180deg)');
+          }else{
+            $(this).find('.expand-nfe').css('transform', 'rotate(0deg)').css('-webkit-transform', 'rotate(0deg)');
+          }
+          console.log(rotate);
+
+          $(this).find('.extra').slideToggle('fast');
+        }
+
+
+
+      });
+    });
+
 });
