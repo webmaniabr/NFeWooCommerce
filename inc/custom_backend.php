@@ -789,10 +789,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
         if (get_post_type($post_id) == 'product'){
 
-            if ($_POST['classe_imposto']) update_post_meta( $post_id, '_nfe_classe_imposto', $_POST['classe_imposto'] );
-            if ($_POST['codigo_ean']) update_post_meta( $post_id, '_nfe_codigo_ean', $_POST['codigo_ean'] );
-            if ($_POST['codigo_ncm']) update_post_meta( $post_id, '_nfe_codigo_ncm', $_POST['codigo_ncm'] );
-            if ($_POST['codigo_cest']) update_post_meta( $post_id, '_nfe_codigo_cest', $_POST['codigo_cest'] );
+            $info = array(
+		'_nfe_classe_imposto' => $_POST['classe_imposto'],
+		'_nfe_codigo_ean'     => $_POST['codigo_ean'],
+		'_nfe_codigo_ncm'     => $_POST['codigo_ncm'],
+		'_nfe_codigo_cest'    => $_POST['codigo_cest'],
+		);
+
+		foreach ($info as $key => $value){
+			update_post_meta($post_id, $key, $value);
+		}
 						if ($_POST['ignorar_nfe']){
 							update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 						}else{
