@@ -422,7 +422,7 @@ class WooCommerceNFe {
                     
                     $data['produtos'][] = array(
                         'nome' => $item['name'], // Nome do produto
-                        'sku' => $product->get_sku(), // Código identificador - SKU
+                        'sku' => '', // Código identificador - SKU
                         'ean' => $codigo_ean, // Código EAN
                         'ncm' => $codigo_ncm, // Código NCM
                         'cest' => $codigo_cest, // Código CEST
