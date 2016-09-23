@@ -336,8 +336,14 @@ class WooCommerceNFe {
 				if (isset($response->log)){
 
 					if ($response->log->xMotivo){
-
-						$mensagem .= '<li>'.$response->log->xMotivo.'</li>';
+						
+						if(isset($response->log->aProt[0]->xMotivo)){
+							$error = $response->log->aProt[0]->xMotivo;
+						}else{
+							$error = $response->log->xMotivo;
+						}
+						
+						$mensagem .= '<li>'.$error.'</li>';
 
 					} else {
 
