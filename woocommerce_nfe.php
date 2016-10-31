@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.0.2.1
+* Version: 2.0.2.2
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -122,7 +122,7 @@ class WooCommerceNFe {
 		add_filter( 'woocommerce_settings_tabs_array', array('WooCommerceNFe_Backend', 'add_settings_tab'), 100 );
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'update_settings' ));
-
+		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'global_admin_scripts') );
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 
 			/*
@@ -139,6 +139,8 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_admin_shipping_fields', array( 'WooCommerceNFe_Backend', 'shop_order_shipping_fields' ) );
 			add_filter( 'woocommerce_found_customer_details', array( 'WooCommerceNFe_Backend', 'customer_details_ajax' ) );
 			add_action( 'woocommerce_process_shop_order_meta', array( 'WooCommerceNFe_Backend', 'save_custom_shop_data' ) );
+			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
+
 
 		}
 
@@ -292,6 +294,7 @@ class WooCommerceNFe {
 		foreach ($order_ids as $order_id) {
 
 			$data = self::order_data( $order_id );
+			print_r($data); die();
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 
@@ -470,6 +473,8 @@ class WooCommerceNFe {
 
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
     if (!$tipo_pessoa) $tipo_pessoa = 1;
+		if($tipo_pessoa == 'F') $tipo_pessoa = 1;
+		if($tipo_pessoa == 'J') $tipo_pessoa = 2;
 
 		if ($tipo_pessoa == 1){
 			$cpf        = get_post_meta($post_id, '_billing_cpf', true);

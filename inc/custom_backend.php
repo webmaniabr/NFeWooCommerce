@@ -242,7 +242,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$nfe_data = get_post_meta($post->ID, 'nfe', true);
 			if(empty($nfe_data)):?>
 			<p>Nenhuma nota emitida para este pedido</p>
+<<<<<<< HEAD
+			<?php else:
+=======
 			<?php else: 
+>>>>>>> origin/master
                 $nfe_data = array_reverse($nfe_data);
             ?>
 				<div class="all-nfe-info">
@@ -764,6 +768,27 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $post_id, '_billing_sex', woocommerce_clean( $_POST['_billing_sex'] ) );
         update_post_meta( $post_id, '_billing_cellphone', woocommerce_clean( $_POST['_billing_cellphone'] ) );
 
+	}
+
+	function wc_api_save_custom_shop_data($order_id, $data){
+
+		$billing_address = $data['customer']['billing_address'];
+		$shipping_address = $data['customer']['shipping_address'];
+
+		update_post_meta( $order_id, '_billing_number', woocommerce_clean( $billing_address['number'] ) );
+		update_post_meta( $order_id, '_billing_neighborhood', woocommerce_clean( $billing_address['neighborhood'] ) );
+
+		update_post_meta( $order_id, '_shipping_number', woocommerce_clean( $shipping_address['number'] ) );
+		update_post_meta( $order_id, '_shipping_neighborhood', woocommerce_clean( $shipping_address['neighborhood'] ) );
+
+		update_post_meta( $order_id, '_billing_persontype', woocommerce_clean( $billing_address['persontype'] ) );
+		update_post_meta( $order_id, '_billing_cpf', woocommerce_clean( $billing_address['cpf'] ) );
+		update_post_meta( $order_id, '_billing_cnpj', woocommerce_clean( $billing_address['cnpj'] ) );
+		update_post_meta( $order_id, '_billing_ie', woocommerce_clean( $billing_address['ie'] ) );
+		update_post_meta( $order_id, '_billing_birthdate', woocommerce_clean( $billing_address['birthdate'] ) );
+		update_post_meta( $order_id, '_billing_sex', woocommerce_clean( $billing_address['sex'] ) );
+		update_post_meta( $order_id, '_billing_cellphone', woocommerce_clean( $billing_address['cellphone'] ) );
+		
 	}
 
     function save_informacoes_fiscais( $post_id ){
