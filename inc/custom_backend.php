@@ -216,10 +216,10 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				if (isset($response->error)){
 
-            WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
-            return false;
+                    WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
+                    return false;
 
-        }else{
+                } else {
 
 					$new_status = $response->status;
 					$nfe_data = get_post_meta($post_id, 'nfe', true);
@@ -240,69 +240,49 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		function metabox_content_woocommernfe_nfe_emitida( $post ) {
 			$nfe_data = get_post_meta($post->ID, 'nfe', true);
-			if(empty($nfe_data)): ?>
+			if(empty($nfe_data)):?>
 			<p>Nenhuma nota emitida para este pedido</p>
-			<?php else: ?>
-				<table class="wp-list-table widefat" width="100%" cellspacing="0">
-					<thead>
-						<tr>
-							<tr>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="15%">Data</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="5%">Série</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="5%">Nº</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="15%">RPS</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col">Código Verificação</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="10%">Arquivo XML</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="10%">Danfe</th>
-								<th id="columnname" class="manage-column column-columnname" scope="col" width="10%">Status</th>
-							</tr>
-						</tr>
-					</thead>
-					<tbody>
+			<?php else: 
+                $nfe_data = array_reverse($nfe_data);
+            ?>
+				<div class="all-nfe-info">
+					<div class="head">
+						<h4 class="head-title">Data</h4>
+						<h4 class="head-title n-column">Nº</h4>
+						<h4 class="head-title danfe-column">Danfe</h4>
+						<h4 class="head-title status-column">Status</h4>
+					</div>
+					<div class="body">
 						<?php foreach($nfe_data as $order_nfe): ?>
-							<tr>
-							<td class="column-columnname" style="padding: 10px 10px;"><?php echo $order_nfe['data'] ?></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><?php echo $order_nfe['n_serie'] ?></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><?php echo $order_nfe['n_nfe'] ?></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><?php echo $order_nfe['n_recibo'] ?></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><?php echo $order_nfe['chave_acesso'] ?></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><a target="_blank" href="<?php echo $order_nfe['url_xml'] ?>">Download XML</a></td>
-							<td class="column-columnname" style="padding: 10px 10px;"><a target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>">Visualizar Nota</a></td>
-							<td class="column-columnname" style="padding: 10px 10px;">
-								<span class="nfe-status <?php echo $order_nfe['status']; ?>"><?php echo $order_nfe['status']; ?></span>
+							<div class="single">
+								<div>
+								<h4 class="body-info"><?php echo $order_nfe['data'] ?></h4>
+								<h4 class="body-info n-column"><?php echo $order_nfe['n_nfe'] ?></h4>
+								<h4 class="body-info danfe-column"><a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Visualizar Nota</span><span class="dashicons dashicons-media-text danfe-icon"></span></a></h4>
 								<?php
 									$post_url = get_edit_post_link($post->ID);
-									echo '<a href="'.$post_url.'&atualizar_nfe=true&chave='.$order_nfe['chave_acesso'].'" style="display:block;text-align:center;">Atualizar Status</a>';
+									$update_url = $post_url.'&atualizar_nfe=true&chave='.$order_nfe['chave_acesso'];
+
 								?>
-								</td>
-							</tr>
+								<h4 class="body-info status-column"><span class="nfe-status <?php echo $order_nfe['status']; ?>"><?php echo $order_nfe['status']; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
+								<div class="extra">
+									<ul>
+										<li><strong>RPS:</strong> <?php echo $order_nfe['n_recibo'] ?></li>
+										<li><strong>Série:</strong> <?php echo $order_nfe['n_serie'] ?></li>
+										<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $order_nfe['url_xml'] ?>">Download XML</a></li>
+										<li><strong>Código Verificação:</strong> <?php echo $order_nfe['chave_acesso'] ?></li>
+									</ul>
+								</div>
+								<span class="dashicons dashicons-arrow-down-alt2 expand-nfe"></span>
+							</div>
+
+
+
+
 						<?php endforeach; ?>
-					</tbody>
-				</table>
+					</div>
+				</div>
 
-				<style>
-					.nfe-status {
-						text-transform: capitalize;
-						color: #FFF;
-    				padding: 2px 5px;
-					}
-
-					.nfe-status.aprovado {
-						background-color: #46894b;
-					}
-
-					.nfe-status.reprovado,
-					.nfe-status.cancelado {
-						background-color: #ce3737;
-					}
-
-					.nfe-status.processamento,
-					.nfe-status.contingencia{
-						background-color: #eccb28;
-						color: #000;
-						font-weight: 600;
-					}
-				</style>
  		<?php endif;
 
 		}
@@ -375,6 +355,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             <option value="7" <?php if ($origem == 7) echo 'selected'; ?> ><?php _e( '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural' ,$domain ); ?></option>
             <option value="8" <?php if ($origem == 8) echo 'selected'; ?> ><?php _e( '8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%', $domain ); ?></option>
        </select>
+			 <input type="hidden" name="wp_admin_nfe" value="1" />
     </div>
 
 </div>
@@ -419,7 +400,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 	function add_order_meta_box_actions( $actions ) {
 
-		if (get_option( 'sefaz' ) == 'offline') return false;
+
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
 		return $actions;
 
@@ -430,7 +411,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		if ( $post_type == 'shop_order' ) {
 
-			if (get_option( 'sefaz' ) == 'offline') return false;
+
 			if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending') return false;
 
 			?>
@@ -787,12 +768,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     function save_informacoes_fiscais( $post_id ){
 
-        if (get_post_type($post_id) == 'product'){
+        if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
 
-            if ($_POST['classe_imposto']) update_post_meta( $post_id, '_nfe_classe_imposto', $_POST['classe_imposto'] );
-            if ($_POST['codigo_ean']) update_post_meta( $post_id, '_nfe_codigo_ean', $_POST['codigo_ean'] );
-            if ($_POST['codigo_ncm']) update_post_meta( $post_id, '_nfe_codigo_ncm', $_POST['codigo_ncm'] );
-            if ($_POST['codigo_cest']) update_post_meta( $post_id, '_nfe_codigo_cest', $_POST['codigo_cest'] );
+            $info = array(
+		'_nfe_classe_imposto' => $_POST['classe_imposto'],
+		'_nfe_codigo_ean'     => $_POST['codigo_ean'],
+		'_nfe_codigo_ncm'     => $_POST['codigo_ncm'],
+		'_nfe_codigo_cest'    => $_POST['codigo_cest'],
+		);
+
+		foreach ($info as $key => $value){
+			update_post_meta($post_id, $key, $value);
+		}
 						if ($_POST['ignorar_nfe']){
 							update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 						}else{

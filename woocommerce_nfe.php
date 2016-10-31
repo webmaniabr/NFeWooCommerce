@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.0.1.1
+* Version: 2.0.2.1
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -182,7 +182,6 @@ class WooCommerceNFe {
 	function init_hooks(){
 
 		// WooCommerceNFe
-		add_action( 'admin_notices', array($this, 'statusSefaz') );
 		add_action( 'admin_notices', array($this, 'validadeCertificado') );
 
 	}
@@ -235,38 +234,6 @@ class WooCommerceNFe {
 
 	}
 
-	function statusSefaz(){
-
-		if (get_transient('statusSefaz')){
-
-			$response = get_transient('statusSefaz');
-
-		} else {
-
-			$webmaniabr = new NFe(WC_NFe()->settings);
-			$response = $webmaniabr->statusSefaz();
-			set_transient( 'statusSefaz', $response, 1 * HOUR_IN_SECONDS );
-
-		}
-
-		if (isset($response->error)){
-
-			WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
-			return false;
-
-		} else {
-
-			if (!$response){
-
-				WC_NFe()->add_error( __('<strong>Sefaz Offline:</strong> A emissão de NF-e encontra-se temporariamente desativada.', $domain) );
-				return false;
-
-			}
-
-		}
-
-	}
-
 	function validadeCertificado(){
 
 		if (get_transient('validadeCertificado')) {
@@ -277,17 +244,19 @@ class WooCommerceNFe {
 
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->validadeCertificado();
-			set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
-
+			
 		}
 
 		if (isset($response->error)){
 
+            set_transient( 'validadeCertificado', $response, 600 );
 			WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
 			return false;
 
 		} else {
 
+            set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
+            
 			if ($response < 45 && $response >= 1){
 
 				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $domain) );
@@ -337,7 +306,13 @@ class WooCommerceNFe {
 
 					if ($response->log->xMotivo){
 
-						$mensagem .= '<li>'.$response->log->xMotivo.'</li>';
+						if(isset($response->log->aProt[0]->xMotivo)){
+							$error = $response->log->aProt[0]->xMotivo;
+						}else{
+							$error = $response->log->xMotivo;
+						}
+
+						$mensagem .= '<li>'.$error.'</li>';
 
 					} else {
 
@@ -387,221 +362,292 @@ class WooCommerceNFe {
 
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
 		$order = new WC_Order( $post_id );
+
+		$default_ean     = get_option('wc_settings_woocommercenfe_ean');
+		$default_ncm     = get_option('wc_settings_woocommercenfe_ncm');
+		$default_cest    = get_option('wc_settings_woocommercenfe_cest');
+		$default_origem  = get_option('wc_settings_woocommercenfe_origem');
+		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
+		$default_weight  = '0.100';
+
 		$coupons = $order->get_used_coupons();
 		$coupons_percentage = array();
-        $total_discount = 0;
-        $data = array();
+		$total_discount = 0;
 
-        if ($coupons){
-            
-            foreach($coupons as $coupon_code){
-                $coupon_obj = new WC_Coupon($coupon_code);
-                if($coupon_obj->discount_type == 'percent'){
-                    $coupons_percentage[] = $coupon_obj->coupon_amount;
-                }
-            }
-            
-        }
-        
+		if ($coupons){
+
+			foreach($coupons as $coupon_code){
+				$coupon_obj = new WC_Coupon($coupon_code);
+				if($coupon_obj->discount_type == 'percent'){
+					$coupons_percentage[] = $coupon_obj->coupon_amount;
+				}
+			}
+
+		}
+
 		if ($order->get_fees()){
-            
-            foreach ($order->get_fees() as $key => $item){
-            
-                if ($item['line_total'] < 0){
-                    
-                    $discount = $item['line_total']*-1;
-                    $total_discount = $discount + $total_discount;
-                    
-                } else {
-                    
-                    $codigo_ean = get_option('wc_settings_woocommercenfe_ean');
-                    $codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
-                    $codigo_cest = get_option('wc_settings_woocommercenfe_cest');
-                    $origem = get_option('wc_settings_woocommercenfe_origem');
-                    $imposto = get_option('wc_settings_woocommercenfe_imposto');
-                    
-                    $data['produtos'][] = array(
-                        'nome' => $item['name'], // Nome do produto
-                        'sku' => $product->get_sku(), // Código identificador - SKU
-                        'ean' => $codigo_ean, // Código EAN
-                        'ncm' => $codigo_ncm, // Código NCM
-                        'cest' => $codigo_cest, // Código CEST
-                        'quantidade' => 1, // Quantidade de itens
-                        'unidade' => 'UN', // Unidade de medida da quantidade de itens
-                        'peso' => '0.100', // Peso em KG. Ex: 800 gramas = 0.800 KG
-                        'origem' => (int) $origem, // Origem do produto
-                        'subtotal' => number_format($item['line_subtotal'], 2), // Preço unitário do produto - sem descontos
-                        'total' => number_format($item['line_total'], 2), // Preço total (quantidade x preço unitário) - sem descontos
-                        'classe_imposto' => $imposto // Referência do imposto cadastrado
-                    );
-                    
-                }
-            
-            }
-            
-        }
-        
-        $total_discount = $order->get_total_discount() + $total_discount;
-        
+
+			foreach ($order->get_fees() as $key => $item){
+
+				if ($item['line_total'] < 0){
+
+					$discount = abs($item['line_total']);
+					$total_discount = $discount + $total_discount;
+
+				} else {
+
+					$data['produtos'][] = array(
+						'nome'           => $item['name'], // Nome do produto
+						'sku'            => '', // Código identificador - SKU
+						'ean'            => $default_ean, // Código EAN
+						'ncm'            => $default_ncm, // Código NCM
+						'cest'           => $default_cest, // Código CEST
+						'quantidade'     => 1, // Quantidade de itens
+						'unidade'        => 'UN', // Unidade de medida da quantidade de itens
+						'peso'           => $default_weight, // Peso em KG. Ex: 800 gramas = 0.800 KG
+						'origem'         => (int) $default_origem, // Origem do produto
+						'subtotal'       => number_format($item['line_subtotal'], 2, '.', ''), // Preço unitário do produto - sem descontos
+						'total'          => number_format($item['line_total'], 2, '.', ''), // Preço total (quantidade x preço unitário) - sem descontos
+						'classe_imposto' => $default_imposto // Referência do imposto cadastrado
+					);
+
+				}
+
+			}
+
+		}
+
+
+
+    $total_discount = $order->get_total_discount() + $total_discount;
+
 		// Order
 		$data = array(
-			'ID' => $post_id, // Número do pedido
-			'operacao' => 1, // Tipo de Operação da Nota Fiscal
+			'ID'                => $post_id, // Número do pedido
+			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
-			'modelo' => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
-			'emissao' => 1, // Tipo de Emissão da NF-e
-			'finalidade' => 1, // Finalidade de emissão da Nota Fiscal
-			'ambiente' => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
+			'modelo'            => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
+			'emissao'           => 1, // Tipo de Emissão da NF-e
+			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
+			'ambiente'          => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
 		);
 
 		$data['pedido'] = array(
-			'pagamento' => 0, // Indicador da forma de pagamento
-			'presenca' => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
+			'pagamento'        => 0, // Indicador da forma de pagamento
+			'presenca'         => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => 0, // Modalidade do frete
-			'frete' => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete
-			'desconto' => $total_discount, // Total do desconto
-			'total' => $order->order_total // Total do pedido - sem descontos
+			'frete'            => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete
+			'desconto'         => $total_discount, // Total do desconto
+			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
 
-		//Informações COmplementares ao Fisco
-		$fiscoinf = get_option('wc_settings_woocommercenfe_fisco_inf');
+		//Informações Complementares ao Fisco
+		$fisco_inf = get_option('wc_settings_woocommercenfe_fisco_inf');
 
-		if(!empty($fiscoinf) && strlen($fiscoinf) <= 2000){
-			$data['pedido']['informacoes_fisco'] = $fiscoinf;
+		if(!empty($fisco_inf) && strlen($fisco_inf) <= 2000){
+			$data['pedido']['informacoes_fisco'] = $fisco_inf;
 		}
 
 		//Informações Complementares ao Consumidor
-		$consumidorinf = get_option('wc_settings_woocommercenfe_cons_inf');
+		$consumidor_inf = get_option('wc_settings_woocommercenfe_cons_inf');
 
-		if(!empty($consumidorinf) && strlen($consumidorinf) <= 2000){
-			$data['pedido']['informacoes_complementares'] = $consumidorinf;
+		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){
+			$data['pedido']['informacoes_complementares'] = $consumidor_inf;
 		}
 
 		// Customer
+		$data['cliente'] = array(
+			'endereco'    => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
+			'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
+			'numero'      => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
+			'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
+			'cidade'      => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
+			'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
+			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
+			'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
+			'email'       => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
+		);
+
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-        if (!$tipo_pessoa) $tipo_pessoa = 1;
+    if (!$tipo_pessoa) $tipo_pessoa = 1;
 
 		if ($tipo_pessoa == 1){
-
-			$data['cliente'] = array(
-				'cpf' => $WooCommerceNFe_Format->cpf(get_post_meta($post_id, '_billing_cpf', true)), // (pessoa fisica) Número do CPF
-				'nome_completo' => get_post_meta($post_id, '_billing_first_name', true).' '.get_post_meta($post_id, '_billing_last_name', true), // (pessoa fisica) Nome completo
-				'endereco' => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
-				'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
-				'numero' => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
-				'bairro' => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
-				'cidade' => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
-				'uf' => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-				'cep' => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
-				'telefone' => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
-				'email' => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
-			);
-
+			$cpf        = get_post_meta($post_id, '_billing_cpf', true);
+			$first_name = get_post_meta($post_id, '_billing_first_name', true);
+			$last_name  = get_post_meta($post_id, '_billing_last_name', true);
+			$full_name  = $first_name.' '.$last_name;
+			$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
+			$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
+		}else if($tipo_pessoa == 2){
+			$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
+			$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
+			$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
 		}
 
-		if ($tipo_pessoa == 2){
-
-			$data['cliente'] = array(
-				'cnpj' => $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)), // (pessoa jurídica) Número do CNPJ
-				'razao_social' => get_post_meta($post_id, '_billing_company', true), // (pessoa jurídica) Razão Social
-				'ie' => get_post_meta($post_id, '_billing_ie', true), // (pessoa jurídica) Número da Inscrição Estadual
-				'endereco' => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
-				'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
-				'numero' => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
-				'bairro' => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
-				'cidade' => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
-				'uf' => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-				'cep' => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
-				'telefone' => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
-				'email' => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
-			);
-
-		}
 
 		// Products
+
+		$bundles = array();
+		if(!isset($data['produtos'])) $data['produtos'] = array();
 		foreach ($order->get_items() as $key => $item){
 
-			$product_id = $item['product_id'];
+			$product      = $order->get_product_from_item( $item );
+			$product_type = $product->get_type();
+			$product_id   = $item['product_id'];
 			$variation_id = $item['variation_id'];
 
+			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || isset($item['bundled_by']) ){
+				$bundles[] = $item;
+				continue;
+			}
+
+			$product_info = self::get_product_nfe_info($item, $order);
 			$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
 
 			if($ignorar_nfe == 1 || $order->get_item_subtotal( $item, false, false ) == 0){
 
 				$data['pedido']['total'] -= $item['line_subtotal'];
-                
+
                 if ($coupons_percentage){
-                    
+
                     foreach($coupons_percentage as $percentage){
                         $data['pedido']['total'] += ($percentage/100)*$item['line_subtotal'];
                         $data['pedido']['desconto'] -= ($percentage/100)*$item['line_subtotal'];
                     }
-                    
+
                 }
 
-				$data['pedido']['total'] = number_format($data['pedido']['total'], 2);
-				$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2);
+				$data['pedido']['total']    = number_format($data['pedido']['total'], 2, '.', '' );
+				$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
 				continue;
+
 			}
 
 			$emitir = apply_filters( 'emitir_nfe_produto', true, $product_id );
 			if ($variation_id) $emitir = apply_filters( 'emitir_nfe_produto', true, $variation_id );
 
 			if ($emitir){
-
-				$product = $order->get_product_from_item( $item );
-
-				// Vars
-				$codigo_ean = get_post_meta($product_id, '_nfe_codigo_ean', true);
-				$codigo_ncm = get_post_meta($product_id, '_nfe_codigo_ncm', true);
-				$codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
-				$origem = get_post_meta($product_id, '_nfe_origem', true);
-				$imposto = get_post_meta($product_id, '_nfe_classe_imposto', true);
-				$peso = $product->get_weight();
-				if (!$peso) $peso = '0.100';
-
-				if (!$codigo_ean) $codigo_ean = get_option('wc_settings_woocommercenfe_ean');
-				if (!$codigo_ncm) $codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
-				if (!$codigo_cest) $codigo_cest = get_option('wc_settings_woocommercenfe_cest');
-				if (!is_numeric($origem)) $origem = get_option('wc_settings_woocommercenfe_origem');
-				if (!$imposto) $imposto = get_option('wc_settings_woocommercenfe_imposto');
-
-				// Attributes
-				$variacoes = '';
-				foreach (array_keys($item['item_meta']) as $meta){
-
-					if (strpos($meta,'pa_') !== false) {
-
-						$atributo = $item[$meta];
-						$nome_atributo = str_replace( 'pa_', '', $meta );
-						$nome_atributo = $wpdb->get_var( "SELECT attribute_label FROM {$wpdb->prefix}woocommerce_attribute_taxonomies WHERE attribute_name = '$nome_atributo'" );
-						$valor = strtoupper($item[$meta]);
-						$variacoes .= ' - '.strtoupper($nome_atributo).': '.$valor;
-
-					}
-
-				}
-
-				$data['produtos'][] = array(
-					'nome' => $item['name'].$variacoes, // Nome do produto
-					'sku' => $product->get_sku(), // Código identificador - SKU
-					'ean' => $codigo_ean, // Código EAN
-					'ncm' => $codigo_ncm, // Código NCM
-					'cest' => $codigo_cest, // Código CEST
-					'quantidade' => $item['qty'], // Quantidade de itens
-					'unidade' => 'UN', // Unidade de medida da quantidade de itens
-					'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
-					'origem' => (int) $origem, // Origem do produto
-					'subtotal' => number_format($order->get_item_subtotal( $item, false, false ), 2), // Preço unitário do produto - sem descontos
-					'total' => number_format($order->get_line_total( $item, false, false ), 2), // Preço total (quantidade x preço unitário) - sem descontos
-					'classe_imposto' => $imposto // Referência do imposto cadastrado
-				);
-
+				$data['produtos'][] = $product_info;
 			}
+
 
 		}
 
+		$bundle_info = self::set_bundle_products_array($bundles, $order);
+		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
+		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
+		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
 		return $data;
+
+	}
+
+
+	function get_product_nfe_info($item, $order){
+
+		global $wpdb;
+
+		$product_id  = $item['product_id'];
+		$product     = $order->get_product_from_item( $item );
+		$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
+
+		$codigo_ean  = get_post_meta($product_id, '_nfe_codigo_ean', true);
+		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
+		$codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
+		$origem      = get_post_meta($product_id, '_nfe_origem', true);
+		$imposto     = get_post_meta($product_id, '_nfe_classe_imposto', true);
+		$peso        = $product->get_weight();
+
+		if (!$peso){
+			$peso = '0.100';
+		}
+
+		if (!$codigo_ean){
+			$codigo_ean = get_option('wc_settings_woocommercenfe_ean');
+		}
+
+		if (!$codigo_ncm){
+			$codigo_ncm   = get_option('wc_settings_woocommercenfe_ncm');
+		}
+
+		if (!$codigo_cest){
+			$codigo_cest = get_option('wc_settings_woocommercenfe_cest');
+		}
+
+		if (!is_numeric($origem)){
+			$origem = get_option('wc_settings_woocommercenfe_origem');
+		}
+
+		if (!$imposto){
+			$imposto = get_option('wc_settings_woocommercenfe_imposto');
+		}
+
+		$variacoes = ''; //Used to append variation name to product name
+		foreach (array_keys($item['item_meta']) as $meta){
+
+			if (strpos($meta,'pa_') !== false) {
+
+				$atributo = $item[$meta];
+				$nome_atributo = str_replace( 'pa_', '', $meta );
+				$nome_atributo = $wpdb->get_var( "SELECT attribute_label FROM {$wpdb->prefix}woocommerce_attribute_taxonomies WHERE attribute_name = '$nome_atributo'" );
+				$valor = strtoupper($item[$meta]);
+				$variacoes .= ' - '.strtoupper($nome_atributo).': '.$valor;
+
+			}
+		}
+
+			$product_active_price = $order->get_item_subtotal( $item, false, false );
+			$info = array(
+				'nome' => $item['name'].$variacoes, // Nome do produto
+				'sku' => $product->get_sku(), // Código identificador - SKU
+				'ean' => $codigo_ean, // Código EAN
+				'ncm' => $codigo_ncm, // Código NCM
+				'cest' => $codigo_cest, // Código CEST
+				'quantidade' => $item['qty'], // Quantidade de itens
+				'unidade' => 'UN', // Unidade de medida da quantidade de itens
+				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
+				'origem' => (int) $origem, // Origem do produto
+				'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
+				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
+				'classe_imposto' => $imposto // Referência do imposto cadastrado
+			);
+
+			return $info;
+
+	}
+
+	function set_bundle_products_array( $bundles, $order ){
+
+		$total_bundle = 0;
+		$total_products = 0;
+
+		$bundle_products = array();
+
+		foreach($bundles as $item){
+			$product = $order->get_product_from_item( $item );
+			$product_type = $product->get_type();
+			$product_price = $product->get_price();
+
+			if(isset($item['bundled_by'])){
+				$total_products += $product_price;
+				if(!isset($bundle_products[$item['product_id']])){
+					$bundle_products[$item['product_id']] = self::get_product_nfe_info($item, $order);
+					$bundle_products[$item['product_id']]['subtotal'] = number_format($product_price, 2, '.', '' );
+					$bundle_products[$item['product_id']]['total'] = number_format($product_price, 2, '.', '' );
+				}else{
+					$new_qty = ((int)$bundle_products[$item['product_id']]['quantidade']) + 1;
+					$new_total = $new_qty * $product_price;
+					$bundle_products[$item['product_id']]['quantidade'] = $new_qty;
+					$bundle_products[$item['product_id']]['total'] = number_format($new_total, 2, '.', '' );
+				}
+
+			}elseif($product_type == 'yith_bundle'){
+				$total_bundle += $product_price;
+			}
+		}
+
+		$discount = abs($total_bundle - $total_products);
+
+		return array('products' => $bundle_products, 'bundle_discount' => $discount);
 
 	}
 
