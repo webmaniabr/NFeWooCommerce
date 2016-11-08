@@ -216,10 +216,10 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				if (isset($response->error)){
 
-                    WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
-                    return false;
+            WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
+            return false;
 
-                } else {
+        }else{
 
 					$new_status = $response->status;
 					$nfe_data = get_post_meta($post_id, 'nfe', true);
@@ -242,11 +242,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$nfe_data = get_post_meta($post->ID, 'nfe', true);
 			if(empty($nfe_data)):?>
 			<p>Nenhuma nota emitida para este pedido</p>
-<<<<<<< HEAD
+
 			<?php else:
-=======
-			<?php else: 
->>>>>>> origin/master
                 $nfe_data = array_reverse($nfe_data);
             ?>
 				<div class="all-nfe-info">
@@ -482,6 +479,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
         wp_enqueue_style( 'woocommercenfe_admin_style' );
         wp_enqueue_script( 'woocommercenfe_admin_script' );
+
+    }
+
+		function global_admin_scripts(){
+
+        wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ) );
+        wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
+
+        wp_enqueue_style( 'woocommercenfe_table_style' );
+        wp_enqueue_script( 'woocommercenfe_table_scripts' );
 
     }
 
@@ -788,7 +795,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $order_id, '_billing_birthdate', woocommerce_clean( $billing_address['birthdate'] ) );
 		update_post_meta( $order_id, '_billing_sex', woocommerce_clean( $billing_address['sex'] ) );
 		update_post_meta( $order_id, '_billing_cellphone', woocommerce_clean( $billing_address['cellphone'] ) );
-		
+
 	}
 
     function save_informacoes_fiscais( $post_id ){

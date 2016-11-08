@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.0.2.2
+* Version: 2.0.2.3
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -141,7 +141,6 @@ class WooCommerceNFe {
 			add_action( 'woocommerce_process_shop_order_meta', array( 'WooCommerceNFe_Backend', 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
 
-
 		}
 
 	}
@@ -246,7 +245,8 @@ class WooCommerceNFe {
 
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->validadeCertificado();
-			
+
+
 		}
 
 		if (isset($response->error)){
@@ -258,7 +258,7 @@ class WooCommerceNFe {
 		} else {
 
             set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
-            
+
 			if ($response < 45 && $response >= 1){
 
 				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $domain) );
@@ -294,7 +294,6 @@ class WooCommerceNFe {
 		foreach ($order_ids as $order_id) {
 
 			$data = self::order_data( $order_id );
-			print_r($data); die();
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 
@@ -473,8 +472,6 @@ class WooCommerceNFe {
 
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
     if (!$tipo_pessoa) $tipo_pessoa = 1;
-		if($tipo_pessoa == 'F') $tipo_pessoa = 1;
-		if($tipo_pessoa == 'J') $tipo_pessoa = 2;
 
 		if ($tipo_pessoa == 1){
 			$cpf        = get_post_meta($post_id, '_billing_cpf', true);
@@ -633,11 +630,12 @@ class WooCommerceNFe {
 			$product_price = $product->get_price();
 
 			if(isset($item['bundled_by'])){
-				$total_products += $product_price;
+				$product_total = $product_price * $item['qty'];
+				$total_products += $product_total;
 				if(!isset($bundle_products[$item['product_id']])){
 					$bundle_products[$item['product_id']] = self::get_product_nfe_info($item, $order);
 					$bundle_products[$item['product_id']]['subtotal'] = number_format($product_price, 2, '.', '' );
-					$bundle_products[$item['product_id']]['total'] = number_format($product_price, 2, '.', '' );
+					$bundle_products[$item['product_id']]['total'] = number_format($product_total, 2, '.', '' );
 				}else{
 					$new_qty = ((int)$bundle_products[$item['product_id']]['quantidade']) + 1;
 					$new_total = $new_qty * $product_price;
@@ -646,11 +644,24 @@ class WooCommerceNFe {
 				}
 
 			}elseif($product_type == 'yith_bundle'){
-				$total_bundle += $product_price;
+				$total_bundle += $product_price*$item['qty'];
 			}
 		}
 
-		$discount = abs($total_bundle - $total_products);
+		if($total_products < $total_bundle){
+			end($bundle_products);
+			$end_key = key($bundle_products);
+			$subtotal_end = $bundle_products[$end_key]['subtotal'];
+			$qty_end = $bundle_products[$end_key]['quantidade'];
+			$diff = $total_bundle - $total_products;
+			$add = $diff / $qty_end;
+			$subtotal_end += $add;
+			$bundle_products[$end_key]['subtotal'] = round($subtotal_end, 2);
+			$bundle_products[$end_key]['total'] = $subtotal_end * $qty_end;
+			$discount = 0;
+		}else{
+			$discount = abs($total_bundle - $total_products);
+		}
 
 		return array('products' => $bundle_products, 'bundle_discount' => $discount);
 
