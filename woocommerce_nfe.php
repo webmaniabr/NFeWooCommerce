@@ -107,7 +107,7 @@ class WooCommerceNFe {
 	function init_backend(){
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-		add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente') );
+		add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 );
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_nfe_emitida') );
 		add_action( 'init', array('WooCommerceNFe_Backend', 'atualizar_status_nota'), 100 );
@@ -283,7 +283,7 @@ class WooCommerceNFe {
 
 		if ($option == 'yes'){
 
-			self::emitirNFe( array( $post_id ) );
+			self::emitirNFe( array( $order_id ) );
 
 		}
 
