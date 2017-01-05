@@ -311,7 +311,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				?>
 				<script>
 				jQuery(function($) {
-				    $('#transporte_forma_envio').on('change', function(){ if ($(this).val() == 'transportadora') $('.transporte').show(); else $('.transporte').hide(); });
+				    $('#transporte_forma_envio').on('change', function(){ if ($(this).val() == '1') $('.transporte').show(); else $('.transporte').hide(); });
 						<?php if (is_numeric($forma_envio) && $forma_envio == '1'){ ?>$('.transporte').show();<?php } ?>
 				});
 				</script>
