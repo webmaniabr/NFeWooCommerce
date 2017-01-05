@@ -414,7 +414,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CEP</label>
 			        </p>
-			        <input type="text" name="transporte_cep" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_cep', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 000000-000">
+			        <input type="text" name="transporte_cep" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_cep', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 00000-000">
 			    </div>
 					<div class="field transporte" style="display:none;">
 			        <p class="label" style="margin-bottom:8px;">
