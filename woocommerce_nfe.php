@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.0.2.4
+* Version: 2.1.0
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -382,6 +382,28 @@ class WooCommerceNFe {
 		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
+
+		// Transporte
+		$forma_envio = get_post_meta( $post_id, '_nfe_transporte_forma_envio', true );
+		if (is_numeric($forma_envio) && $forma_envio == '1'){
+
+			$data['transporte']['volume'] = get_post_meta($post_id, '_nfe_transporte_volume', true);
+			$data['transporte']['especie'] = get_post_meta($post_id, '_nfe_transporte_especie', true);
+			$data['transporte']['peso_bruto'] = get_post_meta($post_id, '_nfe_transporte_peso_bruto', true);
+			$data['transporte']['peso_liquido'] = get_post_meta($post_id, '_nfe_transporte_peso_liquido', true);
+			$data['transporte']['marca'] = get_post_meta($post_id, '_nfe_transporte_marca', true);
+			$data['transporte']['numeracao'] = get_post_meta($post_id, '_nfe_transporte_numeracao', true);
+			$data['transporte']['lacres'] = get_post_meta($post_id, '_nfe_transporte_lacres', true);
+			$data['transporte']['cnpj'] = get_post_meta($post_id, '_nfe_transporte_cnpj', true);
+			$data['transporte']['razao_social'] = get_post_meta($post_id, '_nfe_transporte_razao_social', true);
+			$data['transporte']['ie'] = get_post_meta($post_id, '_nfe_transporte_ie', true);
+			$data['transporte']['endereco'] = get_post_meta($post_id, '_nfe_transporte_endereco', true);
+			$data['transporte']['uf'] = get_post_meta($post_id, '_nfe_transporte_estado', true);
+			$data['transporte']['cidade'] = get_post_meta($post_id, '_nfe_transporte_cidade', true);
+			$data['transporte']['cep'] = get_post_meta($post_id, '_nfe_transporte_cep', true);
+			$data['transporte']['seguro'] = get_post_meta($post_id, '_nfe_transporte_seguro', true);
+
+		}
 		return $data;
 	}
 	function get_product_nfe_info($item, $order){

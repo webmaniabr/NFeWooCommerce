@@ -199,6 +199,15 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'high'
         );
 
+				add_meta_box(
+            'woocommernfe_transporte',
+            'Transporte (NF-e)',
+            array('WooCommerceNFe_Backend', 'metabox_content_woocommernfe_transporte'),
+            'shop_order',
+            'side',
+            'high'
+        );
+
     }
 
 		function atualizar_status_nota() {
@@ -285,6 +294,137 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</div>
 
  		<?php endif;
+
+		}
+
+		function metabox_content_woocommernfe_transporte( $post ){
+
+			global $domain;
+
+			?>
+			<div class="inside" style="padding:0!important;">
+				<p>
+					Informações complementares na emissão de Nota Fiscal para pedidos enviados via Transportadora.
+				</p>
+				<?php
+					$forma_envio = get_post_meta( $post->ID, '_nfe_transporte_forma_envio', true );
+				?>
+				<script>
+				jQuery(function($) {
+				    $('#transporte_forma_envio').on('change', function(){ if ($(this).val() == 'transportadora') $('.transporte').show(); else $('.transporte').hide(); });
+						<?php if (is_numeric($forma_envio) && $forma_envio == '1'){ ?>$('.transporte').show();<?php } ?>
+				});
+				</script>
+				<div class="field">
+		        <p class="label" style="margin-bottom:8px;">
+		            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Forma de envio</label>
+		        </p>
+		        <select name="transporte_forma_envio" id="transporte_forma_envio">
+		            <option value="null" <?php if (!is_numeric($forma_envio)) echo 'selected'; ?> ><?php _e( 'Correios', $domain ); ?></option>
+		            <option value="1" <?php if (is_numeric($forma_envio) && $forma_envio == '1') echo 'selected'; ?> ><?php _e( 'Transportadora', $domain ); ?></option>
+		       </select>
+		    </div>
+				<div class="label transporte" style="margin-bottom:8px;display:none;margin-top:10px;">
+						<label style="font-size:14px;line-height:1.5em;font-weight:bold;color:red">Volumes Transportados</label>
+						<hr style="margin-top:5px;">
+				</div>
+			    <div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Volumes</label>
+			        </p>
+			        <input type="text" name="transporte_volume" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_volume', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+			    <div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Espécie</label>
+			        </p>
+			        <input type="text" name="transporte_especie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_especie', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Bruto</label> (KG)
+			        </p>
+			        <input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 5.200 = 5.200KG">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Líquido</label> (KG)
+			        </p>
+			        <input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 5.200 = 5.200KG">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Marca</label>
+			        </p>
+			        <input type="text" name="transporte_marca" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_marca', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Numeração</label>
+			        </p>
+			        <input type="text" name="transporte_numeracao" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_numeracao', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Lacres</label>
+			        </p>
+			        <input type="text" name="transporte_lacres" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_lacres', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="label transporte" style="margin-bottom:8px;display:none;margin-top:10px;">
+							<label style="font-size:14px;line-height:1.5em;font-weight:bold;color:red;">Transportadora</label>
+							<hr style="margin-top:5px;">
+					</div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ</label>
+			        </p>
+			        <input type="text" name="transporte_cnpj" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_cnpj', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Razão Social</label>
+			        </p>
+			        <input type="text" name="transporte_razao_social" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_razao_social', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Inscrição Estadual (I.E)</label>
+			        </p>
+			        <input type="text" name="transporte_ie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_ie', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Endereço</label>
+			        </p>
+			        <input type="text" name="transporte_endereco" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_endereco', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Estado</label>
+			        </p>
+			        <input type="text" name="transporte_estado" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_estado', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: SP">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Cidade</label>
+			        </p>
+			        <input type="text" name="transporte_cidade" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_cidade', true ); ?>" style="width:100%;padding:5px;" >
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CEP</label>
+			        </p>
+			        <input type="text" name="transporte_cep" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_cep', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 000000-000">
+			    </div>
+					<div class="field transporte" style="display:none;">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Valor do Seguro (R$)</label>
+			        </p>
+			        <input type="text" name="transporte_seguro" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_seguro', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+					<input type="hidden" name="wp_admin_nfe" value="1" />
+			</div>
+			<?php
 
 		}
 
@@ -803,15 +943,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
 
             $info = array(
-		'_nfe_classe_imposto' => $_POST['classe_imposto'],
-		'_nfe_codigo_ean'     => $_POST['codigo_ean'],
-		'_nfe_codigo_ncm'     => $_POST['codigo_ncm'],
-		'_nfe_codigo_cest'    => $_POST['codigo_cest'],
-		);
+						'_nfe_classe_imposto' => $_POST['classe_imposto'],
+						'_nfe_codigo_ean'     => $_POST['codigo_ean'],
+						'_nfe_codigo_ncm'     => $_POST['codigo_ncm'],
+						'_nfe_codigo_cest'    => $_POST['codigo_cest'],
+						);
 
-		foreach ($info as $key => $value){
-			update_post_meta($post_id, $key, $value);
-		}
+						foreach ($info as $key => $value){
+							update_post_meta($post_id, $key, $value);
+						}
+
 						if ($_POST['ignorar_nfe']){
 							update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 						}else{
@@ -820,6 +961,33 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             if (is_numeric($_POST['origem']) || $_POST['origem']) update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
 
         }
+
+				if (get_post_type($post_id) == 'shop_order' && $_POST['wp_admin_nfe']){
+
+					$info = array(
+						'_nfe_transporte_forma_envio' => $_POST['transporte_forma_envio'],
+						'_nfe_transporte_volume'     => $_POST['transporte_volume'],
+						'_nfe_transporte_especie'     => $_POST['transporte_especie'],
+						'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
+						'_nfe_transporte_peso_liquido'    => $_POST['transporte_peso_liquido'],
+						'_nfe_transporte_marca'    => $_POST['transporte_marca'],
+						'_nfe_transporte_numeracao'    => $_POST['transporte_numeracao'],
+						'_nfe_transporte_lacres'    => $_POST['transporte_lacres'],
+						'_nfe_transporte_cnpj'    => $_POST['transporte_cnpj'],
+						'_nfe_transporte_razao_social'    => $_POST['transporte_razao_social'],
+						'_nfe_transporte_ie'    => $_POST['transporte_ie'],
+						'_nfe_transporte_endereco'    => $_POST['transporte_endereco'],
+						'_nfe_transporte_estado'    => $_POST['transporte_estado'],
+						'_nfe_transporte_cidade'    => $_POST['transporte_cidade'],
+						'_nfe_transporte_cep'    => $_POST['transporte_cep'],
+						'_nfe_transporte_seguro'    => str_replace(',', '.', $_POST['transporte_seguro']),
+					);
+
+					foreach ($info as $key => $value){
+						update_post_meta($post_id, $key, $value);
+					}
+
+				}
 
     }
 
