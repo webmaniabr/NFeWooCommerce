@@ -308,6 +308,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</p>
 				<?php
 					$forma_envio = get_post_meta( $post->ID, '_nfe_transporte_forma_envio', true );
+					$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
 				?>
 				<script>
 				jQuery(function($) {
@@ -316,6 +317,15 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				});
 				</script>
 				<div class="field">
+						<p class="label" style="margin-bottom:8px;">
+								<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Modalidade do frete</label>
+						</p>
+						<select name="modalidade_frete" id="modalidade_frete">
+								<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Por conta do emitente', $domain ); ?></option>
+								<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Por conta do destinatário/remetente', $domain ); ?></option>
+								<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Por conta de terceiros', $domain ); ?></option>
+								<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Sem frete', $domain ); ?></option>
+					 </select>
 		        <p class="label" style="margin-bottom:8px;">
 		            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Forma de envio</label>
 		        </p>
@@ -965,6 +975,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				if (get_post_type($post_id) == 'shop_order' && $_POST['wp_admin_nfe']){
 
 					$info = array(
+						'_nfe_modalidade_frete' => $_POST['modalidade_frete'],
 						'_nfe_transporte_forma_envio' => $_POST['transporte_forma_envio'],
 						'_nfe_transporte_volume'     => $_POST['transporte_volume'],
 						'_nfe_transporte_especie'     => $_POST['transporte_especie'],
