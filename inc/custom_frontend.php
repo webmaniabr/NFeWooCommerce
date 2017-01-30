@@ -5,32 +5,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WooCommerceNFe_Frontend extends WooCommerceNFe {
-    
+
     function scripts(){
-        
+
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
         $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');
         $cep = get_option('wc_settings_woocommercenfe_cep');
-        
+
         wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), null, true );
         wp_register_script( 'woocommercenfe_correios', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/correios.min.js', __FILE__ ) ), array('jquery'), null, true );
         wp_register_script( 'woocommercenfe_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/scripts.js', __FILE__ ) ), array('jquery'), null, true );
-        
+
         if ($mascara_campos == 'yes') $array['maskedinput'] = 1;
         if ($cep == 'yes') $array['cep'] = 1;
         if ($tipo_pessoa == 'yes') $array['person_type'] = 1;
-        
+
         if ($mascara_campos == 'yes') wp_enqueue_script( 'woocommercenfe_maskedinput' );
         if ($cep == 'yes') wp_enqueue_script( 'woocommercenfe_correios' );
         if ($array) wp_localize_script( 'woocommercenfe_scripts', 'WooCommerceNFe', $array);
         if ($cep == 'yes' || $mascara_campos == 'yes') wp_enqueue_script( 'woocommercenfe_scripts' );
-        
+
     }
-    
+
     function billing_fields( $fields ){
-        
+
         global $domain;
-        
+
         $new_fields = array(
             'billing_persontype' => array(
                 'type'     => 'select',
@@ -161,15 +161,15 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 				'required'    => true
 			)
         );
-        
-        return $new_fields; 
-        
+
+        return $new_fields;
+
     }
-    
+
     function shipping_fields( $fields ){
-        
+
         global $domain;
-        
+
         $new_fields = array(
             'shipping_first_name' => array(
                 'label'       => __( 'Nome', $domain ),
@@ -229,63 +229,64 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
                 'clear'       => true,
             )
         );
-        
+
         return $new_fields;
-        
+
     }
-    
+
     function valide_checkout_fields(){
-        
+
         $billing_persontype = isset( $_POST['billing_persontype'] ) ? $_POST['billing_persontype'] : 0;
-        
+
         if ($billing_persontype == 1){
-            
+
             if (empty( $_POST['billing_cpf'] )){
-                
+
                 wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
-                
+
             }
-            
+
             if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFe_Format::is_cpf( $_POST['billing_cpf'] )){
-                
+
                 wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
-                
+
             }
-            
+
         }
-        
+
         if ($billing_persontype == 2){
-            
+
             if (empty( $_POST['billing_cnpj'] )){
-                
+
                 wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
-                
+
             }
-            
+
             if (empty( $_POST['billing_company'] )){
-                
+
                 wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Empresa', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
-                
+
             }
-            
+
             if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFe_Format::is_cnpj( $_POST['billing_cnpj'] )){
-                
+
                 wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
-                
+
             }
-            
+
         }
-        
+
     }
-    
+
     function localisation_address_formats( $formats ){
-        
+
         $formats['BR'] = "Nome: {name}\nEndereço: {address_1}, {number}\nComplemento: {address_2}\nBairro: {neighborhood}\nCidade: {city}\nEstado: {state}\nCEP: {postcode}";
+				$formats['default'] = "Nome: {name}\nEndereço: {address_1}, {number}\nComplemento: {address_2}\nBairro: {neighborhood}\nCidade: {city}\nEstado: {state}\nCEP: {postcode}";
 
 		return $formats;
-        
+
     }
-    
+
     function formatted_address_replacements( $replacements, $args ) {
 		extract( $args );
 
@@ -294,31 +295,31 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
 		return $replacements;
 	}
-    
+
     function order_formatted_billing_address( $address, $order ) {
-		
+
         $address['number']       = $order->billing_number;
 		$address['neighborhood'] = $order->billing_neighborhood;
 
 		return $address;
 	}
-    
+
     function order_formatted_shipping_address( $address, $order ) {
-		
+
         $address['number']       = $order->shipping_number;
 		$address['neighborhood'] = $order->shipping_neighborhood;
 
 		return $address;
 	}
-    
+
     function my_account_my_address_formatted_address( $address, $customer_id, $name ) {
-		
+
         $address['number']       = get_user_meta( $customer_id, $name . '_number', true );
 		$address['neighborhood'] = get_user_meta( $customer_id, $name . '_neighborhood', true );
 
 		return $address;
 	}
-    
+
 }
 
 ?>
