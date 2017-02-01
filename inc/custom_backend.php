@@ -324,7 +324,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 								<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Por conta do emitente', $domain ); ?></option>
 								<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Por conta do destinatário/remetente', $domain ); ?></option>
 								<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Por conta de terceiros', $domain ); ?></option>
-								<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Sem frete', $domain ); ?></option>
+								<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem frete', $domain ); ?></option>
 					 </select>
 		        <p class="label" style="margin-bottom:8px;">
 		            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Forma de envio</label>
@@ -354,13 +354,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Bruto</label> (KG)
 			        </p>
-			        <input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 5.200 = 5.200KG">
+			        <input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 			    </div>
 					<div class="field transporte" style="display:none;">
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Líquido</label> (KG)
 			        </p>
-			        <input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 5.200 = 5.200KG">
+			        <input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 			    </div>
 					<div class="field transporte" style="display:none;">
 			        <p class="label" style="margin-bottom:8px;">
