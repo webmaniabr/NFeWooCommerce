@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.1.4
+* Version: 2.5
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -112,6 +112,9 @@ class WooCommerceNFe {
 			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
 			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
 		}
+
+		add_action('init', array('WooCommerceNFe_Backend', 'listen_notification'));
+
 	}
 	function init_frontend(){
 		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
@@ -258,6 +261,9 @@ class WooCommerceNFe {
 		$default_origem  = get_option('wc_settings_woocommercenfe_origem');
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$default_weight  = '0.100';
+
+		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
+
 		$coupons = $order->get_used_coupons();
 		$coupons_percentage = array();
 		$total_discount = 0;
@@ -298,8 +304,17 @@ class WooCommerceNFe {
 		$modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
 		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = 0;
 
+
+		$uniq_key = get_post_meta($post_id, 'uniq_get_key', true);
+
+		if(!$uniq_key){
+			$uniq_key = md5(uniqid(rand(), true));
+			update_post_meta($post_id, 'uniq_get_key', $uniq_key);
+		}
+
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
+			'url_notificacao' => get_bloginfo('url').'?retorno_nfe='.$uniq_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
 			'modelo'            => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
@@ -335,7 +350,7 @@ class WooCommerceNFe {
 			'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
 			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
 			'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
-			'email'       => get_post_meta($post_id, '_billing_email', true) // E-mail do cliente para envio da NF-e
+			'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
 		);
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
     if (!$tipo_pessoa) $tipo_pessoa = 1;
@@ -515,7 +530,7 @@ class WooCommerceNFe {
 /**
 * Active plugin
 */
-add_action( 'init', array( WC_NFe(), 'init' ), 20);
+add_action( 'plugins_loaded', array( WC_NFe(), 'init' ), 20);
 function WC_NFe(){
 	return WooCommerceNFe::instance();
 }

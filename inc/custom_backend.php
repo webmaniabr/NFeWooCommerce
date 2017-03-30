@@ -83,6 +83,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'desc' => __( 'Emitir automaticamente a NF-e sempre que um pagamento for confirmado.', $domain ),
                 'id'   => 'wc_settings_woocommercenfe_emissao_automatica',
             ),
+						'envio_email' => array(
+							'name' => __( 'Envio automático de email', $domain ),
+							'type' =>'checkbox',
+							'desc' => __( 'Enviar email para o cliente após a emissão da nota fiscal eletrônica.'),
+							'id'   => __('wc_settings_woocommercenfe_envio_email'),
+						),
             'natureza_operacao' => array(
                 'name' => __( 'Natureza da Operação', $domain ),
                 'type' => 'text',
@@ -618,7 +624,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		$post_status = $post->post_status;
 		if ($post_status == 'trash' || $post_status == 'wc-cancelled') return false;
 
-		parent::emitirNFe( array( $order_id ) );
+		WC_NFe()->emitirNFe( array( $order_id ) );
 
 	}
 
@@ -1001,5 +1007,33 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				}
 
     }
+
+		function listen_notification() {
+
+			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['retorno_nfe'] && $_GET['order_id']){
+				$order_id = (int) $_GET['order_id'];
+				$order_uniq_key = get_post_meta( $order_id, 'uniq_get_key', true );
+
+				if($_GET['retorno_nfe'] == $order_uniq_key){
+
+					$order_nfe_info = get_post_meta($order_id, 'nfe', true);
+					$current_status = $order_nfe_info['status'];
+
+					$check_status = array('processamento', 'contingencia');
+					$received_status = $_POST['status'];
+
+					if( $current_status != $received_status ){
+						$order_nfe_info['status'] = $received_status;
+						update_post_meta($order_id, 'nfe', $order_nfe_info);
+					}
+
+
+					update_option('retorno_teste', 'posted');
+					$post = file_get_contents('php://input');
+					update_option('retorno_nfe', $_POST);
+				}
+			}
+
+		}
 
 }
