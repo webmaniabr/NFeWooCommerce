@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.5.1
+* Version: 2.5.2
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -95,6 +95,15 @@ class WooCommerceNFe {
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'update_settings' ));
 		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'global_admin_scripts') );
+
+		add_action ('product_cat_add_form_fields', array('WooCommerceNFe_Backend', 'add_category_ncm'));
+		add_action ('product_cat_edit_form_fields', array('WooCommerceNFe_Backend', 'edit_category_ncm'), 10, 2);
+
+		add_action('edited_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
+		add_action('create_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
+
+		add_action('admin_notices', array('WooCommerceNFe_Backend', 'cat_ncm_warning'));
+
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
 			Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
@@ -443,9 +452,26 @@ class WooCommerceNFe {
 		if (!$codigo_ean){
 			$codigo_ean = get_option('wc_settings_woocommercenfe_ean');
 		}
+
 		if (!$codigo_ncm){
-			$codigo_ncm   = get_option('wc_settings_woocommercenfe_ncm');
+
+			$product_cat = get_the_terms($product_id, 'product_cat');
+
+			if(is_array($product_cat)){
+				foreach($product_cat as $cat){
+		      $ncm = get_term_meta($cat->term_id, '_ncm', true);
+		      if($ncm){
+						$codigo_ncm = $ncm;
+						break;
+					}
+		    }
+			}
+
+
+			if(!$codigo_ncm) $codigo_ncm   = get_option('wc_settings_woocommercenfe_ncm');
+
 		}
+
 		if (!$codigo_cest){
 			$codigo_cest = get_option('wc_settings_woocommercenfe_cest');
 		}

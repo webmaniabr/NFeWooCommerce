@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
-    function scripts(){
+    public static function scripts(){
 
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
         $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');

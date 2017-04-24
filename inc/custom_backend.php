@@ -216,7 +216,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     }
 
-		function atualizar_status_nota() {
+		public static function atualizar_status_nota() {
 
 			if(!is_admin()){
 				return false;
@@ -1008,7 +1008,84 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     }
 
-		function listen_notification() {
+		public static function add_category_ncm($taxonomy){ ?>
+
+			<div class="form-field term-ncm-wrap">
+				<label for="term-ncm">NCM</label>
+				<input name="term-ncm" id="term-ncm" type="text" size="40" />
+				<p>Este valor será utilizado caso o NCM não esteja definido diretamente no produto. Se vazio, será utilizado o NCM geral definido nas configurações da Nota Fiscal.</p>
+			</div>
+			<?php
+
+		}
+
+		public static function edit_category_ncm($term, $taxonomy){
+
+				$ncm = get_term_meta($term->term_id, '_ncm', true);
+
+			?>
+
+			<tr class="form-field term-ncm-wrap">
+				<th scope="row" valign="top">
+					<label>NCM</label>
+				</th>
+				<td>
+					<input name="term-ncm" id="term-ncm" type="text" size="40" value="<?php echo $ncm; ?>"/>
+					<p class="description">Este valor será utilizado caso o NCM não esteja definido diretamente no produto. Se vazio, será utilizado o NCM geral definido nas configurações da Nota Fiscal.</p>
+				</td>
+			</div>
+			<?php
+
+		}
+
+		public static function save_product_cat_ncm( $term_id, $tag_id ){
+
+			if ( isset( $_POST['term-ncm'] ) ) {
+        update_term_meta( $term_id, '_ncm', $_POST['term-ncm']);
+    	}
+
+		}
+
+		public static function is_categories_ncm_valid( $post_id ){
+
+			$product_cat = get_the_terms($post_id, 'product_cat');
+			$product_ncm = get_post_meta($post_id, '_nfe_codigo_ncm', true);
+
+			if($product_ncm || !is_array($product_cat)) return true;
+
+			$ncm_categories = array();
+
+			foreach($product_cat as $cat){
+	      $ncm = get_term_meta($cat->term_id, '_ncm', true);
+	      if($ncm) $ncm_categories[] = $ncm;
+	    }
+
+			if(count($ncm_categories) > 1){
+
+				return false;
+
+			}
+
+			return true;
+
+		}
+
+
+		public static function cat_ncm_warning(){
+
+			global $post;
+
+			$post_type = get_post_type($post);
+
+			if($post_type == 'product' && !self::is_categories_ncm_valid($post->ID)){ ?>
+
+				<div class="error" style="background-color: #f2dede; color: #a94442;"><p><strong>Atenção:</strong> Duas ou mais categorias deste produto possuem o NCM definido e, caso diferentes, podem ter o valor incorreto durante a emissão da NF-e.</p></div>
+
+			<?php }
+
+		}
+
+		public static function listen_notification() {
 
 			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['retorno_nfe'] && $_GET['order_id']){
 				$order_id = (int) $_GET['order_id'];
