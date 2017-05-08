@@ -269,24 +269,34 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						<h4 class="head-title status-column">Status</h4>
 					</div>
 					<div class="body">
-						<?php foreach($nfe_data as $order_nfe): ?>
+						<?php foreach($nfe_data as $order_nfe):
+
+							(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
+							(isset($order_nfe['n_nfe']) ? $numero_nfe = $order_nfe['n_nfe'] : $numero_nfe = '' );
+							(isset($order_nfe['chave_acesso']) ? $chave_acesso_nfe = $order_nfe['chave_acesso'] : $chave_acesso_nfe = '' );
+							(isset($order_nfe['status']) ? $status_nfe = $order_nfe['status'] : $status_nfe = '' );
+							(isset($order_nfe['url_xml']) ? $xml_nfe = $order_nfe['url_xml'] : $xml_nfe = '' );
+							(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
+							(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
+
+							?>
 							<div class="single">
 								<div>
-								<h4 class="body-info"><?php echo $order_nfe['data'] ?></h4>
-								<h4 class="body-info n-column"><?php echo $order_nfe['n_nfe'] ?></h4>
+								<h4 class="body-info"><?php echo $data_nfe; ?></h4>
+								<h4 class="body-info n-column"><?php echo $numero_nfe; ?></h4>
 								<h4 class="body-info danfe-column"><a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Visualizar Nota</span><span class="dashicons dashicons-media-text danfe-icon"></span></a></h4>
 								<?php
 									$post_url = get_edit_post_link($post->ID);
-									$update_url = $post_url.'&atualizar_nfe=true&chave='.$order_nfe['chave_acesso'];
+									$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
 
 								?>
-								<h4 class="body-info status-column"><span class="nfe-status <?php echo $order_nfe['status']; ?>"><?php echo $order_nfe['status']; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
+								<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
 								<div class="extra">
 									<ul>
-										<li><strong>RPS:</strong> <?php echo $order_nfe['n_recibo'] ?></li>
-										<li><strong>Série:</strong> <?php echo $order_nfe['n_serie'] ?></li>
-										<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $order_nfe['url_xml'] ?>">Download XML</a></li>
-										<li><strong>Código Verificação:</strong> <?php echo $order_nfe['chave_acesso'] ?></li>
+										<li><strong>RPS:</strong> <?php echo $recibo_nfe; ?></li>
+										<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
+										<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe; ?>">Download XML</a></li>
+										<li><strong>Código Verificação:</strong> <?php echo $chave_acesso_nfe; ?></li>
 									</ul>
 								</div>
 								<span class="dashicons dashicons-arrow-down-alt2 expand-nfe"></span>
