@@ -1104,20 +1104,19 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				if($_GET['retorno_nfe'] == $order_uniq_key){
 
 					$order_nfe_info = get_post_meta($order_id, 'nfe', true);
-					$current_status = $order_nfe_info['status'];
 
-					$check_status = array('processamento', 'contingencia');
-					$received_status = $_POST['status'];
+					if(!is_array($order_nfe_info)) exit;
 
-					if( $current_status != $received_status ){
-						$order_nfe_info['status'] = $received_status;
-						update_post_meta($order_id, 'nfe', $order_nfe_info);
+					foreach($order_nfe_info as $key => $order_nfe){
+
+						$current_status = $order_nfe['status'];
+						$received_status = $_POST['status'];
+
+						if($order_nfe['n_nfe'] == $_POST['nfe'] && $current_status != $received_status){
+							$order_nfe_info[$key]['status'] = $received_status;
+							update_post_meta($order_id, 'nfe', $order_nfe_info);
+						}
 					}
-
-
-					update_option('retorno_teste', 'posted');
-					$post = file_get_contents('php://input');
-					update_option('retorno_nfe', $_POST);
 				}
 			}
 
