@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.5.4
+* Version: 2.6.0
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -271,6 +271,8 @@ class WooCommerceNFe {
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$default_weight  = '0.100';
 
+		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
+
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
 
 		$coupons = $order->get_used_coupons();
@@ -413,28 +415,44 @@ class WooCommerceNFe {
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
 
 		// Transporte
-		$forma_envio = get_post_meta( $post_id, '_nfe_transporte_forma_envio', true );
-		if (is_numeric($forma_envio) && $forma_envio == '1'){
 
-			$data['transporte']['volume'] = get_post_meta($post_id, '_nfe_transporte_volume', true);
-			$data['transporte']['especie'] = get_post_meta($post_id, '_nfe_transporte_especie', true);
-			$data['transporte']['peso_bruto'] = get_post_meta($post_id, '_nfe_transporte_peso_bruto', true);
-			$data['transporte']['peso_liquido'] = get_post_meta($post_id, '_nfe_transporte_peso_liquido', true);
-			$data['transporte']['marca'] = get_post_meta($post_id, '_nfe_transporte_marca', true);
-			$data['transporte']['numeracao'] = get_post_meta($post_id, '_nfe_transporte_numeracao', true);
-			$data['transporte']['lacres'] = get_post_meta($post_id, '_nfe_transporte_lacres', true);
-			$data['transporte']['cnpj'] = get_post_meta($post_id, '_nfe_transporte_cnpj', true);
-			$data['transporte']['razao_social'] = get_post_meta($post_id, '_nfe_transporte_razao_social', true);
-			$data['transporte']['ie'] = get_post_meta($post_id, '_nfe_transporte_ie', true);
-			$data['transporte']['endereco'] = get_post_meta($post_id, '_nfe_transporte_endereco', true);
-			$data['transporte']['uf'] = get_post_meta($post_id, '_nfe_transporte_estado', true);
-			$data['transporte']['cidade'] = get_post_meta($post_id, '_nfe_transporte_cidade', true);
-			$data['transporte']['cep'] = get_post_meta($post_id, '_nfe_transporte_cep', true);
-			$data['transporte']['seguro'] = get_post_meta($post_id, '_nfe_transporte_seguro', true);
+		//Default transportadora info
+		$shipping_method = @array_shift($order->get_shipping_methods());
+		$shipping_method_id = $shipping_method['method_id'];
+
+		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
+
+
+		if($include_shipping_info == 'on' && isset($transportadoras[$shipping_method_id])){
+
+			$transp = $transportadoras[$shipping_method_id];
+			$data['transporte']['cnpj']         = $transp['cnpj'];
+			$data['transporte']['razao_social'] = $transp['razao_social'];
+			$data['transporte']['ie']           = $transp['ie'];
+			$data['transporte']['endereco']     = $transp['address'];
+			$data['transporte']['uf']           = $transp['uf'];
+			$data['transporte']['cidade']       = $transp['city'];
+			$data['transporte']['cep']          = $transp['cep'];
+
+			$order_specifics = array(
+				'volume' => '_nfe_transporte_volume',
+				'especie' => '_nfe_transporte_especie',
+				'peso_bruto' => '_nfe_transporte_peso_bruto',
+				'peso_liquido' => '_nfe_transporte_peso_liquido'
+			);
+
+			foreach($order_specifics as $api_key => $meta_key){
+				$value = get_post_meta($post_id, $meta_key, true);
+				if($value){
+					$data['transporte'][$api_key] = $value;
+				}
+			}
 
 		}
+
 		return $data;
 	}
+	
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
 		$product_id  = $item['product_id'];
