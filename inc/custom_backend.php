@@ -424,6 +424,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				($method->id == $id ? $selected = 'selected' : $selected = '');
 				$title = $method->get_title();
+
+				if(!$title && isset($method->method_title)){
+					$title = $method->method_title;
+				}
+				
 		    $html .= '<option value="'.$method->id.'" '.$selected.'>'.$title.'</option>';
 
 
