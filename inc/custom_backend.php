@@ -428,7 +428,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				if(!$title && isset($method->method_title)){
 					$title = $method->method_title;
 				}
-				
+
 		    $html .= '<option value="'.$method->id.'" '.$selected.'>'.$title.'</option>';
 
 
@@ -1276,30 +1276,41 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function listen_notification() {
+		public static function nfe_callback(){
 
-			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['retorno_nfe'] && $_GET['order_id']){
+			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
+
+				$nfe_data = $_POST['data'];
+				$nfe_order_id = (int) $nfe_data['ID'];
+
+				$order_key = esc_attr($_GET['order_key']);
 				$order_id = (int) $_GET['order_id'];
-				$order_uniq_key = get_post_meta( $order_id, 'uniq_get_key', true );
 
-				if($_GET['retorno_nfe'] == $order_uniq_key){
+				$order = wc_get_order($order_id);
 
-					$order_nfe_info = get_post_meta($order_id, 'nfe', true);
-
-					if(!is_array($order_nfe_info)) exit;
-
-					foreach($order_nfe_info as $key => $order_nfe){
-
-						$current_status = $order_nfe['status'];
-						$received_status = $_POST['status'];
-
-						if($order_nfe['n_nfe'] == $_POST['nfe'] && $current_status != $received_status){
-							$order_nfe_info[$key]['status'] = $received_status;
-							update_post_meta($order_id, 'nfe', $order_nfe_info);
-						}
-					}
+				if($order->order_key != $order_key || $nfe_order_id != $order_id || ! $order){
+					header( 'HTTP/1.1 401 Unauthorized' );
+					exit;
 				}
+
+				$order_nfe_data = get_post_meta($order_id, 'nfe', true);
+
+				if(!is_array($order_nfe_data)) exit;
+
+				foreach($order_nfe_data as $key => $order_nfe){
+
+					$current_status = $order_nfe['status'];
+					$received_status = $_POST['status'];
+
+					if($order_nfe['n_nfe'] == $_POST['nfe'] && $current_status != $received_status){
+						$order_nfe_data[$key]['status'] = $received_status;
+						update_post_meta($order_id, 'nfe', $order_nfe_data);
+					}
+
+				}
+
 			}
+
 
 		}
 

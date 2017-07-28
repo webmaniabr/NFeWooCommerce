@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.2
+* Version: 2.6.5
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -83,6 +83,9 @@ class WooCommerceNFe {
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_nfe_emitida') );
 		add_action( 'init', array('WooCommerceNFe_Backend', 'atualizar_status_nota'), 100 );
+
+		add_action( 'woocommerce_api_nfe_callback', array('WooCommerceNFe_Backend', 'nfe_callback') );
+
 		add_action( 'save_post', array('WooCommerceNFe_Backend', 'save_informacoes_fiscais'), 10, 2);
 		add_action( 'admin_head', array('WooCommerceNFe_Backend', 'style') );
 		add_filter( 'manage_edit-shop_order_columns', array( 'WooCommerceNFe_Backend', 'add_order_status_column_header' ), 20 );
@@ -123,7 +126,7 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
 		}
 
-		add_action('init', array('WooCommerceNFe_Backend', 'listen_notification'));
+
 
 	}
 	function init_frontend(){
@@ -317,16 +320,11 @@ class WooCommerceNFe {
 		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = 0;
 
 
-		$uniq_key = get_post_meta($post_id, 'uniq_get_key', true);
-
-		if(!$uniq_key){
-			$uniq_key = md5(uniqid(rand(), true));
-			update_post_meta($post_id, 'uniq_get_key', $uniq_key);
-		}
+		$order_key = $order->order_key;
 
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
-			'url_notificacao' => get_bloginfo('url').'?retorno_nfe='.$uniq_key.'&order_id='.$post_id,
+			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
 			'modelo'            => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
@@ -415,11 +413,14 @@ class WooCommerceNFe {
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
 
-		// Transporte
 
 		//Default transportadora info
 		$shipping_method = @array_shift($order->get_shipping_methods());
-		$shipping_method_id = str_replace(':1', '', $shipping_method['method_id']);
+		$shipping_method_id = $shipping_method['method_id'];
+
+		if(strpos($shipping_method_id, ':')){
+			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
+		}
 
 		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
 
