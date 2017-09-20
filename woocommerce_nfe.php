@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.7
+* Version: 2.6.8
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -83,9 +83,7 @@ class WooCommerceNFe {
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_nfe_emitida') );
 		add_action( 'init', array('WooCommerceNFe_Backend', 'atualizar_status_nota'), 100 );
-
 		add_action( 'woocommerce_api_nfe_callback', array('WooCommerceNFe_Backend', 'nfe_callback') );
-
 		add_action( 'save_post', array('WooCommerceNFe_Backend', 'save_informacoes_fiscais'), 10, 2);
 		add_action( 'admin_head', array('WooCommerceNFe_Backend', 'style') );
 		add_filter( 'manage_edit-shop_order_columns', array( 'WooCommerceNFe_Backend', 'add_order_status_column_header' ), 20 );
@@ -98,16 +96,12 @@ class WooCommerceNFe {
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'update_settings' ));
 		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'global_admin_scripts') );
-
 		add_action ('product_cat_add_form_fields', array('WooCommerceNFe_Backend', 'add_category_ncm'));
 		add_action ('product_cat_edit_form_fields', array('WooCommerceNFe_Backend', 'edit_category_ncm'), 10, 2);
-
 		add_action('edited_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
 		add_action('create_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
-
 		add_action('admin_notices', array('WooCommerceNFe_Backend', 'cat_ncm_warning'));
 		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'scripts') );
-
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
 			Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
@@ -123,12 +117,10 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_found_customer_details', array( 'WooCommerceNFe_Backend', 'customer_details_ajax' ) );
 			add_action( 'woocommerce_process_shop_order_meta', array( 'WooCommerceNFe_Backend', 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
-			add_action( 'woocommerce_admin_order_data_after_billing_address', array( 'WooCommerceNFe_Backend', 'order_data_after_billing_address' ) );
+			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
+      add_action( 'woocommerce_admin_order_data_after_billing_address', array( 'WooCommerceNFe_Backend', 'order_data_after_billing_address' ) );
 			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( 'WooCommerceNFe_Backend', 'order_data_after_shipping_address' ) );
 		}
-
-
-
 	}
 	function init_frontend(){
 		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
@@ -223,7 +215,6 @@ class WooCommerceNFe {
 	function emitirNFe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
 			$data = self::order_data( $order_id );
-			print_r($data); die();
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 			if (isset($response->error) || $response->status == 'reprovado'){
@@ -276,11 +267,8 @@ class WooCommerceNFe {
 		$default_origem  = get_option('wc_settings_woocommercenfe_origem');
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$default_weight  = '0.100';
-
 		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
-
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
-
 		$coupons = $order->get_used_coupons();
 		$coupons_percentage = array();
 		$total_discount = 0;
@@ -316,14 +304,10 @@ class WooCommerceNFe {
 			}
 		}
     $total_discount = $order->get_total_discount() + $total_discount;
-
 		// Order
 		$modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
 		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = 0;
-
-
 		$order_key = $order->order_key;
-
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
@@ -365,18 +349,15 @@ class WooCommerceNFe {
 			'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
 		);
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-		//echo $order->billing_address->persontype; die();
-		print_r(get_post_meta($post_id)); die();
-		echo $tipo_pessoa; die();
-    if (!$tipo_pessoa) $tipo_pessoa = 'F';
-		if ($tipo_pessoa == 'F'){
+    if (!$tipo_pessoa) $tipo_pessoa = 1;
+		if ($tipo_pessoa == 1){
 			$cpf        = get_post_meta($post_id, '_billing_cpf', true);
 			$first_name = get_post_meta($post_id, '_billing_first_name', true);
 			$last_name  = get_post_meta($post_id, '_billing_last_name', true);
 			$full_name  = $first_name.' '.$last_name;
 			$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
 			$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
-		}else if($tipo_pessoa == 'J'){
+		}else if($tipo_pessoa == 2){
 			$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
 			$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
 			$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
@@ -417,21 +398,14 @@ class WooCommerceNFe {
 		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
-
-
 		//Default transportadora info
 		$shipping_method = @array_shift($order->get_shipping_methods());
 		$shipping_method_id = $shipping_method['method_id'];
-
 		if(strpos($shipping_method_id, ':')){
 			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
 		}
-
 		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
-
-
 		if($include_shipping_info == 'on' && isset($transportadoras[$shipping_method_id])){
-
 			$transp = $transportadoras[$shipping_method_id];
 			$data['transporte']['cnpj']         = $transp['cnpj'];
 			$data['transporte']['razao_social'] = $transp['razao_social'];
@@ -440,26 +414,21 @@ class WooCommerceNFe {
 			$data['transporte']['uf']           = $transp['uf'];
 			$data['transporte']['cidade']       = $transp['city'];
 			$data['transporte']['cep']          = $transp['cep'];
-
 			$order_specifics = array(
 				'volume' => '_nfe_transporte_volume',
 				'especie' => '_nfe_transporte_especie',
 				'peso_bruto' => '_nfe_transporte_peso_bruto',
 				'peso_liquido' => '_nfe_transporte_peso_liquido'
 			);
-
 			foreach($order_specifics as $api_key => $meta_key){
 				$value = get_post_meta($post_id, $meta_key, true);
 				if($value){
 					$data['transporte'][$api_key] = $value;
 				}
 			}
-
 		}
-
 		return $data;
 	}
-
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
 		$product_id  = $item['product_id'];
@@ -477,11 +446,8 @@ class WooCommerceNFe {
 		if (!$codigo_ean){
 			$codigo_ean = get_option('wc_settings_woocommercenfe_ean');
 		}
-
 		if (!$codigo_ncm){
-
 			$product_cat = get_the_terms($product_id, 'product_cat');
-
 			if(is_array($product_cat)){
 				foreach($product_cat as $cat){
 		      $ncm = get_term_meta($cat->term_id, '_ncm', true);
@@ -491,12 +457,8 @@ class WooCommerceNFe {
 					}
 		    }
 			}
-
-
 			if(!$codigo_ncm) $codigo_ncm   = get_option('wc_settings_woocommercenfe_ncm');
-
 		}
-
 		if (!$codigo_cest){
 			$codigo_cest = get_option('wc_settings_woocommercenfe_cest');
 		}
