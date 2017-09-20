@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.5
+* Version: 2.6.7
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -123,7 +123,8 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_found_customer_details', array( 'WooCommerceNFe_Backend', 'customer_details_ajax' ) );
 			add_action( 'woocommerce_process_shop_order_meta', array( 'WooCommerceNFe_Backend', 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
-			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
+			add_action( 'woocommerce_admin_order_data_after_billing_address', array( 'WooCommerceNFe_Backend', 'order_data_after_billing_address' ) );
+			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( 'WooCommerceNFe_Backend', 'order_data_after_shipping_address' ) );
 		}
 
 
@@ -222,6 +223,7 @@ class WooCommerceNFe {
 	function emitirNFe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
 			$data = self::order_data( $order_id );
+			print_r($data); die();
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 			if (isset($response->error) || $response->status == 'reprovado'){
@@ -363,15 +365,18 @@ class WooCommerceNFe {
 			'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
 		);
 		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-    if (!$tipo_pessoa) $tipo_pessoa = 1;
-		if ($tipo_pessoa == 1){
+		//echo $order->billing_address->persontype; die();
+		print_r(get_post_meta($post_id)); die();
+		echo $tipo_pessoa; die();
+    if (!$tipo_pessoa) $tipo_pessoa = 'F';
+		if ($tipo_pessoa == 'F'){
 			$cpf        = get_post_meta($post_id, '_billing_cpf', true);
 			$first_name = get_post_meta($post_id, '_billing_first_name', true);
 			$last_name  = get_post_meta($post_id, '_billing_last_name', true);
 			$full_name  = $first_name.' '.$last_name;
 			$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
 			$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
-		}else if($tipo_pessoa == 2){
+		}else if($tipo_pessoa == 'J'){
 			$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
 			$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
 			$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual

@@ -21,7 +21,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
 
-
 				?>
 
 				<style>
@@ -1312,6 +1311,105 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			}
 
 
+		}
+
+		public static function order_data_after_billing_address( $order ){
+
+			// Get plugin settings.
+			$settings = get_option( 'wcbcf_settings' );
+
+			$html = '<div class="clear"></div>';
+			$html .= '<div class="wcbcf-address">';
+
+			if ( ! $order->get_formatted_billing_address() ) {
+				$html .= '<p class="none_set"><strong>' . __( 'Address', 'woocommerce-extra-checkout-fields-for-brazil' ) . ':</strong> ' . __( 'No billing address set.', 'woocommerce-extra-checkout-fields-for-brazil' ) . '</p>';
+			} else {
+
+				$html .= '<p><strong>' . __( 'Address', 'woocommerce-extra-checkout-fields-for-brazil' ) . ':</strong><br />';
+					$html .= $order->get_formatted_billing_address();
+				$html .= '</p>';
+			}
+
+			$html .= '<h4>' . __( 'Customer data', 'woocommerce-extra-checkout-fields-for-brazil' ) . '</h4>';
+
+			$html .= '<p>';
+
+			if ( 0 != $settings['person_type'] ) {
+
+				// Person type information.
+				if ( ( 1 == $order->billing_persontype && 1 == $settings['person_type'] ) || 2 == $settings['person_type'] ) {
+					$html .= '<strong>' . __( 'CPF', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_cpf ) . '<br />';
+
+					if ( isset( $settings['rg'] ) ) {
+						$html .= '<strong>' . __( 'RG', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_rg ) . '<br />';
+					}
+				}
+
+				if ( ( 2 == $order->billing_persontype && 1 == $settings['person_type'] ) || 3 == $settings['person_type'] ) {
+					$html .= '<strong>' . __( 'Company Name', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_company ) . '<br />';
+					$html .= '<strong>' . __( 'CNPJ', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_cnpj ) . '<br />';
+
+					if ( isset( $settings['ie'] ) ) {
+						$html .= '<strong>' . __( 'State Registration', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_ie ) . '<br />';
+					}
+				}
+			} else {
+				$html .= '<strong>' . __( 'Company', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_company ) . '<br />';
+			}
+
+			if ( isset( $settings['birthdate_sex'] ) ) {
+
+				// Birthdate information.
+				$html .= '<strong>' . __( 'Birthdate', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_birthdate ) . '<br />';
+
+				// Sex Information.
+				$html .= '<strong>' . __( 'Sex', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_sex ) . '<br />';
+			}
+
+			$html .= '<strong>' . __( 'Phone', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_phone ) . '<br />';
+
+			// Cell Phone Information.
+			if ( ! empty( $order->billing_cellphone ) ) {
+				$html .= '<strong>' . __( 'Cell Phone', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . esc_html( $order->billing_cellphone ) . '<br />';
+			}
+
+			$html .= '<strong>' . __( 'Email', 'woocommerce-extra-checkout-fields-for-brazil' ) . ': </strong>' . make_clickable( esc_html( $order->billing_email ) ) . '<br />';
+
+			$html .= '</p>';
+
+			$html .= '</div>';
+
+			echo $html;
+
+		}
+
+		public function order_data_after_shipping_address( $order ) {
+
+			global $post;
+
+			// Get plugin settings.
+			$settings = get_option( 'wcbcf_settings' );
+
+			$html = '<div class="clear"></div>';
+			$html .= '<div class="wcbcf-address">';
+
+			if ( ! $order->get_formatted_shipping_address() ) {
+				$html .= '<p class="none_set"><strong>' . __( 'Address', 'woocommerce-extra-checkout-fields-for-brazil' ) . ':</strong> ' . __( 'No shipping address set.', 'woocommerce-extra-checkout-fields-for-brazil' ) . '</p>';
+			} else {
+
+				$html .= '<p><strong>' . __( 'Address', 'woocommerce-extra-checkout-fields-for-brazil' ) . ':</strong><br />';
+					$html .= $order->get_formatted_shipping_address();
+				$html .= '</p>';
+			}
+
+			if ( apply_filters( 'woocommerce_enable_order_notes_field', 'yes' == get_option( 'woocommerce_enable_order_comments', 'yes' ) ) && $post->post_excerpt ) {
+				$html .= '<p><strong>' . __( 'Customer Note', 'woocommerce-extra-checkout-fields-for-brazil' ) . ':</strong><br />' . nl2br( esc_html( $post->post_excerpt ) ) . '</p>';
+			}
+
+			$html .= '</div>';
+
+			echo $html;
+			
 		}
 
 }
