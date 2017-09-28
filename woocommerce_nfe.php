@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.8
+* Version: 2.6.9
 * Copyright: © 2009-2016 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -13,8 +13,12 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
+
+
 class WooCommerceNFe {
+
 	public $domain = 'WooCommerceNFe';
+
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -22,6 +26,7 @@ class WooCommerceNFe {
 		}
 		return self::$_instance;
 	}
+
 	function init(){
 		global $domain;
 		add_action( 'admin_notices', array($this, 'display_messages') );
@@ -78,51 +83,56 @@ class WooCommerceNFe {
 		do_action('woocommercenfe_loaded');
 	}
 	function init_backend(){
+
+		$WC_NFe_Backend = new WooCommerceNFe_Backend();
+
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
 		add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 );
-		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_listar_nfe') );
-		add_action( 'add_meta_boxes', array('WooCommerceNFe_Backend', 'register_metabox_nfe_emitida') );
-		add_action( 'init', array('WooCommerceNFe_Backend', 'atualizar_status_nota'), 100 );
-		add_action( 'woocommerce_api_nfe_callback', array('WooCommerceNFe_Backend', 'nfe_callback') );
-		add_action( 'save_post', array('WooCommerceNFe_Backend', 'save_informacoes_fiscais'), 10, 2);
-		add_action( 'admin_head', array('WooCommerceNFe_Backend', 'style') );
-		add_filter( 'manage_edit-shop_order_columns', array( 'WooCommerceNFe_Backend', 'add_order_status_column_header' ), 20 );
-		add_action( 'manage_shop_order_posts_custom_column', array( 'WooCommerceNFe_Backend', 'add_order_status_column_content' ) );
-		add_action( 'woocommerce_order_actions', array( 'WooCommerceNFe_Backend', 'add_order_meta_box_actions' ) );
-		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( 'WooCommerceNFe_Backend', 'process_order_meta_box_actions' ) );
-		add_action( 'admin_footer-edit.php', array( 'WooCommerceNFe_Backend', 'add_order_bulk_actions' ) );
-		add_action( 'load-edit.php', array( 'WooCommerceNFe_Backend', 'process_order_bulk_actions' ) );
-		add_filter( 'woocommerce_settings_tabs_array', array('WooCommerceNFe_Backend', 'add_settings_tab'), 100 );
-		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'settings_tab'));
-		add_action( 'woocommerce_update_options_woocommercenfe_tab', array('WooCommerceNFe_Backend', 'update_settings' ));
-		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'global_admin_scripts') );
-		add_action ('product_cat_add_form_fields', array('WooCommerceNFe_Backend', 'add_category_ncm'));
-		add_action ('product_cat_edit_form_fields', array('WooCommerceNFe_Backend', 'edit_category_ncm'), 10, 2);
-		add_action('edited_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
-		add_action('create_product_cat', array('WooCommerceNFe_Backend', 'save_product_cat_ncm'), 10, 2);
-		add_action('admin_notices', array('WooCommerceNFe_Backend', 'cat_ncm_warning'));
-		add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'scripts') );
+		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
+		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
+		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
+		add_action( 'woocommerce_api_nfe_callback', array($WC_NFe_Backend, 'nfe_callback') );
+		add_action( 'save_post', array($WC_NFe_Backend, 'save_informacoes_fiscais'), 10, 2);
+		add_action( 'admin_head', array($WC_NFe_Backend, 'style') );
+		add_filter( 'manage_edit-shop_order_columns', array( $WC_NFe_Backend, 'add_order_status_column_header' ), 20 );
+		add_action( 'manage_shop_order_posts_custom_column', array( $WC_NFe_Backend, 'add_order_status_column_content' ) );
+		add_action( 'woocommerce_order_actions', array( $WC_NFe_Backend, 'add_order_meta_box_actions' ) );
+		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( $WC_NFe_Backend, 'process_order_meta_box_actions' ) );
+		add_action( 'admin_footer-edit.php', array( $WC_NFe_Backend, 'add_order_bulk_actions' ) );
+		add_action( 'load-edit.php', array( $WC_NFe_Backend, 'process_order_bulk_actions' ) );
+		add_filter( 'woocommerce_settings_tabs_array', array($WC_NFe_Backend, 'add_settings_tab'), 100 );
+		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array($WC_NFe_Backend, 'settings_tab'));
+		add_action( 'woocommerce_update_options_woocommercenfe_tab', array($WC_NFe_Backend, 'update_settings' ));
+		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'global_admin_scripts') );
+		add_action ('product_cat_add_form_fields', array($WC_NFe_Backend, 'add_category_ncm'));
+		add_action ('product_cat_edit_form_fields', array($WC_NFe_Backend, 'edit_category_ncm'), 10, 2);
+		add_action('edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action('create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
+		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
 			Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
 			@author Claudio Sanches
 			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 			*/
-			add_action( 'admin_enqueue_scripts', array('WooCommerceNFe_Backend', 'scripts') );
-			add_filter( 'woocommerce_customer_meta_fields', array( 'WooCommerceNFe_Backend', 'customer_meta_fields' ) );
-			add_filter( 'woocommerce_user_column_billing_address', array( 'WooCommerceNFe_Backend', 'user_column_billing_address' ), 1, 2 );
-			add_filter( 'woocommerce_user_column_shipping_address', array( 'WooCommerceNFe_Backend', 'user_column_shipping_address' ), 1, 2 );
-			add_filter( 'woocommerce_admin_billing_fields', array( 'WooCommerceNFe_Backend', 'shop_order_billing_fields' ) );
-			add_filter( 'woocommerce_admin_shipping_fields', array( 'WooCommerceNFe_Backend', 'shop_order_shipping_fields' ) );
-			add_filter( 'woocommerce_found_customer_details', array( 'WooCommerceNFe_Backend', 'customer_details_ajax' ) );
-			add_action( 'woocommerce_process_shop_order_meta', array( 'WooCommerceNFe_Backend', 'save_custom_shop_data' ) );
-			add_action( 'woocommerce_api_create_order', array( 'WooCommerceNFe_Backend', 'wc_api_save_custom_shop_data' ), 10, 2 );
+			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
+			add_filter( 'woocommerce_customer_meta_fields', array( $WC_NFe_Backend, 'customer_meta_fields' ) );
+			add_filter( 'woocommerce_user_column_billing_address', array( $WC_NFe_Backend, 'user_column_billing_address' ), 1, 2 );
+			add_filter( 'woocommerce_user_column_shipping_address', array( $WC_NFe_Backend, 'user_column_shipping_address' ), 1, 2 );
+			add_filter( 'woocommerce_admin_billing_fields', array( $WC_NFe_Backend, 'shop_order_billing_fields' ) );
+			add_filter( 'woocommerce_admin_shipping_fields', array( $WC_NFe_Backend, 'shop_order_shipping_fields' ) );
+			add_filter( 'woocommerce_found_customer_details', array( $WC_NFe_Backend, 'customer_details_ajax' ) );
+			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
+			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
 			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
-      add_action( 'woocommerce_admin_order_data_after_billing_address', array( 'WooCommerceNFe_Backend', 'order_data_after_billing_address' ) );
-			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( 'WooCommerceNFe_Backend', 'order_data_after_shipping_address' ) );
+      add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
 		}
 	}
 	function init_frontend(){
+
+		$WC_NFe_Frontend = new WooCommerceNFe_Frontend();
 		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
@@ -130,14 +140,14 @@ class WooCommerceNFe {
 			@author Claudio Sanches
 			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 			*/
-			add_filter( 'woocommerce_billing_fields', array('WooCommerceNFe_Frontend', 'billing_fields') );
-			add_filter( 'woocommerce_shipping_fields', array('WooCommerceNFe_Frontend', 'shipping_fields') );
-			add_action( 'woocommerce_checkout_process', array('WooCommerceNFe_Frontend', 'valide_checkout_fields') );
-			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
-			add_filter( 'woocommerce_formatted_address_replacements', array( 'WooCommerceNFe_Frontend', 'formatted_address_replacements' ), 1, 2 );
-			add_filter( 'woocommerce_order_formatted_billing_address', array( 'WooCommerceNFe_Frontend', 'order_formatted_billing_address' ), 1, 2 );
-			add_filter( 'woocommerce_order_formatted_shipping_address', array( 'WooCommerceNFe_Frontend', 'order_formatted_shipping_address' ), 1, 2 );
-			add_filter( 'woocommerce_my_account_my_address_formatted_address', array( 'WooCommerceNFe_Frontend', 'my_account_my_address_formatted_address' ), 1, 3 );
+			add_filter( 'woocommerce_billing_fields', array($WC_NFe_Frontend, 'billing_fields') );
+			add_filter( 'woocommerce_shipping_fields', array($WC_NFe_Frontend, 'shipping_fields') );
+			add_action( 'woocommerce_checkout_process', array($WC_NFe_Frontend, 'valide_checkout_fields') );
+			add_filter( 'woocommerce_localisation_address_formats', array( $WC_NFe_Frontend, 'localisation_address_formats' ) );
+			add_filter( 'woocommerce_formatted_address_replacements', array( $WC_NFe_Frontend, 'formatted_address_replacements' ), 1, 2 );
+			add_filter( 'woocommerce_order_formatted_billing_address', array( $WC_NFe_Frontend, 'order_formatted_billing_address' ), 1, 2 );
+			add_filter( 'woocommerce_order_formatted_shipping_address', array( $WC_NFe_Frontend, 'order_formatted_shipping_address' ), 1, 2 );
+			add_filter( 'woocommerce_my_account_my_address_formatted_address', array($WC_NFe_Frontend, 'my_account_my_address_formatted_address' ), 1, 3 );
 		}
 	}
 	function includes(){
@@ -184,6 +194,7 @@ class WooCommerceNFe {
 		update_option('woocommercenfe_success_messages', $messages);
 	}
 	function validadeCertificado(){
+
 		if (get_transient('validadeCertificado')) {
 			$response = get_transient('validadeCertificado');
 		} else {
@@ -192,19 +203,20 @@ class WooCommerceNFe {
 		}
 		if (isset($response->error)){
             set_transient( 'validadeCertificado', $response, 600 );
-			WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
+			WC_NFe()->add_error( __('Erro: '.$response->error, $this->domain) );
 			return false;
 		} else {
             set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
 			if ($response < 45 && $response >= 1){
-				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $domain) );
+				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $this->domain) );
 				return false;
 			}
 			if (!$response) {
-				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', $domain) );
+				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', $this->domain) );
 				return false;
 			}
 		}
+
 	}
 	function emitirNFeAutomaticamente( $order_id ){
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
@@ -450,7 +462,10 @@ class WooCommerceNFe {
 			$product_cat = get_the_terms($product_id, 'product_cat');
 			if(is_array($product_cat)){
 				foreach($product_cat as $cat){
-		      $ncm = get_term_meta($cat->term_id, '_ncm', true);
+					if(function_exists('get_term_meta')){
+						$ncm = get_term_meta($cat->term_id, '_ncm', true);
+					}
+
 		      if($ncm){
 						$codigo_ncm = $ncm;
 						break;

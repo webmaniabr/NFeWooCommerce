@@ -17,7 +17,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     function settings_tab(){
 
-        woocommerce_admin_fields( self::get_settings() );
+        woocommerce_admin_fields( $this->get_settings() );
 
 				$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
 
@@ -133,7 +133,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					<div class="nfe-table-body">
 						<div class="entry">
 							<div class="shipping-method-col">
-								<?php echo self::get_shipping_methods_select(); ?>
+								<?php echo $this->get_shipping_methods_select(); ?>
 							</div>
 							<div class="shipping-info-col">
 									<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_0"/></p>
@@ -146,7 +146,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 							</div>
 							<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>
 						</div>
-						<?php echo self::get_transportadoras_entries(); ?>
+						<?php echo $this->get_transportadoras_entries(); ?>
 					</div>
 					<button type="button" class="button-primary" id="add-shipping-info">Adicionar novo</button>
 					<input type="hidden" name="shipping-info-count" value="<?php echo count($transportadoras); ?>" />
@@ -158,7 +158,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     function update_settings(){
 
-        woocommerce_update_options( self::get_settings() );
+        woocommerce_update_options( $this->get_settings() );
 
 				//Transportadoras
 				$count = (int) $_POST['shipping-info-count'];
@@ -375,7 +375,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			foreach($transportadoras as $key => $transp){
 				$html .= '<div class="entry">';
 
-				$html .= '<div class="shipping-method-col">'.self::get_shipping_methods_select($i, $key).'</div>';
+				$html .= '<div class="shipping-method-col">'.$this->get_shipping_methods_select($i, $key).'</div>';
 
 				$html .= '<div class="shipping-info-col">';
 
@@ -443,7 +443,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         add_meta_box(
             'woocommernfe_nfe_emitida',
             'NF-e do Pedido',
-            array('WooCommerceNFe_Backend', 'metabox_content_woocommernfe_nfe_emitida'),
+            array($this, 'metabox_content_woocommernfe_nfe_emitida'),
             'shop_order',
             'normal',
             'high'
@@ -454,7 +454,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				add_meta_box(
             'woocommernfe_transporte',
             'Transporte (NF-e)',
-            array('WooCommerceNFe_Backend', 'metabox_content_woocommernfe_transporte'),
+            array($this, 'metabox_content_woocommernfe_transporte'),
             'shop_order',
             'side',
             'high'
@@ -462,13 +462,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     }
 
-		public static function atualizar_status_nota() {
+		function atualizar_status_nota() {
 
 			if(!is_admin()){
 				return false;
 			}
 
-			if($_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
+			if(isset($_GET['atualizar_ne']) && $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
 
 				$post_id = (int) sanitize_text_field($_GET['post']);
 				$chave = sanitize_text_field($_GET['chave']);
@@ -639,7 +639,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         add_meta_box(
             'woocommernfe_informacoes',
             'Informações Fiscais (Opcional)',
-            array('WooCommerceNFe_Backend', 'metabox_content_woocommernfe_informacoes'),
+            array($this, 'metabox_content_woocommernfe_informacoes'),
             'product',
             'side',
             'high'
@@ -1034,6 +1034,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     function shop_order_shipping_fields( $data ) {
 
+			global $domain;
+
         $shipping_data['first_name'] = array(
 			'label' => __( 'Nome', $domain ),
 			'show'  => false
@@ -1198,7 +1200,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
     }
 
-		public static function add_category_ncm($taxonomy){ ?>
+		function add_category_ncm($taxonomy){ ?>
 
 			<div class="form-field term-ncm-wrap">
 				<label for="term-ncm">NCM</label>
@@ -1209,9 +1211,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function edit_category_ncm($term, $taxonomy){
+		function edit_category_ncm($term, $taxonomy){
 
+			if(function_exists('get_term_meta')){
 				$ncm = get_term_meta($term->term_id, '_ncm', true);
+			}
+
 
 			?>
 
@@ -1228,7 +1233,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function save_product_cat_ncm( $term_id, $tag_id ){
+		function save_product_cat_ncm( $term_id, $tag_id ){
 
 			if ( isset( $_POST['term-ncm'] ) ) {
         update_term_meta( $term_id, '_ncm', $_POST['term-ncm']);
@@ -1236,7 +1241,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function is_categories_ncm_valid( $post_id ){
+		function is_categories_ncm_valid( $post_id ){
 
 			$product_cat = get_the_terms($post_id, 'product_cat');
 			$product_ncm = get_post_meta($post_id, '_nfe_codigo_ncm', true);
@@ -1246,7 +1251,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$ncm_categories = array();
 
 			foreach($product_cat as $cat){
-	      $ncm = get_term_meta($cat->term_id, '_ncm', true);
+
+				if(function_exists('get_term_meta')){
+					$ncm = get_term_meta($cat->term_id, '_ncm', true);
+				}else{
+					$ncm = null;
+				}
+
 	      if($ncm) $ncm_categories[] = $ncm;
 	    }
 
@@ -1261,13 +1272,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		}
 
 
-		public static function cat_ncm_warning(){
+		function cat_ncm_warning(){
 
 			global $post;
 
 			$post_type = get_post_type($post);
 
-			if($post_type == 'product' && !self::is_categories_ncm_valid($post->ID)){ ?>
+			if($post_type == 'product' && !$this->is_categories_ncm_valid($post->ID)){ ?>
 
 				<div class="error" style="background-color: #f2dede; color: #a94442;"><p><strong>Atenção:</strong> Duas ou mais categorias deste produto possuem o NCM definido e, caso diferentes, podem ter o valor incorreto durante a emissão da NF-e.</p></div>
 
@@ -1275,7 +1286,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function nfe_callback(){
+		function nfe_callback(){
 
 			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
 
@@ -1313,7 +1324,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		}
 
-		public static function order_data_after_billing_address( $order ){
+		function order_data_after_billing_address( $order ){
 
 			// Get plugin settings.
 			$settings = get_option( 'wcbcf_settings' );
@@ -1409,7 +1420,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$html .= '</div>';
 
 			echo $html;
-			
+
 		}
 
 }
