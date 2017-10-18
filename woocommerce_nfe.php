@@ -5,8 +5,8 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.9.1
-* Copyright: © 2009-2016 WebmaniaBR.
+* Version: 2.6.9.2
+* Copyright: © 2009-2017 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
@@ -409,12 +409,14 @@ class WooCommerceNFe {
 		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
-		//Default transportadora info
+
+	  //Default transportadora info
 		$shipping_method = @array_shift($order->get_shipping_methods());
 		$shipping_method_id = $shipping_method['method_id'];
 		if(strpos($shipping_method_id, ':')){
 			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
 		}
+
 		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
 		if($include_shipping_info == 'on' && isset($transportadoras[$shipping_method_id])){
 			$transp = $transportadoras[$shipping_method_id];
@@ -425,20 +427,24 @@ class WooCommerceNFe {
 			$data['transporte']['uf']           = $transp['uf'];
 			$data['transporte']['cidade']       = $transp['city'];
 			$data['transporte']['cep']          = $transp['cep'];
-			$order_specifics = array(
-				'volume' => '_nfe_transporte_volume',
-				'especie' => '_nfe_transporte_especie',
-				'peso_bruto' => '_nfe_transporte_peso_bruto',
-				'peso_liquido' => '_nfe_transporte_peso_liquido'
-			);
-			foreach($order_specifics as $api_key => $meta_key){
-				$value = get_post_meta($post_id, $meta_key, true);
-				if($value){
-					$data['transporte'][$api_key] = $value;
-				}
+		}
+
+		$order_specifics = array(
+			'volume' => '_nfe_transporte_volume',
+			'especie' => '_nfe_transporte_especie',
+			'peso_bruto' => '_nfe_transporte_peso_bruto',
+			'peso_liquido' => '_nfe_transporte_peso_liquido'
+		);
+
+		foreach($order_specifics as $api_key => $meta_key){
+			$value = get_post_meta($post_id, $meta_key, true);
+			if($value){
+				$data['transporte'][$api_key] = $value;
 			}
 		}
+
 		return $data;
+
 	}
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
