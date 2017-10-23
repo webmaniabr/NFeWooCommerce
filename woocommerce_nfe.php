@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.9.2
+* Version: 2.6.10
 * Copyright: © 2009-2017 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -315,8 +315,10 @@ class WooCommerceNFe {
 			}
 		}
     $total_discount = $order->get_total_discount() + $total_discount;
+
 		// Order
-		$modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
+		$modalidade_frete = $_POST['modalidade_frete'];
+		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
 		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = 0;
 		$order_key = $order->order_key;
 		$data = array(
@@ -437,10 +439,13 @@ class WooCommerceNFe {
 		);
 
 		foreach($order_specifics as $api_key => $meta_key){
-			$value = get_post_meta($post_id, $meta_key, true);
-			if($value){
+
+			$value = $_POST[str_replace('_nfe_', '', $meta_key)];
+			if (!isset($value)) $value = get_post_meta($post_id, $meta_key, true);
+			if ($value){
 				$data['transporte'][$api_key] = $value;
 			}
+
 		}
 
 		return $data;
