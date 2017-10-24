@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.10
+* Version: 2.6.11
 * Copyright: © 2009-2017 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -111,7 +111,7 @@ class WooCommerceNFe {
 		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
-			Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
+			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
 			@author Claudio Sanches
 			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 			*/
@@ -135,7 +135,7 @@ class WooCommerceNFe {
 		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
-			Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
+			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
 			@author Claudio Sanches
 			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 			*/

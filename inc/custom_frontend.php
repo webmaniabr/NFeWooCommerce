@@ -61,8 +61,8 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
                 'required'    => false
             ),
             'billing_company' => array(
-				'label'       => __( 'Empresa', $domain ),
-				'placeholder' => _x( 'Empresa', 'placeholder', $domain ),
+				'label'       => __( 'Razão Social', $domain ),
+				'placeholder' => _x( 'Razão Social', 'placeholder', $domain ),
 				'class'       => array( 'form-row-wide', 'person-type-field' ),
 				'required'    => false
 			),
@@ -264,7 +264,7 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
             if (empty( $_POST['billing_company'] )){
 
-                wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Empresa', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
+                wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Razão Social', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
 
             }
 
