@@ -25,8 +25,8 @@ jQuery(function($){
     if (WooCommerceNFe.cep) {
 
         correios.init( 'qS4SKlmAXR21h7wrBMcs0SZyXauLqo5m', 'nkKkInYJ5QvogYn1xj4lk7w3hkhA8qzruoKzuLf6UyBtSIJL' );
-        $('#billing_postcode').correios( '#billing_address_1', '#billing_neighborhood', '#billing_city', '#billing_state', '#loading' );
-        $('#shipping_postcode').correios( '#shipping_address_1', '#shipping_neighborhood', '#shipping_city', '#shipping_state', '#loading' );
+        $('#billing_postcode').correios( '#billing_address_1', '#billing_neighborhood', '#billing_city', '#billing_state', '#loading', false );
+        $('#shipping_postcode').correios( '#shipping_address_1', '#shipping_neighborhood', '#shipping_city', '#shipping_state', '#loading', false );
 
     }
 

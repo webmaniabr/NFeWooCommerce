@@ -5,8 +5,8 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.12
-* Copyright: © 2009-2017 WebmaniaBR.
+* Version: 2.6.13
+* Copyright: © 2009-2018 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
@@ -226,6 +226,7 @@ class WooCommerceNFe {
 	function emitirNFe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
 			$data = self::order_data( $order_id );
+			
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 			if (isset($response->error) || $response->status == 'reprovado'){
@@ -386,14 +387,22 @@ class WooCommerceNFe {
 		$bundles = array();
 		if(!isset($data['produtos'])) $data['produtos'] = array();
 		foreach ($order->get_items() as $key => $item){
+			
 			$product      = $order->get_product_from_item( $item );
 			$product_type = $product->get_type();
 			$product_id   = $item['product_id'];
+
+			$bundled_by = isset($item['bundled_by']);
+			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
+				$bundled_by = $item->meta_exists('_bundled_by');
+			}
+
 			$variation_id = $item['variation_id'];
-			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || isset($item['bundled_by']) ){
+			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || $bundled_by ){
 				$bundles[] = $item;
 				continue;
 			}
+
 			$product_info = self::get_product_nfe_info($item, $order);
 			$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
 			if($ignorar_nfe == 1 || $order->get_item_subtotal( $item, false, false ) == 0){
@@ -458,6 +467,7 @@ class WooCommerceNFe {
 		return $data;
 
 	}
+
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
 		$product_id  = $item['product_id'];
@@ -528,6 +538,7 @@ class WooCommerceNFe {
 			return $info;
 	}
 	function set_bundle_products_array( $bundles, $order ){
+
 		$total_bundle = 0;
 		$total_products = 0;
 		$bundle_products = array();
@@ -535,7 +546,16 @@ class WooCommerceNFe {
 			$product = $order->get_product_from_item( $item );
 			$product_type = $product->get_type();
 			$product_price = $product->get_price();
-			if(isset($item['bundled_by'])){
+
+
+			$bundled_by = isset($item['bundled_by']);
+			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
+				$bundled_by = $item->meta_exists('_bundled_by');
+			}
+
+
+
+			if($bundled_by){
 				$product_total = $product_price * $item['qty'];
 				$total_products += $product_total;
 				if(!isset($bundle_products[$item['product_id']])){

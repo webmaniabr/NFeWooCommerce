@@ -1158,7 +1158,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						);
 
 						foreach ($info as $key => $value){
-							update_post_meta($post_id, $key, $value);
+							if (isset($value)) update_post_meta($post_id, $key, $value);
 						}
 
 						if ($_POST['ignorar_nfe']){
@@ -1193,7 +1193,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					);
 
 					foreach ($info as $key => $value){
-						update_post_meta($post_id, $key, $value);
+						if (isset($value)) update_post_meta($post_id, $key, $value);
 					}
 
 				}
@@ -1350,7 +1350,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				$html .= '<strong>' . __( 'Razão Social', $domain ) . ': </strong>' . esc_html( $order->billing_company ) . '<br />';
 				$html .= '<strong>' . __( 'CNPJ', $domain ) . ': </strong>' . esc_html( $order->billing_cnpj ) . '<br />';
-				if ( isset( $order->billing_ie ) ) {
+				if ( ! empty( $order->billing_ie ) ) {
 					$html .= '<strong>' . __( 'I.E', $domain ) . ': </strong>' . esc_html( $order->billing_ie ) . '<br />';
 				}
 

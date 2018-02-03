@@ -7,14 +7,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
     public static function scripts(){
+        
+        $version = '2.6.13';
 
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
         $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');
         $cep = get_option('wc_settings_woocommercenfe_cep');
 
-        wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), null, true );
-        wp_register_script( 'woocommercenfe_correios', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/correios.min.js', __FILE__ ) ), array('jquery'), null, true );
-        wp_register_script( 'woocommercenfe_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/scripts.js', __FILE__ ) ), array('jquery'), null, true );
+        wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version, true );
+        wp_register_script( 'woocommercenfe_correios', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/correios.min.js', __FILE__ ) ), array('jquery'), $version, true );
+        wp_register_script( 'woocommercenfe_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/scripts.js', __FILE__ ) ), array('jquery'), $version, true );
 
         if ($mascara_campos == 'yes') $array['maskedinput'] = 1;
         if ($cep == 'yes') $array['cep'] = 1;
@@ -29,140 +31,140 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
     function billing_fields( $fields ){
 
-        global $domain;
-
-        $new_fields = array(
-            'billing_persontype' => array(
-                'type'     => 'select',
-                'label'    => __( 'Tipo Pessoa', $domain ),
-                'class'    => array( 'form-row-wide', 'person-type-field' ),
-                'required' => false,
-                'options'  => array(
-                    '1' => __( 'Pessoa Física', $domain ),
-                    '2' => __( 'Pessoa Jurídica', $domain )
-                )
-            ),
-            'billing_cpf' => array(
-                'label'       => __( 'CPF', $domain ),
-                'placeholder' => _x( 'CPF', 'placeholder', $domain ),
-                'class'       => array( 'form-row-wide', 'person-type-field' ),
-                'required'    => false
-            ),
-            'billing_cnpj' => array(
-                'label'       => __( 'CNPJ', $domain ),
-                'placeholder' => _x( 'CNPJ', 'placeholder', $domain ),
-                'class'       => array( 'form-row-first', 'person-type-field' ),
-                'required'    => false
-            ),
-            'billing_ie' => array(
-                'label'       => __( 'Inscrição Estadual', $domain ),
-                'placeholder' => _x( 'Inscrição Estadual', 'placeholder', $domain ),
-                'class'       => array( 'form-row-last', 'person-type-field' ),
-                'required'    => false
-            ),
-            'billing_company' => array(
-				'label'       => __( 'Razão Social', $domain ),
-				'placeholder' => _x( 'Razão Social', 'placeholder', $domain ),
-				'class'       => array( 'form-row-wide', 'person-type-field' ),
-				'required'    => false
-			),
-            'billing_first_name' => array(
-				'label'       => __( 'Nome', $domain ),
-				'placeholder' => _x( 'Nome', 'placeholder', $domain ),
-				'class'       => array( 'form-row-first' ),
-				'required'    => false
-			),
-            'billing_last_name' => array(
-				'label'       => __( 'Sobrenome', $domain ),
-				'placeholder' => _x( 'Sobrenome', 'placeholder', $domain ),
-				'class'       => array( 'form-row-last' ),
-				'required'    => false,
-                'clear'       => true,
-			),
-            'billing_birthdate' => array(
-				'label'       => __( 'Nascimento', $domain ),
-				'placeholder' => _x( 'Nascimento', 'placeholder', $domain ),
-				'class'       => array( 'form-row-first' ),
-				'required'    => false
-			),
-            'billing_sex' => array(
-				'type'        => 'select',
-				'label'       => __( 'Sexo', $domain ),
-				'class'       => array( 'form-row-last' ),
-				'clear'       => true,
-				'required'    => true,
-				'options'     => array(
-					__( 'Feminino', $domain ) => __( 'Feminino', $domain ),
-					__( 'Masculino', $domain )   => __( 'Masculino', $domain )
-				)
-			),
-            'billing_postcode' => array(
-                'label'       => __( 'CEP', $domain ),
-                'placeholder' => _x( 'CEP', 'placeholder', $domain ),
-                'class'       => array( 'form-row-first', 'update_totals_on_change', 'address-field' ),
-                'required'    => true
-            ),
-            'billing_state' => array(
-                'type'        => 'state',
-                'label'       => __( 'Estado', $domain ),
-                'placeholder' => _x( 'Estado', 'placeholder', $domain ),
-                'class'       => array( 'form-row-last', 'address-field' ),
-                'clear'       => true,
-                'required'    => true
-            ),
-            'billing_city' => array(
-                'label'       => __( 'Cidade', $domain ),
-                'placeholder' => _x( 'Cidade', 'placeholder', $domain ),
-                'class'       => array( 'form-row-first', 'address-field' ),
-                'required'    => true
-            ),
-            'billing_neighborhood' => array(
-                'label'       => __( 'Bairro', $domain ),
-                'placeholder' => _x( 'Bairro', 'placeholder', $domain ),
-                'class'       => array( 'form-row-last', 'address-field' ),
-                'clear'       => true,
-            ),
-            'billing_address_1' => array(
-                'label'       => __( 'Endereço', $domain ),
-                'placeholder' => _x( 'Endereço', 'placeholder', $domain ),
-                'class'       => array( 'form-row-wide', 'address-field' ),
-                'required'    => true
-            ),
-            'billing_number' => array(
-                'label'       => __( 'Número', $domain ),
-                'placeholder' => _x( 'Número', 'placeholder', $domain ),
-                'class'       => array( 'form-row-first', 'address-field' ),
-                'required'    => true
-            ),
-            'billing_address_2' => array(
-                'label'       => __( 'Complemento', $domain ),
-                'placeholder' => _x( 'Complemento', 'placeholder', $domain ),
-                'class'       => array( 'form-row-last', 'address-field' ),
-                'clear'       => true,
-            ),
-            'billing_phone' => array(
-				'label'       => __( 'Telefone Fixo', $domain ),
-				'placeholder' => _x( 'Telefone Fixo', 'placeholder', $domain ),
-				'class'       => array( 'form-row-first' ),
-				'required'    => true
-			),
-            'billing_cellphone' => array(
-				'label'       => __( 'Celular', $domain ),
-				'placeholder' => _x( 'Celular', 'placeholder', $domain ),
-				'class'       => array( 'form-row-last' ),
-				'clear'       => true
-			),
-            'billing_email' => array(
-				'label'       => __( 'E-mail', $domain ),
-				'placeholder' => _x( 'E-mail', 'placeholder', $domain ),
-				'class'       => array( 'form-row-wide' ),
-				'validate'    => array( 'email' ),
-				'clear'       => true,
-				'required'    => true
-			)
-        );
-
-        return $new_fields;
+      global $domain;
+  
+      $new_fields = array(
+        'billing_persontype' => array(
+          'type'     => 'select',
+          'label'    => __( 'Tipo Pessoa', $domain ),
+          'class'    => array( 'form-row-wide', 'person-type-field' ),
+          'required' => false,
+          'options'  => array(
+              '1' => __( 'Pessoa Física', $domain ),
+              '2' => __( 'Pessoa Jurídica', $domain )
+          )
+        ),
+        'billing_cpf' => array(
+          'label'       => __( 'CPF', $domain ),
+          'placeholder' => _x( 'CPF', 'placeholder', $domain ),
+          'class'       => array( 'form-row-wide', 'person-type-field' ),
+          'required'    => false
+        ),
+        'billing_cnpj' => array(
+          'label'       => __( 'CNPJ', $domain ),
+          'placeholder' => _x( 'CNPJ', 'placeholder', $domain ),
+          'class'       => array( 'form-row-first', 'person-type-field' ),
+          'required'    => false
+        ),
+        'billing_ie' => array(
+          'label'       => __( 'Inscrição Estadual', $domain ),
+          'placeholder' => _x( 'Inscrição Estadual', 'placeholder', $domain ),
+          'class'       => array( 'form-row-last', 'person-type-field' ),
+          'required'    => false
+        ),
+        'billing_company' => array(
+      		'label'       => __( 'Razão Social', $domain ),
+      		'placeholder' => _x( 'Razão Social', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-wide', 'person-type-field' ),
+      		'required'    => false
+      	),
+        'billing_first_name' => array(
+      		'label'       => __( 'Nome', $domain ),
+      		'placeholder' => _x( 'Nome', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-first' ),
+      		'required'    => false
+      	),
+        'billing_last_name' => array(
+      		'label'       => __( 'Sobrenome', $domain ),
+      		'placeholder' => _x( 'Sobrenome', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-last' ),
+      		'required'    => false,
+          'clear'       => true,
+      	),
+        'billing_birthdate' => array(
+      		'label'       => __( 'Nascimento', $domain ),
+      		'placeholder' => _x( 'Nascimento', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-first' ),
+      		'required'    => false
+      	),
+        'billing_sex' => array(
+      		'type'        => 'select',
+      		'label'       => __( 'Sexo', $domain ),
+      		'class'       => array( 'form-row-last' ),
+      		'clear'       => true,
+      		'required'    => true,
+      		'options'     => array(
+      			__( 'Feminino', $domain ) => __( 'Feminino', $domain ),
+      			__( 'Masculino', $domain )   => __( 'Masculino', $domain )
+      		)
+    	  ),
+        'billing_postcode' => array(
+          'label'       => __( 'CEP', $domain ),
+          'placeholder' => _x( 'CEP', 'placeholder', $domain ),
+          'class'       => array( 'form-row-first', 'update_totals_on_change', 'address-field' ),
+          'required'    => true
+        ),
+        'billing_state' => array(
+          'type'        => 'state',
+          'label'       => __( 'Estado', $domain ),
+          'placeholder' => _x( 'Estado', 'placeholder', $domain ),
+          'class'       => array( 'form-row-last', 'address-field' ),
+          'clear'       => true,
+          'required'    => true
+        ),
+        'billing_city' => array(
+          'label'       => __( 'Cidade', $domain ),
+          'placeholder' => _x( 'Cidade', 'placeholder', $domain ),
+          'class'       => array( 'form-row-first', 'address-field' ),
+          'required'    => true
+        ),
+        'billing_neighborhood' => array(
+          'label'       => __( 'Bairro', $domain ),
+          'placeholder' => _x( 'Bairro', 'placeholder', $domain ),
+          'class'       => array( 'form-row-last', 'address-field' ),
+          'clear'       => true,
+        ),
+        'billing_address_1' => array(
+          'label'       => __( 'Endereço', $domain ),
+          'placeholder' => _x( 'Endereço', 'placeholder', $domain ),
+          'class'       => array( 'form-row-wide', 'address-field' ),
+          'required'    => true
+        ),
+        'billing_number' => array(
+          'label'       => __( 'Número', $domain ),
+          'placeholder' => _x( 'Número', 'placeholder', $domain ),
+          'class'       => array( 'form-row-first', 'address-field' ),
+          'required'    => true
+        ),
+        'billing_address_2' => array(
+          'label'       => __( 'Complemento', $domain ),
+          'placeholder' => _x( 'Complemento', 'placeholder', $domain ),
+          'class'       => array( 'form-row-last', 'address-field' ),
+          'clear'       => true,
+        ),
+        'billing_phone' => array(
+      		'label'       => __( 'Telefone Fixo', $domain ),
+      		'placeholder' => _x( 'Telefone Fixo', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-first' ),
+      		'required'    => true
+      	),
+        'billing_cellphone' => array(
+        	'label'       => __( 'Celular', $domain ),
+        	'placeholder' => _x( 'Celular', 'placeholder', $domain ),
+        	'class'       => array( 'form-row-last' ),
+        	'clear'       => true
+        ),
+        'billing_email' => array(
+      		'label'       => __( 'E-mail', $domain ),
+      		'placeholder' => _x( 'E-mail', 'placeholder', $domain ),
+      		'class'       => array( 'form-row-wide' ),
+      		'validate'    => array( 'email' ),
+      		'clear'       => true,
+      		'required'    => true
+      	)
+      );
+  
+      return $new_fields;
 
     }
 
