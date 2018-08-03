@@ -8,7 +8,8 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
     public static function scripts(){
         
-        $version = '2.6.13';
+        $version = '2.7';
+        $array = array();
 
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
         $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');

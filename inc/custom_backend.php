@@ -42,6 +42,29 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						margin-top: 0;
 						margin-bottom: 15px;
 					}
+					
+					.nfe-table-head--payment{
+						padding-bottom: 20px;
+    				padding-top: 10px;
+					}
+					
+					.nfe-table-head--payment > div,
+					.nfe-table-body--payment .entry > div{
+						width: 30%;
+						display: inline-block;
+						vertical-align: middle;
+					}
+					
+					.nfe-table-head--payment > div h4{
+						margin-bottom: 0;
+					}
+					
+					.nfe-table-head--payment > div h4 span{
+						font-size: 12px;
+    				color: #696969;
+					}
+					
+					    
 
 					.shipping-method-col-title{
 						float:left;
@@ -64,6 +87,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						border-bottom: 1px solid #e5e5e5;
 						overflow: hidden;
 						position: relative;
+					}
+					
+					.nfe-shipping-table.payment-info{
+						padding: 5px;
+					}
+					.nfe-shipping-table.payment-info .entry{
+						border-bottom: 0;
+						padding-left: 10px;
+					}
+					
+					.nfe-shipping-table.payment-info .entry:nth-child(even){
+						background-color:#efefef;
 					}
 
 					.nfe-shipping-table .nfe-table-body .entry:first-child{
@@ -153,46 +188,58 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</div>
 
 				<?php
+				
+				include_once(plugin_dir_path(dirname(__FILE__)).'/templates/payment-setting.php');
 
     }
 
     function update_settings(){
-
+				
         woocommerce_update_options( $this->get_settings() );
+		
+		//Transportadoras
+		$count = (int) $_POST['shipping-info-count'];
+		$transportadoras = array();
+		
+		
+		//Payment methods
+		$payment_methods = array();
+		$cnpj_payment_methods = array();
+		
+		foreach($_POST['payment_method'] as $key => $value){
+			$payment_methods[$key] = sanitize_text_field($value);
+		}
+		
+		for($i = 1; $i < $count+1; $i++){
+			$id = $_POST['shipping_info_method_'.$i];
+			if(!$id) continue;
+			$transportadoras[$id] = array();
 
-				//Transportadoras
-				$count = (int) $_POST['shipping-info-count'];
-				$transportadoras = array();
+			$keys = array(
+				'razao_social' => 'rs',
+				'cnpj'         => 'cnpj',
+				'ie'           => 'ie',
+				'address'      => 'address',
+				'cep'          => 'cep',
+				'city'         => 'city',
+				'uf'           => 'uf'
+			);
 
+			foreach($keys as $name => $post_key){
+				$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
+			}
+		}
 
-				for($i = 1; $i < $count+1; $i++){
-					$id = $_POST['shipping_info_method_'.$i];
-					if(!$id) continue;
-					$transportadoras[$id] = array();
+		update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
+		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
+		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
 
-					$keys = array(
-						'razao_social' => 'rs',
-						'cnpj'         => 'cnpj',
-						'ie'           => 'ie',
-						'address'      => 'address',
-						'cep'          => 'cep',
-						'city'         => 'city',
-						'uf'           => 'uf'
-					);
-
-					foreach($keys as $name => $post_key){
-						$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
-					}
-				}
-
-				update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
-
-				$include = $_POST['wc_settings_woocommercenfe_transp_include'];
-				if($include){
-					update_option('wc_settings_woocommercenfe_transp_include', 'on');
-				}else{
-					update_option('wc_settings_woocommercenfe_transp_include', 'off');
-				}
+		$include = $_POST['wc_settings_woocommercenfe_transp_include'];
+		if($include){
+			update_option('wc_settings_woocommercenfe_transp_include', 'on');
+		}else{
+			update_option('wc_settings_woocommercenfe_transp_include', 'off');
+		}
 
     }
 
@@ -255,7 +302,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'envio_email' => array(
 							'name' => __( 'Envio automático de email', $domain ),
 							'type' =>'checkbox',
-							'desc' => __( 'Enviar email para o cliente após a emissão da nota fiscal eletrônica.'),
+							'desc' => __( 'Enviar email para o cliente após a emissão da nota fiscal eletrônica. <br /><em style="color: red">Atenção: O email será enviado mesmo para notas emitidas em ambiente de homologação.</em>'),
 							'default' => 'yes',
 							'id'   => __('wc_settings_woocommercenfe_envio_email'),
 						),
@@ -271,9 +318,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id'   => 'wc_settings_woocommercenfe_imposto'
             ),
             'ean' => array(
-                'name' => __( 'Código de Barras EAN', $domain ),
+                'name' => __( 'GTIN (Antigo código EAN)', $domain ),
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_ean'
+            ),
+            'gtin_tributavel' => array(
+                'name' => __( 'GTIN tributável', $domain ),
+                'type' => 'text',
+                'id'   => 'wc_settings_woocommercenfe_gtin_tributavel'
             ),
             'ncm' => array(
                 'name' => __( 'Código NCM', $domain ),
@@ -285,6 +337,24 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cest'
             ),
+            
+            'cnpj_fabricante' => array(
+                'name' => __( 'CNPJ do fabricante da mercadoria', $domain ),
+                'type' => 'text',
+                'id'   => 'wc_settings_woocommercenfe_cnpj_fabricante'
+            ),
+            
+            'ind_escala' => array(
+            	'name' => __('Indicador de escala relevante'),
+            	'type' => 'select',
+            	'options' => array(
+                   'null' => 'Selecionar',
+                   'S' => 'S - Produzido em Escala Relevante',
+                   'N' => 'N - Produzido em Escala NÃO Relevante',
+                ),
+                'id'   => 'wc_settings_woocommercenfe_ind_escala'
+            ),
+            
             'origem' => array(
                 'name' => __( 'Origem dos Produtos', $domain ),
                 'type' => 'select',
@@ -431,6 +501,40 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		    $html .= '<option value="'.$method->id.'" '.$selected.'>'.$title.'</option>';
 
 
+		  }
+
+			$html .= '</select>';
+
+			return $html;
+		}
+		
+		function get_payment_methods_select($method, $index = 0, $id = ''){
+			
+			$saved_values = get_option('wc_settings_woocommercenfe_payment_methods', array());
+			
+			$options = array(
+				'01' => 'Dinheiro',
+				'02' => 'Cheque',
+				'03' => 'Cartão de Crédito',
+				'04' => 'Cartão de Débito',
+				'15' => 'Boleto Bancário',
+				'90' => 'Sem pagamento',
+				'pagseguro' => 'PagSeguro',
+				'99' => 'Outros',
+			);
+			
+			$html = '<select class="nfe-payment-methods-sel" name="payment_method['.$method.']">';
+			$html .= '<option value="">Selecionar</option>';
+
+			foreach($options as $value => $label){
+				
+				$selected = '';
+				
+				if(isset($saved_values[$method]) && $saved_values[$method] == $value){
+					$selected = 'selected';
+				}
+				
+		    $html .= '<option value="'.$value.'" '.$selected.'>'.$label.'</option>';
 		  }
 
 			$html .= '</select>';
@@ -587,10 +691,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 								<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Modalidade do frete</label>
 						</p>
 						<select name="modalidade_frete" id="modalidade_frete">
-								<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Por conta do emitente', $domain ); ?></option>
-								<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Por conta do destinatário/remetente', $domain ); ?></option>
-								<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Por conta de terceiros', $domain ); ?></option>
-								<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem frete', $domain ); ?></option>
+								<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Remetente (CIF)', $domain ); ?></option>
+								<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Destinatário (FOB)', $domain ); ?></option>
+								<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta de Terceiros', $domain ); ?></option>
+								<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Remetente', $domain ); ?></option>
+								<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Destinatário', $domain ); ?></option>
+								<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem Ocorrência de Transporte', $domain ); ?></option>
 					 </select>
 		    </div>
 				<div class="label transporte" style="margin-bottom:8px;margin-top:10px;">
@@ -667,9 +773,15 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
-            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código de Barras EAN</label>
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">GTIN (antigo código EAN)</label>
         </p>
         <input type="text" name="codigo_ean" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
+    </div>
+    <div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">GTIN tributável</label>
+        </p>
+        <input type="text" name="gtin_tributavel" value="<?php echo get_post_meta( $post->ID, '_nfe_gtin_tributavel', true ); ?>" style="width:100%;padding:5px;">
     </div>
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
@@ -683,6 +795,29 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         </p>
         <input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
     </div>
+    
+    <div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
+        </p>
+        <input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
+    </div>
+    
+    <div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Indicador de escala relevante</label>
+        </p>
+        <?php
+          $ind_escala = get_post_meta( $post->ID, '_nfe_ind_escala', true );
+        ?>
+        <select name="ind_escala">
+            <option value="" <?php if (!$ind_escala) echo 'selected'; ?> ><?php _e( 'Selecionar', $domain ); ?></option>
+            <option value="S" <?php if ($ind_escala == 'S') echo 'selected'; ?> ><?php _e( 'S - Produzido em Escala Relevante', $domain ); ?></option>
+            <option value="N" <?php if ($ind_escala == 'N') echo 'selected'; ?> ><?php _e( 'N - Produzido em Escala NÃO Relevante', $domain ); ?></option>
+       </select>
+			 <input type="hidden" name="wp_admin_nfe" value="1" />
+    </div>
+    
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Origem</label>
@@ -1151,10 +1286,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
 
             $info = array(
-						'_nfe_classe_imposto' => $_POST['classe_imposto'],
-						'_nfe_codigo_ean'     => $_POST['codigo_ean'],
-						'_nfe_codigo_ncm'     => $_POST['codigo_ncm'],
-						'_nfe_codigo_cest'    => $_POST['codigo_cest'],
+						'_nfe_classe_imposto'  => $_POST['classe_imposto'],
+						'_nfe_codigo_ean'      => $_POST['codigo_ean'],
+						'_nfe_gtin_tributavel' => $_POST['gtin_tributavel'],
+						'_nfe_codigo_ncm'      => $_POST['codigo_ncm'],
+						'_nfe_codigo_cest'     => $_POST['codigo_cest'],
+						'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
+						'_nfe_ind_escala'      => $_POST['ind_escala']
 						);
 
 						foreach ($info as $key => $value){
@@ -1312,7 +1450,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					$current_status = $order_nfe['status'];
 					$received_status = $_POST['status'];
 
-					if($order_nfe['n_nfe'] == $_POST['nfe'] && $current_status != $received_status){
+					if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status){
 						$order_nfe_data[$key]['status'] = $received_status;
 						update_post_meta($order_id, 'nfe', $order_nfe_data);
 					}

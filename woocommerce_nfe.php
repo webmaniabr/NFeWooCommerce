@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.6.13
+* Version: 2.7.0
 * Copyright: © 2009-2018 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -19,8 +19,11 @@ class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
 
+	
+
 	protected static $_instance = NULL;
 	public static function instance() {
+		
 		if ( is_null( self::$_instance ) ) {
 			self::$_instance = new self();
 		}
@@ -28,6 +31,8 @@ class WooCommerceNFe {
 	}
 
 	function init(){
+		
+
 		global $domain;
 		add_action( 'admin_notices', array($this, 'display_messages') );
 		// Verify WooCommerce Plugin
@@ -223,12 +228,14 @@ class WooCommerceNFe {
 			self::emitirNFe( array( $order_id ) );
 		}
 	}
+	
 	function emitirNFe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
 			$data = self::order_data( $order_id );
-			
+		
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
+			
 			if (isset($response->error) || $response->status == 'reprovado'){
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 				$mensagem .= '<ul style="padding-left:20px;">';
@@ -255,6 +262,7 @@ class WooCommerceNFe {
 				$nfe = get_post_meta( $order_id, 'nfe', true );
 				if (!$nfe) $nfe = array();
 				$nfe[] = array(
+					'uuid'   => (string) $response->uuid,
 					'status' => (string) $response->status,
 					'chave_acesso' => $response->chave,
 					'n_recibo' => (int) $response->recibo,
@@ -271,9 +279,17 @@ class WooCommerceNFe {
 	}
 	function order_data( $post_id ){
 		global $wpdb;
+		
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
+		$payment_methods       = get_option('wc_settings_woocommercenfe_payment_methods', array());
+		$payment_keys = array_keys($payment_methods);
+		
+		
 		$order = new WC_Order( $post_id );
-		$default_ean     = get_option('wc_settings_woocommercenfe_ean');
+		
+		//Antigo código EAN
+		$default_gtin            = get_option('wc_settings_woocommercenfe_ean');
+		$default_gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
 		$default_ncm     = get_option('wc_settings_woocommercenfe_ncm');
 		$default_cest    = get_option('wc_settings_woocommercenfe_cest');
 		$default_origem  = get_option('wc_settings_woocommercenfe_origem');
@@ -301,7 +317,8 @@ class WooCommerceNFe {
 					$data['produtos'][] = array(
 						'nome'           => $item['name'], // Nome do produto
 						'sku'            => '', // Código identificador - SKU
-						'ean'            => $default_ean, // Código EAN
+						'gtin'            => $default_gtin,
+						'gtin_tributavel' => $default_gtin_tributavel, //GTIN tributável
 						'ncm'            => $default_ncm, // Código NCM
 						'cest'           => $default_cest, // Código CEST
 						'quantidade'     => 1, // Quantidade de itens
@@ -333,13 +350,36 @@ class WooCommerceNFe {
 			'ambiente'          => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
 		);
 		$data['pedido'] = array(
-			'pagamento'        => 0, // Indicador da forma de pagamento
 			'presenca'         => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => (int) $modalidade_frete, // Modalidade do frete
 			'frete'            => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete
 			'desconto'         => $total_discount, // Total do desconto
 			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
+		
+		
+		//Define forma de pagamento (obrigatório NFe 4.0)
+		if( in_array($order->payment_method, $payment_keys) ){
+			
+			//Caso pagseguro, verificar post meta para método de pagamento
+			//Senão, pegar valor salvo nas configurações
+			if($order->payment_method == 'pagseguro'){
+				
+				$payment_type = get_post_meta($post_id, __( 'Payment type', 'woocommerce-pagseguro' ), true);
+				
+				if( strtolower($payment_type) == 'boleto'){
+					$data['pedido']['forma_pagamento'] = '15';
+				}elseif($payment_type == 'Cartão de Crédito'){
+					$data['pedido']['forma_pagamento'] = '03';
+				}
+				
+			}else{
+				$data['pedido']['forma_pagamento'] = $payment_methods[$order->payment_method];
+			}
+			
+		}
+	
+		
 		//Informações Complementares ao Fisco
 		$fisco_inf = get_option('wc_settings_woocommercenfe_fisco_inf');
 		if(!empty($fisco_inf) && strlen($fisco_inf) <= 2000){
@@ -404,8 +444,10 @@ class WooCommerceNFe {
 			}
 
 			$product_info = self::get_product_nfe_info($item, $order);
+			
 			$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
-			if($ignorar_nfe == 1 || $order->get_item_subtotal( $item, false, false ) == 0){
+			
+			if($ignorar_nfe == 1){
 				$data['pedido']['total'] -= $item['line_subtotal'];
                 if ($coupons_percentage){
                     foreach($coupons_percentage as $percentage){
@@ -473,18 +515,32 @@ class WooCommerceNFe {
 		$product_id  = $item['product_id'];
 		$product     = $order->get_product_from_item( $item );
 		$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
-		$codigo_ean  = get_post_meta($product_id, '_nfe_codigo_ean', true);
+		
+		//Antigo código ean
+		$codigo_gtin  = get_post_meta($product_id, '_nfe_codigo_ean', true);
+		$gtin_tributavel = get_post_meta($product_id, '_nfe_gtin_tributavel', true);
+		
 		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
 		$codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
 		$origem      = get_post_meta($product_id, '_nfe_origem', true);
 		$imposto     = get_post_meta($product_id, '_nfe_classe_imposto', true);
+		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
+		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
+		
 		$peso        = $product->get_weight();
 		if (!$peso){
 			$peso = '0.100';
 		}
-		if (!$codigo_ean){
-			$codigo_ean = get_option('wc_settings_woocommercenfe_ean');
+		
+		if (!$codigo_gtin){
+			$codigo_gtin = get_option('wc_settings_woocommercenfe_ean');
 		}
+		
+		if(!$gtin_tributavel){
+			$gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
+		}
+		
+		
 		if (!$codigo_ncm){
 			$product_cat = get_the_terms($product_id, 'product_cat');
 			if(is_array($product_cat)){
@@ -510,6 +566,17 @@ class WooCommerceNFe {
 		if (!$imposto){
 			$imposto = get_option('wc_settings_woocommercenfe_imposto');
 		}
+		
+		
+		if(!$ind_escala){
+			$ind_escala = get_option('wc_settings_woocommercenfe_ind_escala');
+			if($ind_escala == 'null') $ind_escala = '';
+		}
+		
+		if(!$cnpj_fabricante){
+			$cnpj_fabricante = get_option('wc_settings_woocommercenfe_cnpj_fabricante');
+		}
+		
 		$variacoes = ''; //Used to append variation name to product name
 		foreach (array_keys($item['item_meta']) as $meta){
 			if (strpos($meta,'pa_') !== false) {
@@ -524,9 +591,12 @@ class WooCommerceNFe {
 			$info = array(
 				'nome' => $item['name'].$variacoes, // Nome do produto
 				'sku' => $product->get_sku(), // Código identificador - SKU
-				'ean' => $codigo_ean, // Código EAN
+				'gtin' => $codigo_gtin, // Código GTIN
+				'gtin_tributavel' => $gtin_tributavel,
 				'ncm' => $codigo_ncm, // Código NCM
 				'cest' => $codigo_cest, // Código CEST
+				'ind_escala' => $ind_escala,
+				'cnpj_fabricante' => $cnpj_fabricante,
 				'quantidade' => $item['qty'], // Quantidade de itens
 				'unidade' => 'UN', // Unidade de medida da quantidade de itens
 				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
@@ -535,8 +605,11 @@ class WooCommerceNFe {
 				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
+			
 			return $info;
+			
 	}
+	
 	function set_bundle_products_array( $bundles, $order ){
 
 		$total_bundle = 0;
@@ -591,6 +664,50 @@ class WooCommerceNFe {
 	function default_plugin_url( $url ){
 		return str_replace('inc/', '', $url);
 	}
+	
+	
+	public function get_pagseguro_bandeira($order_id){
+		
+		$payment_type = get_post_meta($order_id, __( 'Payment method', 'woocommerce-pagseguro' ), true);
+		$payment_code = '99';
+		
+		$bandeiras = $this->get_bandeiras_list();
+		
+		$payment_type = str_replace(array('Cartão de crédito', 'Cartão de débito'), '', $payment_type);
+		$payment_type = trim($payment_type);
+		
+		foreach($bandeiras as $code => $brand){
+			
+			if(stripos($brand, $payment_type) !== false){
+				$payment_code = $code;
+				break;
+			}
+			
+		}
+		
+		return $payment_code;
+		
+	}
+	
+	public function get_bandeiras_list(){
+		
+		$bandeiras = array(
+			'01' => 'Visa / Visa Electron',
+			'02' => 'Mastercard / Maestro',
+			'03' => 'American Express',
+			'04' => 'Sorocred',
+			'05' => 'Diners Club',
+			'06' => 'Elo',
+			'07' => 'Hipercard',
+			'08' => 'Aura',
+			'09' => 'Cabal'
+		);
+		
+		return $bandeiras;
+		
+	}
+	
+	
 }
 /**
 * Active plugin
