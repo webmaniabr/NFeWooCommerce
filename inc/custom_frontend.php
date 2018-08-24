@@ -73,13 +73,13 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
       		'label'       => __( 'Nome', $domain ),
       		'placeholder' => _x( 'Nome', 'placeholder', $domain ),
       		'class'       => array( 'form-row-first' ),
-      		'required'    => false
+      		'required'    => true
       	),
         'billing_last_name' => array(
       		'label'       => __( 'Sobrenome', $domain ),
       		'placeholder' => _x( 'Sobrenome', 'placeholder', $domain ),
       		'class'       => array( 'form-row-last' ),
-      		'required'    => false,
+      		'required'    => true,
           'clear'       => true,
       	),
         'billing_birthdate' => array(
