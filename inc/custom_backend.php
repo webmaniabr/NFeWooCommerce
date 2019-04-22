@@ -42,29 +42,29 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						margin-top: 0;
 						margin-bottom: 15px;
 					}
-					
+
 					.nfe-table-head--payment{
 						padding-bottom: 20px;
     				padding-top: 10px;
 					}
-					
+
 					.nfe-table-head--payment > div,
 					.nfe-table-body--payment .entry > div{
 						width: 30%;
 						display: inline-block;
 						vertical-align: middle;
 					}
-					
+
 					.nfe-table-head--payment > div h4{
 						margin-bottom: 0;
 					}
-					
+
 					.nfe-table-head--payment > div h4 span{
 						font-size: 12px;
     				color: #696969;
 					}
-					
-					    
+
+
 
 					.shipping-method-col-title{
 						float:left;
@@ -88,7 +88,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						overflow: hidden;
 						position: relative;
 					}
-					
+
 					.nfe-shipping-table.payment-info{
 						padding: 5px;
 					}
@@ -96,7 +96,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						border-bottom: 0;
 						padding-left: 10px;
 					}
-					
+
 					.nfe-shipping-table.payment-info .entry:nth-child(even){
 						background-color:#efefef;
 					}
@@ -188,28 +188,28 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</div>
 
 				<?php
-				
+
 				include_once(plugin_dir_path(dirname(__FILE__)).'/templates/payment-setting.php');
 
     }
 
     function update_settings(){
-				
+
         woocommerce_update_options( $this->get_settings() );
-		
+
 		//Transportadoras
 		$count = (int) $_POST['shipping-info-count'];
 		$transportadoras = array();
-		
-		
+
+
 		//Payment methods
 		$payment_methods = array();
 		$cnpj_payment_methods = array();
-		
+
 		foreach($_POST['payment_method'] as $key => $value){
 			$payment_methods[$key] = sanitize_text_field($value);
 		}
-		
+
 		for($i = 1; $i < $count+1; $i++){
 			$id = $_POST['shipping_info_method_'.$i];
 			if(!$id) continue;
@@ -337,13 +337,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cest'
             ),
-            
+
             'cnpj_fabricante' => array(
                 'name' => __( 'CNPJ do fabricante da mercadoria', $domain ),
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cnpj_fabricante'
             ),
-            
+
             'ind_escala' => array(
             	'name' => __('Indicador de escala relevante'),
             	'type' => 'select',
@@ -354,7 +354,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 ),
                 'id'   => 'wc_settings_woocommercenfe_ind_escala'
             ),
-            
+
             'origem' => array(
                 'name' => __( 'Origem dos Produtos', $domain ),
                 'type' => 'select',
@@ -507,11 +507,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 			return $html;
 		}
-		
+
 		function get_payment_methods_select($method, $index = 0, $id = ''){
-			
+
 			$saved_values = get_option('wc_settings_woocommercenfe_payment_methods', array());
-			
+
 			$options = array(
 				'01' => 'Dinheiro',
 				'02' => 'Cheque',
@@ -522,18 +522,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				'pagseguro' => 'PagSeguro',
 				'99' => 'Outros',
 			);
-			
+
 			$html = '<select class="nfe-payment-methods-sel" name="payment_method['.$method.']">';
 			$html .= '<option value="">Selecionar</option>';
 
 			foreach($options as $value => $label){
-				
+
 				$selected = '';
-				
+
 				if(isset($saved_values[$method]) && $saved_values[$method] == $value){
 					$selected = 'selected';
 				}
-				
+
 		    $html .= '<option value="'.$value.'" '.$selected.'>'.$label.'</option>';
 		  }
 
@@ -795,14 +795,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         </p>
         <input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
     </div>
-    
+
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
         </p>
         <input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
     </div>
-    
+
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Indicador de escala relevante</label>
@@ -817,7 +817,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
        </select>
 			 <input type="hidden" name="wp_admin_nfe" value="1" />
     </div>
-    
+
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Origem</label>
@@ -1017,7 +1017,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		$new_fields['billing']['fields']['billing_postcode'] = $fields['billing']['fields']['billing_postcode'];
 		$new_fields['billing']['fields']['billing_country']  = $fields['billing']['fields']['billing_country'];
 		$new_fields['billing']['fields']['billing_state']    = $fields['billing']['fields']['billing_state'];
-		$new_fields['billing']['fields']['billing_phone']    = $fields['billing']['fields']['billing_phone'];
+		$new_fields['billing']['fields']['billing_phone']    = str_replace("?", "", $fields['billing']['fields']['billing_phone']);
 
 		if ( isset( $settings['cell_phone'] ) ) {
 			$new_fields['billing']['fields']['billing_cellphone'] = array(
@@ -1256,7 +1256,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $post_id, '_billing_ie', woocommerce_clean( $_POST['_billing_ie'] ) );
 		update_post_meta( $post_id, '_billing_birthdate', woocommerce_clean( $_POST['_billing_birthdate'] ) );
 		update_post_meta( $post_id, '_billing_sex', woocommerce_clean( $_POST['_billing_sex'] ) );
-		update_post_meta( $post_id, '_billing_cellphone', woocommerce_clean( $_POST['_billing_cellphone'] ) );
+		update_post_meta( $post_id, '_billing_cellphone', woocommerce_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) );
 
 	}
 
@@ -1277,7 +1277,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $order_id, '_billing_ie', woocommerce_clean( $billing_address['ie'] ) );
 		update_post_meta( $order_id, '_billing_birthdate', woocommerce_clean( $billing_address['birthdate'] ) );
 		update_post_meta( $order_id, '_billing_sex', woocommerce_clean( $billing_address['sex'] ) );
-		update_post_meta( $order_id, '_billing_cellphone', woocommerce_clean( $billing_address['cellphone'] ) );
+		update_post_meta( $order_id, '_billing_cellphone', woocommerce_clean( str_replace("?", "", $billing_address['cellphone']) ) );
 
 	}
 
@@ -1443,22 +1443,39 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				$order_nfe_data = get_post_meta($order_id, 'nfe', true);
 
-				if(!is_array($order_nfe_data)) exit;
+				if(!is_array($order_nfe_data)) {
 
-				foreach($order_nfe_data as $key => $order_nfe){
+					$nfe[] = array(
+						'uuid'   => (string) $_POST['uuid'],
+						'status' => (string) $_POST['status'],
+						'chave_acesso' => (string) $_POST['chave'],
+						'n_recibo' => (int) $_POST['recibo'],
+						'n_nfe' => (int) $_POST['nfe'],
+						'n_serie' => (int) $_POST['serie'],
+						'url_xml' => (string) $_POST['xml'],
+						'url_danfe' => (string) $_POST['danfe'],
+						'data' => date_i18n('d/m/Y'),
+					);
 
-					$current_status = $order_nfe['status'];
-					$received_status = $_POST['status'];
+					update_post_meta( $order_id, 'nfe', $nfe );
 
-					if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status){
-						$order_nfe_data[$key]['status'] = $received_status;
-						update_post_meta($order_id, 'nfe', $order_nfe_data);
+				} else {
+
+					foreach($order_nfe_data as $key => $order_nfe){
+
+						$current_status = $order_nfe['status'];
+						$received_status = $_POST['status'];
+
+						if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status){
+							$order_nfe_data[$key]['status'] = $received_status;
+							update_post_meta($order_id, 'nfe', $order_nfe_data);
+						}
+
 					}
 
 				}
 
 			}
-
 
 		}
 
@@ -1504,11 +1521,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 			}
 
-			$html .= '<strong>' . __( 'Telefone', $domain ) . ': </strong>' . esc_html( $order->billing_phone ) . '<br />';
+			$html .= '<strong>' . __( 'Telefone', $domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->billing_cellphone) ) . '<br />';
 
 			// Cell Phone Information.
-			if ( ! empty( $order->billing_cellphone ) ) {
-				$html .= '<strong>' . __( 'Telefone Cel.', $domain ) . ': </strong>' . esc_html( $order->billing_cellphone ) . '<br />';
+			if ( ! empty( str_replace("?", "", $order->billing_cellphone) ) ) {
+				$html .= '<strong>' . __( 'Telefone Cel.', $domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->billing_cellphone) ) . '<br />';
 			}
 
 			$html .= '<strong>' . __( 'Email', $domain ) . ': </strong>' . make_clickable( esc_html( $order->billing_email ) ) . '<br />';

@@ -7,8 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
     public static function scripts(){
-        
-        $version = '2.7';
+
+        $version = '2.7.6';
         $array = array();
 
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
@@ -33,7 +33,7 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
     function billing_fields( $fields ){
 
       global $domain;
-  
+
       $new_fields = array(
         'billing_persontype' => array(
           'type'     => 'select',
@@ -164,7 +164,7 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
       		'required'    => true
       	)
       );
-  
+
       return $new_fields;
 
     }

@@ -1,6 +1,6 @@
 <?php
 
-/* 
+/*
 Based of the plugin: WooCommerce Extra Checkout Fields for Brazil
 @author Claudio Sanches
 @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
@@ -11,22 +11,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WooCommerceNFe_Api extends WooCommerceNFe {
-    
+
     function init() {
-        
+
         if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
-        
+
             add_filter( 'woocommerce_api_order_response', array( 'WooCommerceNFe_Api', 'orders' ), 100, 4 );
             add_filter( 'woocommerce_api_customer_response', array( 'WooCommerceNFe_Api', 'customer' ), 100, 4 );
-            
+
         }
-        
+
 	}
-    
+
     function format_number( $string ) {
 		return str_replace( array( '.', '-', '/' ), '', $string );
 	}
-    
+
     function get_formatted_birthdate( $date, $server ) {
 		$birthdate = explode( '/', $date );
 
@@ -36,15 +36,15 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 
 		return '';
 	}
-    
+
     function get_person_type( $type ) {
 
-        if ($type == 1) return 'F'; 
-        else if ($type == 2) return 'J'; 
+        if ($type == 1) return 'F';
+        else if ($type == 2) return 'J';
         else return '';
 
     }
-    
+
     function orders( $order_data, $order, $fields, $server ) {
 
 		// Billing fields.
@@ -56,7 +56,7 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 		$order_data['billing_address']['sex']          = substr( $order->billing_sex, 0, 1 );
 		$order_data['billing_address']['number']       = $order->billing_number;
 		$order_data['billing_address']['neighborhood'] = $order->billing_neighborhood;
-		$order_data['billing_address']['cellphone']    = $order->billing_cellphone;
+		$order_data['billing_address']['cellphone']    = str_replace("?", "", $order->billing_cellphone);
 
 		// Shipping fields.
 		$order_data['shipping_address']['number']       = $order->shipping_number;
@@ -73,7 +73,7 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 			$order_data['customer']['billing_address']['sex']          = substr( $order->billing_sex, 0, 1 );
 			$order_data['customer']['billing_address']['number']       = $order->billing_number;
 			$order_data['customer']['billing_address']['neighborhood'] = $order->billing_neighborhood;
-			$order_data['customer']['billing_address']['cellphone']    = $order->billing_cellphone;
+			$order_data['customer']['billing_address']['cellphone']    = str_replace("?", "", $order->billing_cellphone);
 
 			// Customer shipping fields.
 			$order_data['customer']['shipping_address']['number']       = $order->shipping_number;
@@ -85,11 +85,11 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 		}
 
 		return $order_data;
-        
+
 	}
-    
+
     function customer( $customer_data, $customer, $fields, $server ) {
-		
+
         // Billing fields.
 		$customer_data['billing_address']['persontype']   = self::get_person_type( $customer->billing_persontype );
 		$customer_data['billing_address']['cpf']          = self::format_number( $customer->billing_cpf );
@@ -99,7 +99,7 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 		$customer_data['billing_address']['sex']          = substr( $customer->billing_sex, 0, 1 );
 		$customer_data['billing_address']['number']       = $customer->billing_number;
 		$customer_data['billing_address']['neighborhood'] = $customer->billing_neighborhood;
-		$customer_data['billing_address']['cellphone']    = $customer->billing_cellphone;
+		$customer_data['billing_address']['cellphone']    = str_replace("?", "", $order->billing_cellphone);
 
 		// Shipping fields.
 		$customer_data['shipping_address']['number']       = $customer->shipping_number;
@@ -110,7 +110,7 @@ class WooCommerceNFe_Api extends WooCommerceNFe {
 		}
 
 		return $customer_data;
-        
+
 	}
-    
+
 }

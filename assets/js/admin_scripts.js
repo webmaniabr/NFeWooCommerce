@@ -86,7 +86,7 @@ jQuery( function ( $ ) {
 
       var $table = $('.nfe-shipping-table:not(.payment-info)');
       var $table_body = $table.find('.nfe-table-body');
-      
+
       var html = $table.find('.entry:first-child').html();
 
       var element = $('<div class="entry"></div>').html(html);

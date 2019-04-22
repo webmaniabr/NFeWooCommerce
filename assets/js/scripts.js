@@ -6,19 +6,24 @@ jQuery(function($){
         $('#billing_cnpj').mask('99.999.999/9999-99');
         $('#billing_postcode').mask('99999-999');
         $('#shipping_postcode').mask('99999-999');
-        $('#billing_phone, #billing_cellphone').focusout(function(){
-        var phone, element;
-        element = $(this);
-        element.unmask();
-        phone = element.val().replace(/\D/g, '');
-
-        if (phone.length > 10) {
-            element.mask('(99) 99999-999?9');
-        } else {
-            element.mask('(99) 9999-9999?9');
-        }
-    }).trigger('focusout');
         $('#billing_birthdate').mask('99/99/9999');
+
+        $('#billing_phone, #billing_cellphone').focusin(function(){
+            $(this).unmask().mask('(99) 99999-9999');
+        });
+
+        $('#billing_phone, #billing_cellphone').focusout(function(){
+          var phone, element;
+          element = $(this);
+          element.unmask();
+          phone = element.val().replace(/\D/g, '');
+
+          if (phone.length > 10) {
+              element.mask('(99) 99999-9999');
+          } else {
+              element.mask('(99) 9999-9999');
+          }
+        }).trigger('focusout');
 
     }
 

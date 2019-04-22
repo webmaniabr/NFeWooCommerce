@@ -5,41 +5,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class WooCommerceNFe_Format extends WooCommerceNFe {
-    
+
     function cpf( $string ){
-		
+
 		if (!$string) return;
 		$string = self::clear( $string );
 		$string = self::mask($string,'###.###.###-##');
 		return $string;
-		
+
 	}
-    
+
 	function cnpj( $string ){
-		
+
 		if (!$string) return;
 		$string = self::clear( $string );
 		$string = self::mask($string,'##.###.###/####-##');
 		return $string;
-		
+
 	}
-    
+
 	function cep( $string ){
-		
+
 		if (!$string) return;
 		$string = self::clear( $string );
 		$string = self::mask($string,'#####-###');
 		return $string;
-		
+
 	}
-    
+
 	function clear( $string ) {
-	
+
         $string = str_replace( array(',', '-', '!', '.', '/', '?', '(', ')', ' ', '$', 'R$', '€'), '', $string );
         return $string;
-	
+
 	}
-    
+
 	function mask($val, $mask) {
 	   $maskared = '';
 	   $k = 0;
@@ -54,7 +54,7 @@ class WooCommerceNFe_Format extends WooCommerceNFe {
 	   }
 	   return $maskared;
 	}
-    
+
     function is_cpf( $cpf ) {
 		$cpf = preg_replace( '/[^0-9]/', '', $cpf );
 
@@ -77,7 +77,7 @@ class WooCommerceNFe_Format extends WooCommerceNFe {
 
 		return $digit[9] == ( (int) $cpf[9] ) && $digit[10] == ( (int) $cpf[10] );
 	}
-    
+
     function is_cnpj( $cnpj ) {
 		$cnpj = sprintf( '%014s', preg_replace( '{\D}', '', $cnpj ) );
 
@@ -97,5 +97,5 @@ class WooCommerceNFe_Format extends WooCommerceNFe {
 
 		return true;
 	}
-    
+
 }
