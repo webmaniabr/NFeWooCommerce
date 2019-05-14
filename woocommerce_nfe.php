@@ -158,6 +158,7 @@ class WooCommerceNFe {
 		include_once( 'inc/custom_frontend.php' );
 		include_once( 'inc/format.php' );
 		include_once( 'inc/api.php' );
+		include_once( 'inc/compatibility.php' );
 	}
 	function init_hooks(){
 		// WooCommerceNFe
@@ -440,16 +441,12 @@ class WooCommerceNFe {
 			$product_type = $product->get_type();
 			$product_id   = $item['product_id'];
 
-			$bundled_by = isset($item['bundled_by']);
-			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
-				$bundled_by = $item->meta_exists('_bundled_by');
-			}
-
-			$variation_id = $item['variation_id'];
-			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || $bundled_by ){
+			if( WC_NFe_Compatibility::is_bundle_type_product( $product) || WC_NFe_Compatibility::is_bundle_type_order_item( $item ) ) {
 				$bundles[] = $item;
 				continue;
 			}
+
+			$variation_id = $item['variation_id'];
 
 			$product_info = self::get_product_nfe_info($item, $order);
 
@@ -628,15 +625,9 @@ class WooCommerceNFe {
 			$product_type = $product->get_type();
 			$product_price = $product->get_price();
 
-
-			$bundled_by = isset($item['bundled_by']);
-			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
-				$bundled_by = $item->meta_exists('_bundled_by');
-			}
-
-
-
-			if($bundled_by){
+			if( WC_NFe_Compatibility::is_bundle_type_product( $product ) ){
+				$total_bundle += $product_price*$item['qty'];
+			}else{
 				$product_total = $product_price * $item['qty'];
 				$total_products += $product_total;
 				if(!isset($bundle_products[$item['product_id']])){
@@ -649,8 +640,6 @@ class WooCommerceNFe {
 					$bundle_products[$item['product_id']]['quantidade'] = $new_qty;
 					$bundle_products[$item['product_id']]['total'] = number_format($new_total, 2, '.', '' );
 				}
-			}elseif($product_type == 'yith_bundle'){
-				$total_bundle += $product_price*$item['qty'];
 			}
 		}
 		if($total_products < $total_bundle){
