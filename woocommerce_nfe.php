@@ -101,6 +101,7 @@ class WooCommerceNFe {
 		add_action( 'manage_shop_order_posts_custom_column', array( $WC_NFe_Backend, 'add_order_status_column_content' ) );
 		add_action( 'woocommerce_order_actions', array( $WC_NFe_Backend, 'add_order_meta_box_actions' ) );
 		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( $WC_NFe_Backend, 'process_order_meta_box_actions' ) );
+		add_action( 'woocommerce_order_action_wc_nfce_emitir', array( $WC_NFe_Backend, 'process_order_meta_box_actions2' ) );
 		add_action( 'admin_footer-edit.php', array( $WC_NFe_Backend, 'add_order_bulk_actions' ) );
 		add_action( 'load-edit.php', array( $WC_NFe_Backend, 'process_order_bulk_actions' ) );
 		add_filter( 'woocommerce_settings_tabs_array', array($WC_NFe_Backend, 'add_settings_tab'), 100 );
@@ -112,6 +113,7 @@ class WooCommerceNFe {
 		add_action('edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
 		add_action('create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
 		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
+		add_action('orquidario_emitir_nota_fiscal', array($tihs, 'emitirNFeAutomaticamente'), 10, 1)
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
 			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
@@ -226,12 +228,18 @@ class WooCommerceNFe {
 		if ($option == 'yes'){
 
 			$nfe = get_post_meta( $order_id, 'nfe', true );
+			$nfce = get_post_meta( $order_id, 'nfce', true );
 
-			if(is_array($nfe) && !empty($nfe)){
+			if((is_array($nfe) && !empty($nfe)) || (is_array($nfec) && !empty($nfec))){
 				return false;
 			}
 
-			self::emitirNFe( array( $order_id ) );
+			$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
+			if ($tipo == 'nfe') {
+			  self::emitirNFe( array( $order_id ) );
+		  } else if ($tipo == 'nfce') {
+				self::emitirNFCe( array( $order_id ) );
+			}
 
 		}
 
@@ -285,7 +293,55 @@ class WooCommerceNFe {
 			}
 		}
 	}
-	function order_data( $post_id ){
+	function emitirNFCe( $order_ids = array() ){
+		foreach ($order_ids as $order_id) {
+			$data = self::order_data( $order_id, 2 );
+
+			$webmaniabr = new NFe(WC_NFe()->settings);
+			$response = $webmaniabr->emissaoNotaFiscal( $data );
+
+			if (isset($response->error) || $response->status == 'reprovado'){
+				$mensagem = 'Erro ao emitir a NFC-e do Pedido #'.$order_id.':';
+				$mensagem .= '<ul style="padding-left:20px;">';
+				$mensagem .= '<li>'.$response->error.'</li>';
+				if (isset($response->log)){
+					if ($response->log->xMotivo){
+						if(isset($response->log->aProt[0]->xMotivo)){
+							$error = $response->log->aProt[0]->xMotivo;
+						}else{
+							$error = $response->log->xMotivo;
+						}
+						$mensagem .= '<li>'.$error.'</li>';
+					} else {
+						foreach ($response->log as $erros){
+							foreach ($erros as $erro) {
+								$mensagem .= '<li>'.$erro.'</li>';
+							}
+						}
+					}
+				}
+				$mensagem .= '</ul>';
+				WC_NFe()->add_error( $mensagem );
+			} else {
+				$nfe = get_post_meta( $order_id, 'nfce', true );
+				if (!$nfe) $nfe = array();
+				$nfe[] = array(
+					'uuid'   => (string) $response->uuid,
+					'status' => (string) $response->status,
+					'chave_acesso' => $response->chave,
+					'n_recibo' => (int) $response->recibo,
+					'n_nfe' => (int) $response->nfe,
+					'n_serie' => (int) $response->serie,
+					'url_xml' => (string) $response->xml,
+					'url_danfe' => (string) $response->danfe,
+					'data' => date_i18n('d/m/Y'),
+				);
+				update_post_meta( $order_id, 'nfce', $nfe );
+				WC_NFe()->add_success( 'NFC-e emitida com sucesso do Pedido #'.$order_id );
+			}
+		}
+	}
+	function order_data( $post_id, $modelo = 1 ){
 		global $wpdb;
 
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
@@ -345,26 +401,28 @@ class WooCommerceNFe {
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
-		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = 0;
+		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $oder );
 		$order_key = $order->order_key;
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
-			'modelo'            => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
+			'modelo'            => $modelo, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
 			'ambiente'          => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
 		);
 		$data['pedido'] = array(
-			'presenca'         => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
+			'presenca'         => apply_filters('webmaniabr_pedido_presenca', $modelo == 1 ? 2 : 1, $post_id, $modelo, $order), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => (int) $modalidade_frete, // Modalidade do frete
 			'frete'            => get_post_meta( $order->id, '_order_shipping', true ), // Total do frete
 			'desconto'         => $total_discount, // Total do desconto
 			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
 
+		error_log($order->payment_method);
+		error_log(print_r($payment_keys, true));
 
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
@@ -387,6 +445,20 @@ class WooCommerceNFe {
 
 		}
 
+		if ($modelo == 2) {
+			$data['pedido']['pagamento'] = apply_filters('webmaniabr_pedido_pagamento', 0, $post_id, $order);
+			$data['pedido']['tipo_integracao'] = apply_filters('webmaniabr_pedido_tipo_integracao', 2, $post_id, $order);
+
+			if ($data['pedido']['forma_pagamento'] == '01' ) {
+				// TODO: colocar o valor padrão exato do pedido, fingindo que não tem troco.
+				$data['pedido']['valor_pagamento'] = apply_filters('webmaniabr_pedido_valor_pagamento', 0, $post_id, $order);
+			} else if ($data['pedido']['forma_pagamento'] == '03' || $data['pedido']['forma_pagamento'] == '04') {
+				$data['pedido']['cnpj_credenciadora'] = apply_filters('webmaniabr_pedido_cnpj_credenciadora', get_option('wc_settings_woocommercenfe_cnpj_fabricante'), $post_id, $order);
+				$data['pedido']['bandeira'] = apply_filters('webmaniabr_pedido_bandeira', '', $post_id, $order);
+				$data['pedido']['autorizacao'] = apply_filters('webmaniabr_pedido_autorizacao', '', $post_id, $order);
+			}
+		}
+
 
 		//Informações Complementares ao Fisco
 		$fisco_inf = get_option('wc_settings_woocommercenfe_fisco_inf');
@@ -398,38 +470,40 @@ class WooCommerceNFe {
 		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){
 			$data['pedido']['informacoes_complementares'] = $consumidor_inf;
 		}
-		// Customer
-		$data['cliente'] = array(
-			'endereco'    => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
-			'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
-			'numero'      => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
-			'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
-			'cidade'      => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
-			'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
-			'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
-			'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
-		);
+		if ($order->get_user() !== false) {
+			// Customer
+			$data['cliente'] = array(
+				'endereco'    => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
+				'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
+				'numero'      => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
+				'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
+				'cidade'      => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
+				'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
+				'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
+				'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
+				'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
+			);
 
-		if($envio_email && $envio_email == 'yes'){
-			$data['cliente']['email'] = get_post_meta($post_id, '_billing_email', true);
-		}else{
-			$data['cliente']['email'] = '';
-		}
+			if($envio_email && $envio_email == 'yes'){
+				$data['cliente']['email'] = get_post_meta($post_id, '_billing_email', true);
+			}else{
+				$data['cliente']['email'] = '';
+			}
 
-		$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-    if (!$tipo_pessoa) $tipo_pessoa = 1;
-		if ($tipo_pessoa == 1){
-			$cpf        = get_post_meta($post_id, '_billing_cpf', true);
-			$first_name = get_post_meta($post_id, '_billing_first_name', true);
-			$last_name  = get_post_meta($post_id, '_billing_last_name', true);
-			$full_name  = $first_name.' '.$last_name;
-			$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
-			$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
-		}else if($tipo_pessoa == 2){
-			$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
-			$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
-			$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
+			$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
+	    if (!$tipo_pessoa) $tipo_pessoa = 1;
+			if ($tipo_pessoa == 1){
+				$cpf        = get_post_meta($post_id, '_billing_cpf', true);
+				$first_name = get_post_meta($post_id, '_billing_first_name', true);
+				$last_name  = get_post_meta($post_id, '_billing_last_name', true);
+				$full_name  = $first_name.' '.$last_name;
+				$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
+				$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
+			}else if($tipo_pessoa == 2) {
+				$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
+				$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
+				$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
+			}
 		}
 		// Products
 		$bundles = array();

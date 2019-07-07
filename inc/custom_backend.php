@@ -338,10 +338,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id'   => 'wc_settings_woocommercenfe_cest'
             ),
 
-            'cnpj_fabricante' => array(
+						'cnpj_fabricante' => array(
                 'name' => __( 'CNPJ do fabricante da mercadoria', $domain ),
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cnpj_fabricante'
+            ),
+
+						'cnpj_credenciadora' => array(
+                'name' => __( 'CNPJ da Credenciadora do Cartão', $domain ),
+                'type' => 'text',
+                'id'   => 'wc_settings_woocommercenfe_cnpj_credenciadora'
             ),
 
             'ind_escala' => array(
@@ -508,7 +514,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			return $html;
 		}
 
-		function get_payment_methods_select($method, $index = 0, $id = ''){
+		function get_payment_methods_select($method, $index = 0, $id = '') {
 
 			$saved_values = get_option('wc_settings_woocommercenfe_payment_methods', array());
 
@@ -605,11 +611,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 		function metabox_content_woocommernfe_nfe_emitida( $post ) {
 			$nfe_data = get_post_meta($post->ID, 'nfe', true);
-			if(empty($nfe_data)):?>
+			$nfce_data = get_post_meta($post->ID, 'nfce', true);
+			if(empty($nfe_data) && empty($nfce_data)):?>
 			<p>Nenhuma nota emitida para este pedido</p>
 
 			<?php else:
-                $nfe_data = array_reverse($nfe_data);
+                $nfe_data = array_reverse(empty($nfe_data) ? $nfce_data : $nfe_data);
             ?>
 				<div class="all-nfe-info">
 					<div class="head">
@@ -796,11 +803,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         <input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
     </div>
 
-    <div class="field">
+		<div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
         </p>
         <input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
+    </div>
+
+		<div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
+        </p>
+        <input type="text" name="cnpj_credenciadora" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_credenciadora', true ); ?>" style="width:100%;padding:5px;">
     </div>
 
     <div class="field">
@@ -870,10 +884,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		if ( 'nfe' == $column ) {
 
 			$nfe = get_post_meta( $post->ID, 'nfe', true );
+			$nfce = get_post_meta( $post->ID, 'nfce', true );
 			$order = new WC_Order( $post->ID );
 
-            if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') echo '<span class="nfe_none">-</span>';
+      if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') echo '<span class="nfe_none">-</span>';
 			elseif ($nfe) echo '<div class="nfe_success">NF-e Emitida</div>';
+			elseif ($nfce) echo '<div class="nfe_success">NFC-e Emitida</div>';
 			else echo '<div class="nfe_alert">NF-e não emitida</div>';
 
 		}
@@ -884,6 +900,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
+		$actions['wc_nfce_emitir'] = __( 'Emitir NFC-e' );
 		return $actions;
 
 	}
@@ -899,9 +916,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			?>
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
-						  var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
-						  $( 'select[name^="action"]' ).append( $emitir_nfe );
-					  });
+					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
+					$( 'select[name^="action"]' ).append( $emitir_nfe );
+						var $emitir_nfce = $('<option>').val('wc_nfce_emitir').text('<?php _e( 'Emitir NFC-e' ); ?>');
+						$( 'select[name^="action"]' ).append( $emitir_nfce );
+						  });
 			</script>
 			<?php
 
@@ -933,11 +952,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) ) return false;
+			if ( ! in_array( $action, array( 'wc_nfe_emitir', 'wc_nfce_emitir') ) ) return false;
 			if ( isset( $_REQUEST['post'] ) ) $order_ids = array_map( 'absint', $_REQUEST['post'] );
 			if ( empty( $order_ids ) ) return false;
 
 			if ($action == 'wc_nfe_emitir') WC_NFe()->emitirNFe( $order_ids );
+			if ($action == 'wc_nfce_emitir') WC_NFe()->emitirNFCe( $order_ids );
 
 		}
 
@@ -950,6 +970,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		if ($post_status == 'trash' || $post_status == 'wc-cancelled') return false;
 
 		WC_NFe()->emitirNFe( array( $order_id ) );
+
+	}
+
+	function process_order_meta_box_actions2( $post ){
+
+		$order_id = $post->id;
+		$post_status = $post->post_status;
+		if ($post_status == 'trash' || $post_status == 'wc-cancelled') return false;
+
+		WC_NFe()->emitirNFCe( array( $order_id ) );
 
 	}
 
@@ -1292,6 +1322,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_codigo_ncm'      => $_POST['codigo_ncm'],
 						'_nfe_codigo_cest'     => $_POST['codigo_cest'],
 						'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
+						'_nfe_cnpj_credenciadora' => $_POST['cnpj_credenciadora'],
 						'_nfe_ind_escala'      => $_POST['ind_escala']
 						);
 
