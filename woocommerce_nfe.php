@@ -113,7 +113,6 @@ class WooCommerceNFe {
 		add_action('edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
 		add_action('create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
 		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
-		add_action('orquidario_emitir_nota_fiscal', array($tihs, 'emitirNFeAutomaticamente'), 10, 1)
 		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
 			/*
 			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
@@ -420,9 +419,6 @@ class WooCommerceNFe {
 			'desconto'         => $total_discount, // Total do desconto
 			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
-
-		error_log($order->payment_method);
-		error_log(print_r($payment_keys, true));
 
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
