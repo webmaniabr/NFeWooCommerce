@@ -229,7 +229,7 @@ class WooCommerceNFe {
 			$nfe = get_post_meta( $order_id, 'nfe', true );
 			$nfce = get_post_meta( $order_id, 'nfce', true );
 
-			if((is_array($nfe) && !empty($nfe)) || (is_array($nfec) && !empty($nfec))){
+			if((is_array($nfe) && !empty($nfe)) || (is_array($nfce) && !empty($nfce))){
 				return false;
 			}
 
