@@ -90,7 +90,7 @@ class WooCommerceNFe {
 		$WC_NFe_Backend = new WooCommerceNFe_Backend();
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-		add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 );
+		//add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
@@ -235,11 +235,11 @@ class WooCommerceNFe {
 
 			$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
 			if ($tipo == 'nfe') {
-			  self::emitirNFe( array( $order_id ) );
+			  return self::emitirNFe( array( $order_id ) );
 		  } else if ($tipo == 'nfce') {
-				self::emitirNFCe( array( $order_id ) );
+				return self::emitirNFCe( array( $order_id ) );
 			}
-
+			return false;
 		}
 
 	}
@@ -273,6 +273,7 @@ class WooCommerceNFe {
 				}
 				$mensagem .= '</ul>';
 				WC_NFe()->add_error( $mensagem );
+				return false;
 			} else {
 				$nfe = get_post_meta( $order_id, 'nfe', true );
 				if (!$nfe) $nfe = array();
@@ -289,6 +290,7 @@ class WooCommerceNFe {
 				);
 				update_post_meta( $order_id, 'nfe', $nfe );
 				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
+				return $nfe;
 			}
 		}
 	}
@@ -321,10 +323,11 @@ class WooCommerceNFe {
 				}
 				$mensagem .= '</ul>';
 				WC_NFe()->add_error( $mensagem );
+				return false;
 			} else {
-				$nfe = get_post_meta( $order_id, 'nfce', true );
-				if (!$nfe) $nfe = array();
-				$nfe[] = array(
+				$nfce = get_post_meta( $order_id, 'nfce', true );
+				if (!$nfce) $nfce = array();
+				$nfce[] = array(
 					'uuid'   => (string) $response->uuid,
 					'status' => (string) $response->status,
 					'chave_acesso' => $response->chave,
@@ -335,8 +338,9 @@ class WooCommerceNFe {
 					'url_danfe' => (string) $response->danfe,
 					'data' => date_i18n('d/m/Y'),
 				);
-				update_post_meta( $order_id, 'nfce', $nfe );
+				update_post_meta( $order_id, 'nfce', $nfce );
 				WC_NFe()->add_success( 'NFC-e emitida com sucesso do Pedido #'.$order_id );
+				return $nfce;
 			}
 		}
 	}
@@ -787,6 +791,64 @@ class WooCommerceNFe {
 
 
 }
+
+class WebmaniaBR_Rest_Controller extends WP_REST_Controller {
+
+  //The namespace and version for the REST SERVER
+  var $my_namespace = 'wc/v';
+  var $my_version   = '3';
+
+  public function register_routes() {
+    $namespace = $this->my_namespace . $this->my_version;
+    $base      = 'nota-fiscal';
+    register_rest_route( $namespace, '/' . $base, array(
+      array(
+          'methods'         => WP_REST_Server::READABLE,
+          'callback'        => array( $this, 'get_nota_fiscal' ),
+          'permission_callback'   => array( $this, 'get_nota_fiscal_permission' )
+        )
+    )  );
+  }
+
+  // Register our REST Server
+  public function hook_rest_server(){
+    add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+  }
+
+  public function get_nota_fiscal_permission(){
+    if ( ! current_user_can( 'view_register' ) ) {
+          return new WP_Error( 'rest_forbidden', 'Sem permissão para executar essa ação.', array( 'status' => 401 ) );
+      }
+
+      // This approach blocks the endpoint operation. You could alternatively do this by an un-blocking approach, by returning false here and changing the permissions check.
+      return true;
+  }
+
+  public function get_nota_fiscal( WP_REST_Request $request ) {
+    //Let Us use the helper methods to get the parameters
+    $id = $request->get_param( 'id' );
+		if (!$id)
+			return false;
+
+		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamente($id);
+
+		if (!$return) {
+			$nfe = get_post_meta( $id, 'nfe', true );
+			$nfce = get_post_meta( $id, 'nfce', true );
+
+			if (is_array($nfe) && !empty($nfe)) {
+				return $nfe;
+			} else if (is_array($nfce) && !empty($nfce)) {
+				return $nfce;
+			}
+		}
+
+		return $return;
+  }
+}
+$my_rest_server = new WebmaniaBR_Rest_Controller();
+$my_rest_server->hook_rest_server();
+
 /**
 * Active plugin
 */
