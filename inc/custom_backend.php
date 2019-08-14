@@ -293,12 +293,23 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type'     => 'title',
                 'desc'     => 'A configuração padrão será utilizada para todos os produtos.<br>Caso deseje a configuração também pode ser personalizada em cada produto.'
             ),
-            'emissao_automatica' => array(
+            // 'emissao_automatica' => array(
+            //     'name' => __( 'Emissão automática', $domain ),
+            //     'type' => 'checkbox',
+            //     'desc' => __( 'Emitir automaticamente a NF-e sempre que um pagamento for confirmado.', $domain ),
+            //     'id'   => 'wc_settings_woocommercenfe_emissao_automatica',
+            // ),
+						'emissao_automatica' => array(
                 'name' => __( 'Emissão automática', $domain ),
-                'type' => 'checkbox',
-                'desc' => __( 'Emitir automaticamente a NF-e sempre que um pagamento for confirmado.', $domain ),
-                'id'   => 'wc_settings_woocommercenfe_emissao_automatica',
-            ),
+                'type' => 'radio',
+                'options' => array(
+                	'0' => 'Não emitir automaticamente.',
+                	'1' => 'Sempre que o pedido ter o status alterado para Processando (Pagamento confirmado)',
+                	'2' => 'Sempre que o pedido ter o status alterado para Concluído.'
+            	),
+                'default' => '0',
+                'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
+            ),  
 						'envio_email' => array(
 							'name' => __( 'Envio automático de email', $domain ),
 							'type' =>'checkbox',
@@ -865,16 +876,46 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	}
 
 	function add_order_status_column_content( $column ) {
+
 		global $post;
 
 		if ( 'nfe' == $column ) {
 
+			// Get the 'NF-e' informations
 			$nfe = get_post_meta( $post->ID, 'nfe', true );
+
+			// Get the order informations
 			$order = new WC_Order( $post->ID );
 
-            if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') echo '<span class="nfe_none">-</span>';
-			elseif ($nfe) echo '<div class="nfe_success">NF-e Emitida</div>';
-			else echo '<div class="nfe_alert">NF-e não emitida</div>';
+			// If order has the status pending or cancelled, don't print 'NF-e' status
+            if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
+            	echo '<span class="nfe_none">-</span>';
+
+            // Else if $nfe has information, check status from array
+            } elseif ($nfe) {
+
+				// Define as false
+				$nfe_emitida = false;
+
+            	foreach ( $nfe as $item ) {
+
+            		// If array has any approved document define $nfe_emitida as true
+            		if ( $item['status'] == 'aprovado' ) {
+            			$nfe_emitida = true;
+            		}
+
+            	}
+
+            	// Print depending of the case
+            	if ( $nfe_emitida ) {
+            		echo '<div class="nfe_success">NF-e Emitida</div>';
+            	} else {
+            		echo '<div class="nfe_alert">NF-e não emitida</div>';
+            	}
+
+            } else {
+            	echo '<div class="nfe_alert">NF-e não emitida</div>';
+            }
 
 		}
 
@@ -1436,16 +1477,36 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 				$order = wc_get_order($order_id);
 
-				if($order->order_key != $order_key || $nfe_order_id != $order_id || ! $order){
+				if ($order->order_key != $order_key || $nfe_order_id != $order_id || ! $order) {
 					header( 'HTTP/1.1 401 Unauthorized' );
 					exit;
 				}
 
 				$order_nfe_data = get_post_meta($order_id, 'nfe', true);
 
-				if(!is_array($order_nfe_data)) {
+				$is_new = true;
 
-					$nfe[] = array(
+				if ( is_array($order_nfe_data) ) {
+
+					foreach($order_nfe_data as $key => $order_nfe){
+
+						$current_status = $order_nfe['status'];
+						$received_status = $_POST['status'];
+
+						if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status) {
+							$order_nfe_data[$key]['status'] = $received_status;
+						}
+
+						if ( $order_nfe['uuid'] == $_POST['uuid'] ) {
+							$is_new = false;
+						}
+
+					}
+
+				}
+
+				if ( $is_new ) {
+					$order_nfe_data[] = array(
 						'uuid'   => (string) $_POST['uuid'],
 						'status' => (string) $_POST['status'],
 						'chave_acesso' => (string) $_POST['chave'],
@@ -1456,24 +1517,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'url_danfe' => (string) $_POST['danfe'],
 						'data' => date_i18n('d/m/Y'),
 					);
-
-					update_post_meta( $order_id, 'nfe', $nfe );
-
-				} else {
-
-					foreach($order_nfe_data as $key => $order_nfe){
-
-						$current_status = $order_nfe['status'];
-						$received_status = $_POST['status'];
-
-						if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status){
-							$order_nfe_data[$key]['status'] = $received_status;
-							update_post_meta($order_id, 'nfe', $order_nfe_data);
-						}
-
-					}
-
 				}
+
+				update_post_meta($order_id, 'nfe', $order_nfe_data);
 
 			}
 
