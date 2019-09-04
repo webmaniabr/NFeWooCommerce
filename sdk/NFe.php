@@ -147,7 +147,7 @@ class NFe {
 				}
 
 				// Return
-				if ($curl_error){
+				if ( isset($curl_error->error) ) {
 						return $curl_error;
 				} else {
 						return json_decode($response);
