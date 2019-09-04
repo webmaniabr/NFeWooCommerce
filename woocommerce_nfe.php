@@ -5,8 +5,8 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.7.7
-* Copyright: © 2009-2018 WebmaniaBR.
+* Version: 2.8.0
+* Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
@@ -50,7 +50,7 @@ class WooCommerceNFe {
 			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce na versão mais recente.', $domain) );
 			return false;
 		}
-		// Init Back-end and Fron-end
+		// Init Back-end and Front-end
 		$this->includes();
 		$this->init_backend();
 		$this->init_frontend();
@@ -90,7 +90,17 @@ class WooCommerceNFe {
 		$WC_NFe_Backend = new WooCommerceNFe_Backend();
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-		//add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 );
+
+		// Get value from 'Emissão Automática' option
+		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+
+		if ( $option == 1 || $option == 'yes' ) {
+			// add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 ); Depreciated
+			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		} else if ( $option == 2 ) {
+			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		}
+    
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
@@ -129,7 +139,7 @@ class WooCommerceNFe {
 			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
 			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
-      add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+    		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
 			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
 		}
 	}
@@ -221,10 +231,13 @@ class WooCommerceNFe {
 		}
 
 	}
+
+	// Depreciated
 	function emitirNFeAutomaticamente( $order_id ){
 
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-		if ($option == 'yes'){
+
+		if ( $option == 1 || $option == 'yes' ) {
 
 			$nfe = get_post_meta( $order_id, 'nfe', true );
 			$nfce = get_post_meta( $order_id, 'nfce', true );
@@ -244,17 +257,62 @@ class WooCommerceNFe {
 
 	}
 
+	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+
+		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+
+		// If the option "Emitir Automaticamente" is enabled and
+		// the post type is equal to 'shop_order'
+		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
+
+			// Double check the order status
+			$order = wc_get_order( $order_id );
+			$order_status  = $order->get_status();
+
+			// If the post is Processing (Processando) or Completed (Concluído)
+			if ( $order_status == 'processing' || $order_status == 'completed' ) {
+
+				// Get the field with all "NF-e" informations
+				$nfes = get_post_meta( $order_id, 'nfe', true );
+
+				// Check if is empty or invalid
+				if( !empty($nfes) && is_array($nfes) ) {
+
+					// If exists, find for any approved document
+					foreach ( $nfes as $nfe ) {
+
+						if ( $nfe['status'] == 'aprovado' ) {
+								return false;
+						}
+
+					}
+
+				}
+
+				// If all conditions was match, call function
+				self::emitirNFe( array( $order_id ) );
+
+			}
+
+		}
+
+	}
+
 	function emitirNFe( $order_ids = array() ){
+
 		foreach ($order_ids as $order_id) {
+
 			$data = self::order_data( $order_id );
 
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 
-			if (isset($response->error) || $response->status == 'reprovado'){
+			if (isset($response->error) || $response->status == 'reprovado') {
+
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 				$mensagem .= '<ul style="padding-left:20px;">';
 				$mensagem .= '<li>'.$response->error.'</li>';
+
 				if (isset($response->log)){
 					if ($response->log->xMotivo){
 						if(isset($response->log->aProt[0]->xMotivo)){
@@ -271,12 +329,20 @@ class WooCommerceNFe {
 						}
 					}
 				}
+
 				$mensagem .= '</ul>';
 				WC_NFe()->add_error( $mensagem );
 				return false;
 			} else {
+				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
+			}
+
+			// If API respond with status, register 'NF-e'
+			if ( is_object($response) && $response->status ) {
+
 				$nfe = get_post_meta( $order_id, 'nfe', true );
 				if (!$nfe) $nfe = array();
+
 				$nfe[] = array(
 					'uuid'   => (string) $response->uuid,
 					'status' => (string) $response->status,
@@ -288,12 +354,16 @@ class WooCommerceNFe {
 					'url_danfe' => (string) $response->danfe,
 					'data' => date_i18n('d/m/Y'),
 				);
+
 				update_post_meta( $order_id, 'nfe', $nfe );
 				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
 				return $nfe;
 			}
+
 		}
+
 	}
+
 	function emitirNFCe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
 			$data = self::order_data( $order_id, 2 );
@@ -399,7 +469,7 @@ class WooCommerceNFe {
 				}
 			}
 		}
-    $total_discount = $order->get_total_discount() + $total_discount;
+		$total_discount = $order->get_total_discount() + $total_discount;
 
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
@@ -520,7 +590,7 @@ class WooCommerceNFe {
 			}
 
 			$variation_id = $item['variation_id'];
-			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || $bundled_by ){
+			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || $product_type == 'mix-and-match' || $bundled_by ){
 				$bundles[] = $item;
 				continue;
 			}
@@ -660,6 +730,7 @@ class WooCommerceNFe {
 		}
 
 		$variacoes = ''; //Used to append variation name to product name
+
 		foreach (array_keys($item['item_meta']) as $meta){
 			if (strpos($meta,'pa_') !== false) {
 				$atributo = $item[$meta];
@@ -670,6 +741,7 @@ class WooCommerceNFe {
 			}
 		}
 			$product_active_price = $order->get_item_subtotal( $item, false, false );
+
 			$info = array(
 				'nome' => $item['name'].$variacoes, // Nome do produto
 				'sku' => $product->get_sku(), // Código identificador - SKU
@@ -683,8 +755,8 @@ class WooCommerceNFe {
 				'unidade' => 'UN', // Unidade de medida da quantidade de itens
 				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
 				'origem' => (int) $origem, // Origem do produto
-				'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
-				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
+				'subtotal' => number_format($product->get_price(), 2, '.', '' ), //[Felipe] Preço unitário do produto - sem descontos
+				'total' => number_format($product->get_price()*$item['qty'], 2, '.', '' ), //[Felipe] Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
 
@@ -692,26 +764,25 @@ class WooCommerceNFe {
 
 	}
 
-	function set_bundle_products_array( $bundles, $order ){
+	function set_bundle_products_array( $bundles, $order){
 
 		$total_bundle = 0;
 		$total_products = 0;
 		$bundle_products = array();
+
 		foreach($bundles as $item){
 			$product = $order->get_product_from_item( $item );
 			$product_type = $product->get_type();
 			$product_price = $product->get_price();
-
 
 			$bundled_by = isset($item['bundled_by']);
 			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
 				$bundled_by = $item->meta_exists('_bundled_by');
 			}
 
-
+			$product_total = $product_price * $item['qty'];
 
 			if($bundled_by){
-				$product_total = $product_price * $item['qty'];
 				$total_products += $product_total;
 				if(!isset($bundle_products[$item['product_id']])){
 					$bundle_products[$item['product_id']] = self::get_product_nfe_info($item, $order);
@@ -725,9 +796,48 @@ class WooCommerceNFe {
 				}
 			}elseif($product_type == 'yith_bundle'){
 				$total_bundle += $product_price*$item['qty'];
+			}elseif($product_type == 'mix-and-match'){
+
+				$total_products_bundle = 0;
+				$mnm_products_price = 0;
+				$mnm_qty = $item['qty'];
+
+				foreach ( $order->get_items() as $key => $item ) {
+
+					// Get if the product belongs to Mix and Match to calculate discount
+					$mnm_configs = wc_get_order_item_meta( $key, '_mnm_config', true);
+
+					if ( $mnm_configs ) {
+
+						// Get the total and quantity from Mix and Match bundle
+						$mnm_product_price_total = wc_get_order_item_meta( $key, '_line_subtotal', true); // Get subtotal to aply coupon discount after, line_total aplies this discount before needed
+						$mnm_product_price_qty = wc_get_order_item_meta( $key, '_qty', true);
+
+						// Use the products inside the bundle
+						foreach ( $mnm_configs as $mnm_config ) {
+
+							// Load the product
+							$product_mnm = wc_get_product( $mnm_config['product_id'] );
+
+							// Store the discount from bundle
+							$mnm_products_price += $product_mnm->get_price() * ( $mnm_config['quantity'] * $mnm_product_price_qty );
+
+						}
+
+						// Update total discount
+						$mnm_products_price -= $mnm_product_price_total;
+
+					}
+
+				}
+
+				$total_discount = $mnm_products_price;
+
 			}
+
 		}
-		if($total_products < $total_bundle){
+
+		if($total_products < $total_bundle && $product_type != 'mix-and-match'){
 			end($bundle_products);
 			$end_key = key($bundle_products);
 			$subtotal_end = $bundle_products[$end_key]['subtotal'];
@@ -738,6 +848,8 @@ class WooCommerceNFe {
 			$bundle_products[$end_key]['subtotal'] = round($subtotal_end, 2);
 			$bundle_products[$end_key]['total'] = $subtotal_end * $qty_end;
 			$discount = 0;
+		}else if($product_type == 'mix-and-match'){
+			$discount = abs($total_discount);
 		}else{
 			$discount = abs($total_bundle - $total_products);
 		}
