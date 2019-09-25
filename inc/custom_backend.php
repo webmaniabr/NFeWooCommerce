@@ -309,7 +309,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             	),
                 'default' => '0',
                 'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
-            ),  
+            ),
 						'envio_email' => array(
 							'name' => __( 'Envio automático de email', $domain ),
 							'type' =>'checkbox',
@@ -440,6 +440,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id' => 'wc_settings_woocommercenfe_end4'
             ),
         );
+
+        // WooCommerce Extra Checkout Fields for Brazil
+        if (is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')){
+        	unset($settings['title5']);
+        	unset($settings['tipo_pessoa']);
+        	unset($settings['mascara_campos']);
+        	unset($settings['cep']);
+        }
 
         return $settings;
 
@@ -1503,6 +1511,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 					}
 
+				} else {
+					$order_nfe_data = array();
 				}
 
 				if ( $is_new ) {

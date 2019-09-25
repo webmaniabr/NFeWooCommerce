@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.8.0
+* Version: 2.9.0
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -13,7 +13,6 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
-
 
 class WooCommerceNFe {
 
@@ -30,9 +29,10 @@ class WooCommerceNFe {
 
 	function init(){
 
-
 		global $domain;
+
 		add_action( 'admin_notices', array($this, 'display_messages') );
+
 		// Verify WooCommerce Plugin
 		if ( !class_exists( 'WooCommerce' ) ) {
 			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
@@ -85,22 +85,12 @@ class WooCommerceNFe {
 		$this->init_hooks();
 		do_action('woocommercenfe_loaded');
 	}
+
 	function init_backend(){
 
 		$WC_NFe_Backend = new WooCommerceNFe_Backend();
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-
-		// Get value from 'Emissão Automática' option
-		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-
-		if ( $option == 1 || $option == 'yes' ) {
-			// add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 ); Depreciated
-			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
-		} else if ( $option == 2 ) {
-			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
-		}
-
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
@@ -117,17 +107,29 @@ class WooCommerceNFe {
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array($WC_NFe_Backend, 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array($WC_NFe_Backend, 'update_settings' ));
 		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'global_admin_scripts') );
-		add_action ('product_cat_add_form_fields', array($WC_NFe_Backend, 'add_category_ncm'));
-		add_action ('product_cat_edit_form_fields', array($WC_NFe_Backend, 'edit_category_ncm'), 10, 2);
-		add_action('edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
-		add_action('create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
-		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
-		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
-			/*
-			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
-			@author Claudio Sanches
-			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
-			*/
+		add_action( 'product_cat_add_form_fields', array($WC_NFe_Backend, 'add_category_ncm'));
+		add_action( 'product_cat_edit_form_fields', array($WC_NFe_Backend, 'edit_category_ncm'), 10, 2);
+		add_action( 'edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action( 'create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action( 'admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
+		add_filter( "plugin_action_links_".plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
+
+		// NFe autommatic
+		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+		if ( $option == 1 || $option == 'yes' ) {
+			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		} else if ( $option == 2 ) {
+			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		}
+
+		// Custom plugin: WooCommerce Extra Checkout Fields for Brazil
+	  // @author Claudio Sanches
+	  // @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
+		if (
+			get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes' &&
+			!is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')
+		){
+
 			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 			add_filter( 'woocommerce_customer_meta_fields', array( $WC_NFe_Backend, 'customer_meta_fields' ) );
 			add_filter( 'woocommerce_user_column_billing_address', array( $WC_NFe_Backend, 'user_column_billing_address' ), 1, 2 );
@@ -138,20 +140,34 @@ class WooCommerceNFe {
 			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
 			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
-    		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+    	add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
 			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
 		}
+
 	}
+
 	function init_frontend(){
 
+		global $pagenow;
+
 		$WC_NFe_Frontend = new WooCommerceNFe_Frontend();
+
 		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
-		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
-			/*
-			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
-			@author Claudio Sanches
-			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
-			*/
+
+		// WooCommerce Admin
+		if (is_plugin_active('woocommerce-admin/woocommerce-admin.php') && ($pagenow != 'admin.php' && $_GET['page'] != 'wc-admin')){
+			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_before_notices' ) );
+			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_after_notices' ), PHP_INT_MAX );
+		}
+
+		// Custom plugin: WooCommerce Extra Checkout Fields for Brazil
+	  // @author Claudio Sanches
+	  // @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
+		if (
+			get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes' &&
+			!is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')
+		){
+
 			add_filter( 'woocommerce_billing_fields', array($WC_NFe_Frontend, 'billing_fields') );
 			add_filter( 'woocommerce_shipping_fields', array($WC_NFe_Frontend, 'shipping_fields') );
 			add_action( 'woocommerce_checkout_process', array($WC_NFe_Frontend, 'valide_checkout_fields') );
@@ -160,7 +176,9 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_order_formatted_billing_address', array( $WC_NFe_Frontend, 'order_formatted_billing_address' ), 1, 2 );
 			add_filter( 'woocommerce_order_formatted_shipping_address', array( $WC_NFe_Frontend, 'order_formatted_shipping_address' ), 1, 2 );
 			add_filter( 'woocommerce_my_account_my_address_formatted_address', array($WC_NFe_Frontend, 'my_account_my_address_formatted_address' ), 1, 3 );
+
 		}
+
 	}
 	function includes(){
 		include_once( 'sdk/NFe.php' );
@@ -420,6 +438,7 @@ class WooCommerceNFe {
 		$order_key = $order->order_key;
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
+			'origem'				  	=> 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
@@ -667,6 +686,7 @@ class WooCommerceNFe {
 				$variacoes .= ' - '.strtoupper($nome_atributo).': '.$valor;
 			}
 		}
+
 			$product_active_price = $order->get_item_subtotal( $item, false, false );
 
 			$info = array(
@@ -682,8 +702,8 @@ class WooCommerceNFe {
 				'unidade' => 'UN', // Unidade de medida da quantidade de itens
 				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
 				'origem' => (int) $origem, // Origem do produto
-				'subtotal' => number_format($product->get_price(), 2, '.', '' ), //[Felipe] Preço unitário do produto - sem descontos
-				'total' => number_format($product->get_price()*$item['qty'], 2, '.', '' ), //[Felipe] Preço total (quantidade x preço unitário) - sem descontos
+				'subtotal' => number_format(product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
+				'total' => number_format(product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
 
@@ -828,6 +848,18 @@ class WooCommerceNFe {
 
 	}
 
+	/**
+	 * Config button
+	**/
+	public static function plugin_add_settings_link( $links ) {
+
+    $action_links = array(
+      'settings' => '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) . '" aria-label="Visualizar Configurações">Configurações</a>',
+    );
+
+    return array_merge( $action_links, $links );
+
+  }
 
 }
 /**
