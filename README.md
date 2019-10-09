@@ -8,7 +8,7 @@ Através do emissor de Nota Fiscal da WebmaniaBR®, você conta com a emissão e
 
 ## Requisitos
 
-- Contrate um dos planos de Nota Fiscal Eletrônica da WebmaniaBR® a partir de R$29,90/mês: <br>[Avaliação por 30 dias grátis!](https://webmaniabr.com/smartsales/nota-fiscal-eletronica/)
+- Contrate um dos planos de Nota Fiscal Eletrônica da WebmaniaBR® a partir de R$29,90/mês: [Assine agora mesmo](https://webmaniabr.com/smartsales/nota-fiscal-eletronica/).
 - Instale o módulo grátis do WooCommerce da WebmaniaBR® e configure conforme instruções.
 
 ## Instalação do Módulo
@@ -21,8 +21,18 @@ Através do emissor de Nota Fiscal da WebmaniaBR®, você conta com a emissão e
 
 ## Instruções
 
-- [Guia de emissão de Nota Fiscal para Loja Virtual](https://webmaniabr.com/blog/guia-de-emissao-de-nota-fiscal-para-loja-virtual/)
+- [Configuração do Módulo NF-e](https://webmaniabr.com/atendimento/nfe/woocommerce/configuracao-modulo-nf-e-woocommerce/)
+- [Emissão de NF-e](https://webmaniabr.com/atendimento/nfe/woocommerce/emissao-de-nfe-woocommerce/)
+- [Cadastro de NCM](https://webmaniabr.com/atendimento/nfe/woocommerce/cadastro-de-ncm-woocommerce/)
+
+## Controle das Notas Fiscais
+
+Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no painel da WebmaniaBR®. Simples e fácil.
+
+<p align="center">
+<img src="https://webmaniabr.com/wp-content/themes/wmbr/img/nf07.jpg">
+</p>
 
 ## Suporte
 
-Qualquer dúvida entre em contato na nossa [Central de Ajuda](https://ajuda.webmaniabr.com) ou acesse o [Painel de Controle](https://webmaniabr.com/painel/) para conversar em tempo real no Chat ou Abrir um chamado.
+Qualquer dúvida entre em contato na nossa [Central de Atendimento](https://webmaniabr.com/atendimento/) ou no e-mail suporte@webmaniabr.com.
