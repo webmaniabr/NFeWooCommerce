@@ -29,5 +29,3 @@ p.form-field._billing_sex_field label {
 input#_billing_sex {
     margin-left: -17px;
 }
-
-#woocommerce-layout__notice-list .woocommerce-layout__notice-list-hide{ display: block !important; }

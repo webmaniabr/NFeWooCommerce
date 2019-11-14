@@ -190,7 +190,7 @@ jQuery( function ( $ ) {
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
     $( '#customer_user' ).on( 'change', change_customer_user );
 
-    $('#add-shipping-info').on('click', add_shipping_info);
+    $('#wmbr-add-shipping-info').on('click', add_shipping_info);
     $('.nfe-table-body').on('click', '.wmbr-remove-shipping-info', remove_shipping_info);
 
     $('#_billing_persontype').on('change', show_hide_fields);

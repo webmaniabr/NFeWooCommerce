@@ -1,26 +1,16 @@
 <?php
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
-
 class WooCommerceNFe_Backend extends WooCommerceNFe {
-
     function add_settings_tab( $settings_tabs ){
-
         global $domain;
-
         $settings_tabs['woocommercenfe_tab'] = __( 'Nota Fiscal', $domain );
         return $settings_tabs;
-
     }
-
     function settings_tab(){
-
         woocommerce_admin_fields( $this->get_settings() );
-
 				$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
-
 				?>
 
 				<style>
@@ -28,67 +18,53 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						min-width: 120px;
 						display: inline-block;
 					}
-
 					.nfe-table-body,
 					.nfe-table-head{
 						overflow: hidden;
 					}
-
 					.nfe-table-head{
 						border-bottom: 1px solid #e5e5e5;
 					}
-
 					.nfe-table-head h4{
 						margin-top: 0;
 						margin-bottom: 15px;
 					}
-
 					.nfe-table-head--payment{
 						padding-bottom: 20px;
     				padding-top: 10px;
 					}
-
 					.nfe-table-head--payment > div,
 					.nfe-table-body--payment .entry > div{
 						width: 30%;
 						display: inline-block;
 						vertical-align: middle;
 					}
-
 					.nfe-table-head--payment > div h4{
 						margin-bottom: 0;
 					}
-
 					.nfe-table-head--payment > div h4 span{
 						font-size: 12px;
     				color: #696969;
 					}
-
-
-
 					.shipping-method-col-title{
 						float:left;
 						width: 30%;
 					}
-
 					.shipping-info-col-title{
 						float:left;
 						width: 70%;
 					}
-
 					.nfe-shipping-table{
 						background: #FFF;
 				    border: 1px solid #e5e5e5;
 				    padding: 15px;
 					}
-
 					.nfe-shipping-table .entry{
 						margin-top: 15px;
 						border-bottom: 1px solid #e5e5e5;
 						overflow: hidden;
 						position: relative;
 					}
-
 					.nfe-shipping-table.payment-info{
 						padding: 5px;
 					}
@@ -96,35 +72,28 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						border-bottom: 0;
 						padding-left: 10px;
 					}
-
 					.nfe-shipping-table.payment-info .entry:nth-child(even){
 						background-color:#efefef;
 					}
-
 					.nfe-shipping-table .nfe-table-body .entry:first-child{
 						display: none;
 					}
-
 					.shipping-method-col{
 						display: inline-block;
     				width: 30%;
     				float: left;
 					}
-
 					.shipping-info-col{
 						display: inline-block;
     				width: 70%;
     				float: left;
 					}
-
 					.nfe-shipping-methods-sel{
 						max-width: 80%;
 					}
-
-					#add-shipping-info{
+					#wmbr-add-shipping-info{
 						margin-top: 15px;
 					}
-
 					.wmbr-remove-shipping-info,
 					.wmbr-remove-shipping-info:active{
 						  position: absolute;
@@ -135,15 +104,43 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					    color: #FFF!important;
 					    border: 0;
 					}
-
 					.wmbr-remove-shipping-info span{
 						vertical-align: middle;
 				    position: relative;
 				    top: -2px;
 					}
-
-
+					.cert_ajax_success, .cert_ajax_error {
+					    background: white;
+					    padding: 10px;
+					}
+					.cert_ajax_success {
+					    border-left: 4px solid #46b450;
+					}
+					.cert_ajax_error {
+					    border-left: 4px solid #dc3232;
+					}
 				</style>
+
+				<h3>Certificado digital A1</h3>
+				<h4>Atualize manualmente seu certificado digital A1</h4>
+
+				<?php
+					add_action( 'admin_footer', array($this, 'force_digital_certificate_update') );
+					$certificate = json_decode($this->validadeCertificado(false, true));
+					echo '<span id="update-digital-certificate-response">';
+						if ( isset($certificate->status) && $certificate->status == 'success' ) {
+							echo '<h4 class="cert_ajax_success">Faltam ' . $certificate->msg . ' dias para o certificado digital A1 expirar.</h4>';
+						} elseif ( isset($certificate->status) && $certificate->status == 'error' ) {
+							echo '<h4 class="cert_ajax_error">Certificado digital A1 expirado</h4>';
+						} elseif ( isset($certificate->status) && $certificate->status == 'null_credentials' ) {
+							echo '<h4 class="cert_ajax_error">'.$certificate->msg.'</h4>';
+						} else {
+							echo '<h4 class="cert_ajax_error">Não foi possível atualizar seu certificado digital A1. Por favor, solicite suporte para <a target="_blank" href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a>.</h4>';
+						}
+					echo '</span>';
+				?>
+
+				<button type="button" class="button-primary" id="update-digital-certificate">Atualizar manualmente</button>
 
 				<h3>Informações de Transportadoras</h3>
 				<p>Cadastre as transportadoras particulares utilizadas em sua loja virtual para identificação na nota fiscal eletrônica. Observação: Para o transporte dos Correios não há necessidade de preenchimento dos dados.</p>
@@ -183,38 +180,56 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						</div>
 						<?php echo $this->get_transportadoras_entries(); ?>
 					</div>
-					<button type="button" class="button-primary" id="add-shipping-info">Adicionar novo</button>
+					<button type="button" class="button-primary" id="wmbr-add-shipping-info">Adicionar novo</button>
 					<input type="hidden" name="shipping-info-count" value="<?php echo count($transportadoras); ?>" />
 				</div>
 
 				<?php
-
 				include_once(plugin_dir_path(dirname(__FILE__)).'/templates/payment-setting.php');
-
     }
-
+	function force_digital_certificate_update() {
+	?>
+		<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				var data = {
+					'action': 'force_digital_certificate_update'
+				};
+				$("#update-digital-certificate").click(function(){
+					var response = '';
+					$("#update-digital-certificate").prop('disabled', true);
+					jQuery.post(ajaxurl, data, function(response) {
+						if ( response.status == 'success' ) {
+							response = '<h4 class="cert_ajax_success">Seu certificado digital A1 foi atualizado: Faltam ' + response.msg + ' dias para o certificado digital A1 expirar.</h4>';
+						} else if ( response.status == 'error' ) {
+							response = '<h4 class="cert_ajax_error">Erro ao atualizar o certificado digital A1: ' + response.msg + '</h4> ';
+						} else if ( response.status == 'null_credentials' ) {
+							response = '<h4 class="cert_ajax_error">' + response.msg + '</h4> ';
+						} else {
+							response = '<h4 class="cert_ajax_error">Não foi possível atualizar seu certificado digital A1. Por favor, solicite suporte para <a href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a></h4>';
+						}
+						$("#update-digital-certificate-response").html(response);
+						$("#update-digital-certificate").prop('disabled', false);
+					}, 'json');
+				});
+			});
+		</script>
+	<?php
+	}
     function update_settings(){
-
         woocommerce_update_options( $this->get_settings() );
-
 		//Transportadoras
 		$count = (int) $_POST['shipping-info-count'];
 		$transportadoras = array();
-
-
 		//Payment methods
 		$payment_methods = array();
 		$cnpj_payment_methods = array();
-
 		foreach($_POST['payment_method'] as $key => $value){
 			$payment_methods[$key] = sanitize_text_field($value);
 		}
-
 		for($i = 1; $i < $count+1; $i++){
 			$id = $_POST['shipping_info_method_'.$i];
 			if(!$id) continue;
 			$transportadoras[$id] = array();
-
 			$keys = array(
 				'razao_social' => 'rs',
 				'cnpj'         => 'cnpj',
@@ -224,29 +239,22 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				'city'         => 'city',
 				'uf'           => 'uf'
 			);
-
 			foreach($keys as $name => $post_key){
 				$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
 			}
 		}
-
 		update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
 		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
 		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
-
 		$include = $_POST['wc_settings_woocommercenfe_transp_include'];
 		if($include){
 			update_option('wc_settings_woocommercenfe_transp_include', 'on');
 		}else{
 			update_option('wc_settings_woocommercenfe_transp_include', 'off');
 		}
-
     }
-
     function get_settings(){
-
         global $domain;
-
         $settings = array(
             'title' => array(
                 'name'     => __( 'Credenciais de Acesso', $domain ),
@@ -348,13 +356,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cest'
             ),
-
             'cnpj_fabricante' => array(
                 'name' => __( 'CNPJ do fabricante da mercadoria', $domain ),
                 'type' => 'text',
                 'id'   => 'wc_settings_woocommercenfe_cnpj_fabricante'
             ),
-
             'ind_escala' => array(
             	'name' => __('Indicador de escala relevante'),
             	'type' => 'select',
@@ -365,7 +371,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 ),
                 'id'   => 'wc_settings_woocommercenfe_ind_escala'
             ),
-
             'origem' => array(
                 'name' => __( 'Origem dos Produtos', $domain ),
                 'type' => 'select',
@@ -440,97 +445,59 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id' => 'wc_settings_woocommercenfe_end4'
             ),
         );
-
         // WooCommerce Extra Checkout Fields for Brazil
-        if (is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')){
+        if ($this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')){
         	unset($settings['title5']);
         	unset($settings['tipo_pessoa']);
         	unset($settings['mascara_campos']);
         	unset($settings['cep']);
         }
-
         return $settings;
-
     }
-
 		function get_transportadoras_entries(){
-
 			$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
-
 			$html  = '';
-
 			$i = 1;
-
 			foreach($transportadoras as $key => $transp){
 				$html .= '<div class="entry">';
-
 				$html .= '<div class="shipping-method-col">'.$this->get_shipping_methods_select($i, $key).'</div>';
-
 				$html .= '<div class="shipping-info-col">';
-
 				$html .= '<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_'.$i.'" value="'.$transp['razao_social'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">CNPJ: </label><input type="text" name="shipping_info_cnpj_'.$i.'" value="'.$transp['cnpj'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">Inscrição estadual: </label><input type="text" name="shipping_info_ie_'.$i.'" value="'.$transp['ie'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">Endereço: </label><input type="text" name="shipping_info_address_'.$i.'" value="'.$transp['address'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">CEP: </label><input type="text" name="shipping_info_cep_'.$i.'" value="'.$transp['cep'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">Cidade: </label><input type="text" name="shipping_info_city_'.$i.'" value="'.$transp['city'].'"/></p>';
-
 				$html .= '<p><label class="nfe-shipping-label">UF: </label><input type="text" name="shipping_info_uf_'.$i.'" value="'.$transp['uf'].'"/></p>';
-
 				$html .= '<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>';
-
 				$html .= '</div>';
 				$html .= '</div>';
-
 				$i++;
 			}
-
 			return $html;
-
 		}
-
 		function get_shipping_methods_select($index = 0, $id = ''){
-
 			$shipping = new WC_Shipping();
 			$shipping->load_shipping_methods();
 		  $shipping_methods = $shipping->get_shipping_methods();
-
-
 			$html = '<select class="nfe-shipping-methods-sel" name="shipping_info_method_'.$index.'">';
 			$html .= '<option value="">Selecionar</option>';
-
 			foreach($shipping_methods as $method){
-
 				if($method->id == 'correios'){
 					continue;
 				}
-
 				($method->id == $id ? $selected = 'selected' : $selected = '');
 				$title = $method->get_title();
-
 				if(!$title && isset($method->method_title)){
 					$title = $method->method_title;
 				}
-
 		    $html .= '<option value="'.$method->id.'" '.$selected.'>'.$title.'</option>';
-
-
 		  }
-
 			$html .= '</select>';
-
 			return $html;
 		}
-
 		function get_payment_methods_select($method, $index = 0, $id = ''){
-
 			$saved_values = get_option('wc_settings_woocommercenfe_payment_methods', array());
-
 			$options = array(
 				'01' => 'Dinheiro',
 				'02' => 'Cheque',
@@ -541,28 +508,19 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				'pagseguro' => 'PagSeguro',
 				'99' => 'Outros',
 			);
-
 			$html = '<select class="nfe-payment-methods-sel" name="payment_method['.$method.']">';
 			$html .= '<option value="">Selecionar</option>';
-
 			foreach($options as $value => $label){
-
 				$selected = '';
-
 				if(isset($saved_values[$method]) && $saved_values[$method] == $value){
 					$selected = 'selected';
 				}
-
 		    $html .= '<option value="'.$value.'" '.$selected.'>'.$label.'</option>';
 		  }
-
 			$html .= '</select>';
-
 			return $html;
 		}
-
 		function register_metabox_nfe_emitida() {
-
         add_meta_box(
             'woocommernfe_nfe_emitida',
             'NF-e do Pedido',
@@ -571,10 +529,16 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'normal',
             'high'
         );
-
-				//Specific shipping info
-
-				add_meta_box(
+		add_meta_box(
+            'woocommernfe_informacoes_adicionais',
+            'Nota Fiscal',
+            array($this, 'metabox_content_woocommernfe_informacoes_adicionais'),
+            'shop_order',
+            'side',
+            'high'
+        );
+		//Specific shipping info
+		add_meta_box(
             'woocommernfe_transporte',
             'Transporte (NF-e)',
             array($this, 'metabox_content_woocommernfe_transporte'),
@@ -582,46 +546,32 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'side',
             'high'
         );
-
     }
-
 		function atualizar_status_nota() {
-
 			if(!is_admin()){
 				return false;
 			}
-
 			if(isset($_GET['atualizar_ne']) && $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
-
 				$post_id = (int) sanitize_text_field($_GET['post']);
 				$chave = sanitize_text_field($_GET['chave']);
 				$webmaniabr = new NFe(WC_NFe()->settings);
 				$response = $webmaniabr->consultaNotaFiscal($chave);
-
 				if (isset($response->error)){
-
             WC_NFe()->add_error( __('Erro: '.$response->error, $domain) );
             return false;
-
         }else{
-
 					$new_status = $response->status;
 					$nfe_data = get_post_meta($post_id, 'nfe', true);
-
 					foreach($nfe_data as &$order_nfe){
 						if($order_nfe['chave_acesso'] == $chave){
 							$order_nfe['status'] = $new_status;
 						}
 					}
-
 					update_post_meta($post_id, 'nfe', $nfe_data);
 					WC_NFe()->add_success( 'NF-e atualizada com sucesso' );
 				}
-
 			}
-
 		}
-
 		function metabox_content_woocommernfe_nfe_emitida( $post ) {
 			$nfe_data = get_post_meta($post->ID, 'nfe', true);
 			if(empty($nfe_data)):?>
@@ -639,7 +589,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					</div>
 					<div class="body">
 						<?php foreach($nfe_data as $order_nfe):
-
 							(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
 							(isset($order_nfe['n_nfe']) ? $numero_nfe = $order_nfe['n_nfe'] : $numero_nfe = '' );
 							(isset($order_nfe['chave_acesso']) ? $chave_acesso_nfe = $order_nfe['chave_acesso'] : $chave_acesso_nfe = '' );
@@ -647,7 +596,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 							(isset($order_nfe['url_xml']) ? $xml_nfe = $order_nfe['url_xml'] : $xml_nfe = '' );
 							(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 							(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
-
 							?>
 							<div class="single">
 								<div>
@@ -657,7 +605,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 								<?php
 									$post_url = get_edit_post_link($post->ID);
 									$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
-
 								?>
 								<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
 								<div class="extra">
@@ -679,13 +626,25 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</div>
 
  		<?php endif;
-
 		}
+		function metabox_content_woocommernfe_informacoes_adicionais( $post ) {
+			?>
 
+			<div class="inside" style="padding:0!important;">
+				<div class="field outras_informacoes">
+			        <p class="label" style="margin-bottom:8px;">
+			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Natureza da Operação</label>
+			        </p>
+			        <input type="text" name="natureza_operacao_pedido" value="<?php echo get_post_meta( $post->ID, '_nfe_natureza_operacao_pedido', true ); ?>" style="width:100%;padding:5px;">
+			    </div>
+
+				<input type="hidden" name="wp_admin_nfe" value="1" />
+			</div>
+
+			<?php
+		}
 		function metabox_content_woocommernfe_transporte( $post ){
-
 			global $domain;
-
 			?>
 			<div class="inside" style="padding:0!important;">
 				<p>
@@ -699,7 +658,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				jQuery(function($) {
 				    $('#transporte_forma_envio').on('change', function(){ if ($(this).val() == '1') $('.transporte').show(); else $('.transporte').hide(); });
 						<?php if (is_numeric($forma_envio) && $forma_envio == '1'){ ?>$('.transporte').show();<?php } ?>
-
 						$('input[name="transporte_peso_bruto"]').on('keyup', function(){
 							$('input[name="transporte_peso_liquido"]').val($(this).val());
 						});
@@ -734,33 +692,31 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			        </p>
 			        <input type="text" name="transporte_especie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_especie', true ); ?>" style="width:100%;padding:5px;">
 			    </div>
-					<div class="field transporte">
+				<div class="field transporte">
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Bruto</label> (KG)
 			        </p>
 			        <input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 			    </div>
-					<div class="field transporte">
+				<div class="field transporte">
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Líquido</label> (KG)
 			        </p>
 			        <input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 			    </div>
 
-					<div class="field transporte" style="display:none;">
+				<div class="field transporte" style="display:none;">
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Valor do Seguro (R$)</label>
 			        </p>
 			        <input type="text" name="transporte_seguro" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_seguro', true ); ?>" style="width:100%;padding:5px;">
 			    </div>
-					<input type="hidden" name="wp_admin_nfe" value="1" />
+
+				<input type="hidden" name="wp_admin_nfe" value="1" />
 			</div>
 			<?php
-
 		}
-
     function register_metabox_listar_nfe() {
-
         add_meta_box(
             'woocommernfe_informacoes',
             'Informações Fiscais (Opcional)',
@@ -769,13 +725,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'side',
             'high'
         );
-
     }
-
     function metabox_content_woocommernfe_informacoes( $post ){
-
         global $domain;
-
 ?>
 <div class="inside" style="padding:0!important;">
 		<div class="field">
@@ -861,90 +813,56 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 </div>
 <?php
-
     }
-
-
 	function add_order_status_column_header( $columns ) {
-
 		$new_columns = array();
-
 		foreach ( $columns as $column_name => $column_info ) {
-
 			$new_columns[ $column_name ] = $column_info;
-
 			if ( 'order_status' == $column_name ) {
-
 				$new_columns['nfe'] = __( 'Status NF-e' );
-
 			}
 		}
-
 		return $new_columns;
 	}
-
 	function add_order_status_column_content( $column ) {
-
 		global $post;
-
 		if ( 'nfe' == $column ) {
-
 			// Get the 'NF-e' informations
 			$nfe = get_post_meta( $post->ID, 'nfe', true );
-
 			// Get the order informations
 			$order = new WC_Order( $post->ID );
-
 			// If order has the status pending or cancelled, don't print 'NF-e' status
             if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
             	echo '<span class="nfe_none">-</span>';
-
             // Else if $nfe has information, check status from array
             } elseif ($nfe) {
-
 				// Define as false
 				$nfe_emitida = false;
-
             	foreach ( $nfe as $item ) {
-
             		// If array has any approved document define $nfe_emitida as true
             		if ( $item['status'] == 'aprovado' ) {
             			$nfe_emitida = true;
             		}
-
             	}
-
             	// Print depending of the case
             	if ( $nfe_emitida ) {
             		echo '<div class="nfe_success">NF-e Emitida</div>';
             	} else {
             		echo '<div class="nfe_alert">NF-e não emitida</div>';
             	}
-
             } else {
             	echo '<div class="nfe_alert">NF-e não emitida</div>';
             }
-
 		}
-
 	}
-
 	function add_order_meta_box_actions( $actions ) {
-
-
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
 		return $actions;
-
 	}
-
 	function add_order_bulk_actions() {
 		global $post_type, $post_status;
-
 		if ( $post_type == 'shop_order' ) {
-
-
 			if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending') return false;
-
 			?>
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
@@ -953,12 +871,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					  });
 			</script>
 			<?php
-
 		}
 	}
-
 	function style(){
-
 		?>
 		<style>
 		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
@@ -970,62 +885,38 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		.nfe_textarea{ min-width: 300px; min-height: 100px; }
 		</style>
 		<?php
-
 	}
-
 	function process_order_bulk_actions(){
-
 		global $typenow;
-
 		if ( 'shop_order' == $typenow ) {
-
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
-
 			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) ) return false;
 			if ( isset( $_REQUEST['post'] ) ) $order_ids = array_map( 'absint', $_REQUEST['post'] );
 			if ( empty( $order_ids ) ) return false;
-
 			if ($action == 'wc_nfe_emitir') WC_NFe()->emitirNFe( $order_ids );
-
 		}
-
 	}
-
 	function process_order_meta_box_actions( $post ){
-
 		$order_id = $post->id;
 		$post_status = $post->post_status;
 		if ($post_status == 'trash' || $post_status == 'wc-cancelled') return false;
-
 		WC_NFe()->emitirNFe( array( $order_id ) );
-
 	}
-
     function scripts(){
-
-        wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ) );
-        wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ) );
-
+        wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $this->version );
+        wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $this->version );
         wp_enqueue_style( 'woocommercenfe_admin_style' );
         wp_enqueue_script( 'woocommercenfe_admin_script' );
-
     }
-
-		function global_admin_scripts(){
-
+	function global_admin_scripts(){
         wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ) );
         wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
-
         wp_enqueue_style( 'woocommercenfe_table_style' );
         wp_enqueue_script( 'woocommercenfe_table_scripts' );
-
     }
-
     function customer_meta_fields( $fields ) {
-
         global $domain;
-
 		// Billing fields.
 		$new_fields['billing']['title'] = __( 'Endereço de Cobrança', $domain );
 		$new_fields['billing']['fields']['billing_first_name'] = $fields['billing']['fields']['billing_first_name'];
@@ -1051,7 +942,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'label' => __( 'Sexo', $domain ),
             'description' => ''
         );
-
 		$new_fields['billing']['fields']['billing_address_1'] = $fields['billing']['fields']['billing_address_1'];
 		$new_fields['billing']['fields']['billing_number'] = array(
 			'label' => __( 'Número', $domain ),
@@ -1067,16 +957,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		$new_fields['billing']['fields']['billing_country']  = $fields['billing']['fields']['billing_country'];
 		$new_fields['billing']['fields']['billing_state']    = $fields['billing']['fields']['billing_state'];
 		$new_fields['billing']['fields']['billing_phone']    = str_replace("?", "", $fields['billing']['fields']['billing_phone']);
-
 		if ( isset( $settings['cell_phone'] ) ) {
 			$new_fields['billing']['fields']['billing_cellphone'] = array(
 				'label' => __( 'Celular', $domain ),
 				'description' => ''
 			);
 		}
-
 		$new_fields['billing']['fields']['billing_email'] = $fields['billing']['fields']['billing_email'];
-
 		// Shipping fields.
 		$new_fields['shipping']['title'] = __( 'Customer Shipping Address', $domain );
 		$new_fields['shipping']['fields']['shipping_first_name'] = $fields['shipping']['fields']['shipping_first_name'];
@@ -1096,29 +983,20 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		$new_fields['shipping']['fields']['shipping_postcode'] = $fields['shipping']['fields']['shipping_postcode'];
 		$new_fields['shipping']['fields']['shipping_country']  = $fields['shipping']['fields']['shipping_country'];
 		$new_fields['shipping']['fields']['shipping_state']    = $fields['shipping']['fields']['shipping_state'];
-
 		return $new_fields;
-
 	}
-
     function user_column_billing_address( $address, $user_id ) {
 		$address['number']       = get_user_meta( $user_id, 'billing_number', true );
 		$address['neighborhood'] = get_user_meta( $user_id, 'billing_neighborhood', true );
-
 		return $address;
 	}
-
     function user_column_shipping_address( $address, $user_id ) {
 		$address['number']       = get_user_meta( $user_id, 'shipping_number', true );
 		$address['neighborhood'] = get_user_meta( $user_id, 'shipping_neighborhood', true );
-
 		return $address;
 	}
-
     function shop_order_billing_fields( $data ) {
-
         global $domain;
-
 		$billing_data['first_name'] = array(
 			'label' => __( 'Nome', $domain ),
 			'show'  => false
@@ -1196,30 +1074,21 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			'label' => __( 'CEP', $domain ),
 			'show'  => false
 		);
-
 		$billing_data['phone'] = array(
 			'label' => __( 'Telefone Fixo', $domain ),
 		);
-
 		if ( isset( $settings['cell_phone'] ) ) {
 			$billing_data['cellphone'] = array(
 				'label' => __( 'Celular', $domain ),
 			);
 		}
-
 		$billing_data['email'] = array(
 			'label' => __( 'E-mail', $domain ),
 		);
-
-
 		return $billing_data;
-
 	}
-
     function shop_order_shipping_fields( $data ) {
-
 			global $domain;
-
         $shipping_data['first_name'] = array(
 			'label' => __( 'Nome', $domain ),
 			'show'  => false
@@ -1268,16 +1137,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			'label' => __( 'CEP', $domain ),
 			'show'  => false
 		);
-
 		return $shipping_data;
-
 	}
-
     function customer_details_ajax( $customer_data ) {
-
         $user_id      = (int) trim( stripslashes( $_POST['user_id'] ) );
 		$type_to_load = esc_attr( trim( stripslashes( $_POST['type_to_load'] ) ) );
-
 		$custom_data = array(
 			$type_to_load . '_number'       => get_user_meta( $user_id, $type_to_load . '_number', true ),
 			$type_to_load . '_neighborhood' => get_user_meta( $user_id, $type_to_load . '_neighborhood', true ),
@@ -1289,12 +1153,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$type_to_load . '_sex'          => get_user_meta( $user_id, $type_to_load . '_sex', true ),
 			$type_to_load . '_cellphone'    => get_user_meta( $user_id, $type_to_load . '_cellphone', true )
 		);
-
 		return array_merge( $customer_data, $custom_data );
 	}
-
   function save_custom_shop_data( $post_id ) {
-
 		update_post_meta( $post_id, '_billing_number', woocommerce_clean( $_POST['_billing_number'] ) );
 		update_post_meta( $post_id, '_billing_neighborhood', woocommerce_clean( $_POST['_billing_neighborhood'] ) );
 		update_post_meta( $post_id, '_shipping_number', woocommerce_clean( $_POST['_shipping_number'] ) );
@@ -1306,20 +1167,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $post_id, '_billing_birthdate', woocommerce_clean( $_POST['_billing_birthdate'] ) );
 		update_post_meta( $post_id, '_billing_sex', woocommerce_clean( $_POST['_billing_sex'] ) );
 		update_post_meta( $post_id, '_billing_cellphone', woocommerce_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) );
-
 	}
-
 	function wc_api_save_custom_shop_data($order_id, $data){
-
 		$billing_address = $data['customer']['billing_address'];
 		$shipping_address = $data['customer']['shipping_address'];
-
 		update_post_meta( $order_id, '_billing_number', woocommerce_clean( $billing_address['number'] ) );
 		update_post_meta( $order_id, '_billing_neighborhood', woocommerce_clean( $billing_address['neighborhood'] ) );
-
 		update_post_meta( $order_id, '_shipping_number', woocommerce_clean( $shipping_address['number'] ) );
 		update_post_meta( $order_id, '_shipping_neighborhood', woocommerce_clean( $shipping_address['neighborhood'] ) );
-
 		update_post_meta( $order_id, '_billing_persontype', woocommerce_clean( $billing_address['persontype'] ) );
 		update_post_meta( $order_id, '_billing_cpf', woocommerce_clean( $billing_address['cpf'] ) );
 		update_post_meta( $order_id, '_billing_cnpj', woocommerce_clean( $billing_address['cnpj'] ) );
@@ -1327,13 +1182,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_post_meta( $order_id, '_billing_birthdate', woocommerce_clean( $billing_address['birthdate'] ) );
 		update_post_meta( $order_id, '_billing_sex', woocommerce_clean( $billing_address['sex'] ) );
 		update_post_meta( $order_id, '_billing_cellphone', woocommerce_clean( str_replace("?", "", $billing_address['cellphone']) ) );
-
 	}
-
     function save_informacoes_fiscais( $post_id ){
-
         if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
-
             $info = array(
 						'_nfe_classe_imposto'  => $_POST['classe_imposto'],
 						'_nfe_codigo_ean'      => $_POST['codigo_ean'],
@@ -1343,50 +1194,42 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
 						'_nfe_ind_escala'      => $_POST['ind_escala']
 						);
-
 						foreach ($info as $key => $value){
 							if (isset($value)) update_post_meta($post_id, $key, $value);
 						}
-
 						if ($_POST['ignorar_nfe']){
 							update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 						}else{
 							update_post_meta( $post_id, '_nfe_ignorar_nfe', 0 );
 						}
             if (is_numeric($_POST['origem']) || $_POST['origem']) update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
-
         }
-
 				if (get_post_type($post_id) == 'shop_order' && $_POST['wp_admin_nfe']){
-
 					$info = array(
-						'_nfe_modalidade_frete' => $_POST['modalidade_frete'],
-						'_nfe_transporte_forma_envio' => $_POST['transporte_forma_envio'],
-						'_nfe_transporte_volume'     => $_POST['transporte_volume'],
-						'_nfe_transporte_especie'     => $_POST['transporte_especie'],
+						'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
+						'_nfe_transporte_forma_envio'	=> $_POST['transporte_forma_envio'],
+						'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
+						'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
 						'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
-						'_nfe_transporte_peso_liquido'    => $_POST['transporte_peso_liquido'],
-						'_nfe_transporte_marca'    => $_POST['transporte_marca'],
-						'_nfe_transporte_numeracao'    => $_POST['transporte_numeracao'],
-						'_nfe_transporte_lacres'    => $_POST['transporte_lacres'],
-						'_nfe_transporte_cnpj'    => $_POST['transporte_cnpj'],
-						'_nfe_transporte_razao_social'    => $_POST['transporte_razao_social'],
-						'_nfe_transporte_ie'    => $_POST['transporte_ie'],
-						'_nfe_transporte_endereco'    => $_POST['transporte_endereco'],
-						'_nfe_transporte_estado'    => $_POST['transporte_estado'],
-						'_nfe_transporte_cidade'    => $_POST['transporte_cidade'],
-						'_nfe_transporte_cep'    => $_POST['transporte_cep'],
-						'_nfe_transporte_seguro'    => str_replace(',', '.', $_POST['transporte_seguro']),
+						'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
+						'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
+						'_nfe_transporte_marca' 		=> $_POST['transporte_marca'],
+						'_nfe_transporte_numeracao' 	=> $_POST['transporte_numeracao'],
+						'_nfe_transporte_lacres'    	=> $_POST['transporte_lacres'],
+						'_nfe_transporte_cnpj'  		=> $_POST['transporte_cnpj'],
+						'_nfe_transporte_razao_social'  => $_POST['transporte_razao_social'],
+						'_nfe_transporte_ie'    		=> $_POST['transporte_ie'],
+						'_nfe_transporte_endereco'  	=> $_POST['transporte_endereco'],
+						'_nfe_transporte_estado'    	=> $_POST['transporte_estado'],
+						'_nfe_transporte_cidade'    	=> $_POST['transporte_cidade'],
+						'_nfe_transporte_cep'   		=> $_POST['transporte_cep'],
+						'_nfe_transporte_seguro'    	=> str_replace(',', '.', $_POST['transporte_seguro']),
 					);
-
 					foreach ($info as $key => $value){
 						if (isset($value)) update_post_meta($post_id, $key, $value);
 					}
-
 				}
-
     }
-
 		function add_category_ncm($taxonomy){ ?>
 
 			<div class="form-field term-ncm-wrap">
@@ -1395,16 +1238,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				<p>Este valor será utilizado caso o NCM não esteja definido diretamente no produto. Se vazio, será utilizado o NCM geral definido nas configurações da Nota Fiscal.</p>
 			</div>
 			<?php
-
 		}
-
 		function edit_category_ncm($term, $taxonomy){
-
 			if(function_exists('get_term_meta')){
 				$ncm = get_term_meta($term->term_id, '_ncm', true);
 			}
-
-
 			?>
 
 			<tr class="form-field term-ncm-wrap">
@@ -1417,104 +1255,66 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</td>
 			</div>
 			<?php
-
 		}
-
 		function save_product_cat_ncm( $term_id, $tag_id ){
-
 			if ( isset( $_POST['term-ncm'] ) ) {
         update_term_meta( $term_id, '_ncm', $_POST['term-ncm']);
     	}
-
 		}
-
 		function is_categories_ncm_valid( $post_id ){
-
 			$product_cat = get_the_terms($post_id, 'product_cat');
 			$product_ncm = get_post_meta($post_id, '_nfe_codigo_ncm', true);
-
 			if($product_ncm || !is_array($product_cat)) return true;
-
 			$ncm_categories = array();
-
 			foreach($product_cat as $cat){
-
 				if(function_exists('get_term_meta')){
 					$ncm = get_term_meta($cat->term_id, '_ncm', true);
 				}else{
 					$ncm = null;
 				}
-
 	      if($ncm) $ncm_categories[] = $ncm;
 	    }
-
 			if(count($ncm_categories) > 1){
-
 				return false;
-
 			}
-
 			return true;
-
 		}
-
-
 		function cat_ncm_warning(){
-
 			global $post;
-
 			$post_type = get_post_type($post);
-
 			if($post_type == 'product' && !$this->is_categories_ncm_valid($post->ID)){ ?>
 
 				<div class="error" style="background-color: #f2dede; color: #a94442;"><p><strong>Atenção:</strong> Duas ou mais categorias deste produto possuem o NCM definido e, caso diferentes, podem ter o valor incorreto durante a emissão da NF-e.</p></div>
 
 			<?php }
-
 		}
-
 		function nfe_callback(){
-
 			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
-
 				$nfe_data = $_POST['data'];
 				$nfe_order_id = (int) $nfe_data['ID'];
-
 				$order_key = esc_attr($_GET['order_key']);
 				$order_id = (int) $_GET['order_id'];
-
 				$order = wc_get_order($order_id);
-
 				if ($order->order_key != $order_key || $nfe_order_id != $order_id || ! $order) {
 					header( 'HTTP/1.1 401 Unauthorized' );
 					exit;
 				}
-
 				$order_nfe_data = get_post_meta($order_id, 'nfe', true);
-
 				$is_new = true;
-
 				if ( is_array($order_nfe_data) ) {
-
 					foreach($order_nfe_data as $key => $order_nfe){
-
 						$current_status = $order_nfe['status'];
 						$received_status = $_POST['status'];
-
 						if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status) {
 							$order_nfe_data[$key]['status'] = $received_status;
 						}
-
 						if ( $order_nfe['uuid'] == $_POST['uuid'] ) {
 							$is_new = false;
 						}
-
 					}
-
 				} else {
 					$order_nfe_data = array();
 				}
-
 				if ( $is_new ) {
 					$order_nfe_data[] = array(
 						'uuid'   => (string) $_POST['uuid'],
@@ -1528,97 +1328,62 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 				}
-
 				update_post_meta($order_id, 'nfe', $order_nfe_data);
-
 			}
-
 		}
-
 		function order_data_after_billing_address( $order ){
-
 			global $domain;
-
 			$html = '<div class="clear"></div>';
 			$html .= '<div class="wcbcf-address">';
-
 			if ( ! $order->get_formatted_billing_address() ) {
 				$html .= '<p class="none_set"><strong>' . __( 'Endereço', $domain ) . ':</strong> ' . __( 'Nenhum endereço de cobrança definido.', $domain ) . '</p>';
 			} else {
-
 				$html .= '<p><strong>' . __( 'Endereço', $domain ) . ':</strong><br />';
 					$html .= $order->get_formatted_billing_address();
 				$html .= '</p>';
 			}
-
 			$html .= '<h4>' . __( 'Informações do cliente', $domain ) . '</h4>';
-
 			$html .= '<p>';
-
 			// Person type information.
 			if ( 1 == $order->billing_persontype ) $html .= '<strong>' . __( 'CPF', $domain ) . ': </strong>' . esc_html( $order->billing_cpf ) . '<br />';
 			if ( 2 == $order->billing_persontype ) {
-
 				$html .= '<strong>' . __( 'Razão Social', $domain ) . ': </strong>' . esc_html( $order->billing_company ) . '<br />';
 				$html .= '<strong>' . __( 'CNPJ', $domain ) . ': </strong>' . esc_html( $order->billing_cnpj ) . '<br />';
 				if ( ! empty( $order->billing_ie ) ) {
 					$html .= '<strong>' . __( 'I.E', $domain ) . ': </strong>' . esc_html( $order->billing_ie ) . '<br />';
 				}
-
 			}
-
 			if ( ! empty( $order->billing_birthdate ) ) {
-
 				// Birthdate information.
 				$html .= '<strong>' . __( 'Data de nascimento', $domain ) . ': </strong>' . esc_html( $order->billing_birthdate ) . '<br />';
-
 				// Sex Information.
 				$html .= '<strong>' . __( 'Sexo', $domain ) . ': </strong>' . esc_html( $order->billing_sex ) . '<br />';
-
 			}
-
 			$html .= '<strong>' . __( 'Telefone', $domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->billing_cellphone) ) . '<br />';
-
 			// Cell Phone Information.
 			if ( ! empty( str_replace("?", "", $order->billing_cellphone) ) ) {
 				$html .= '<strong>' . __( 'Telefone Cel.', $domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->billing_cellphone) ) . '<br />';
 			}
-
 			$html .= '<strong>' . __( 'Email', $domain ) . ': </strong>' . make_clickable( esc_html( $order->billing_email ) ) . '<br />';
 			$html .= '</p>';
 			$html .= '</div>';
-
 			echo $html;
-
 		}
-
 		public function order_data_after_shipping_address( $order ) {
-
 			global $post, $domain;
-
 			$html = '<div class="clear"></div>';
 			$html .= '<div class="wcbcf-address">';
-
 			if ( ! $order->get_formatted_shipping_address() ) {
-
 				$html .= '<p class="none_set"><strong>' . __( 'Endereço', $domain ) . ':</strong> ' . __( 'Nenhum endereço de envio definido.', $domain ) . '</p>';
-
 			} else {
-
 				$html .= '<p><strong>' . __( 'Endereço', $domain ) . ':</strong><br />';
 				$html .= $order->get_formatted_shipping_address();
 				$html .= '</p>';
-
 			}
-
 			if ( apply_filters( 'woocommerce_enable_order_notes_field', 'yes' == get_option( 'woocommerce_enable_order_comments', 'yes' ) ) && $post->post_excerpt ) {
 				$html .= '<p><strong>' . __( 'Nota do cliente', $domain ) . ':</strong><br />' . nl2br( esc_html( $post->post_excerpt ) ) . '</p>';
 			}
-
 			$html .= '</div>';
-
 			echo $html;
-
 		}
-
 }

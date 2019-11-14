@@ -8,7 +8,7 @@ class WooCommerceNFe_Frontend extends WooCommerceNFe {
 
     public static function scripts(){
 
-        $version = '2.8.3';
+        $version = $this->version;
         $array = array();
 
         $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
