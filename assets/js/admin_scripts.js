@@ -152,14 +152,48 @@ jQuery( function ( $ ) {
 
     };
 
+    show_hide_fields = function(){
+
+      if( this.value == 2 ) {
+        $("._billing_cnpj_field").show();
+        $("._billing_ie_field").show();
+        $("._billing_company_field").show();
+
+        $("._billing_cpf_field").hide();
+      } else {
+        $("._billing_cpf_field").show();
+
+        $("._billing_cnpj_field").hide();
+        $("._billing_ie_field").hide();
+        $("._billing_company_field").hide();
+      }
+    }
+
+    load_fields = function(){
+      if(  $('#_billing_persontype').val() == 2 ) {
+        $("._billing_cnpj_field").show();
+        $("._billing_ie_field").show();
+        $("._billing_company_field").show();
+
+        $("._billing_cpf_field").hide();
+      } else {
+        $("._billing_cpf_field").show();
+
+        $("._billing_cnpj_field").hide();
+        $("._billing_ie_field").hide();
+        $("._billing_company_field").hide();
+      }
+    }
+
 
     $( 'a.load_customer_billing' ).on( 'click', load_billing );
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
     $( '#customer_user' ).on( 'change', change_customer_user );
 
-    $('#add-shipping-info').on('click', add_shipping_info);
+    $('#wmbr-add-shipping-info').on('click', add_shipping_info);
     $('.nfe-table-body').on('click', '.wmbr-remove-shipping-info', remove_shipping_info);
 
-
+    $('#_billing_persontype').on('change', show_hide_fields);
+    $('.edit_address').on('click', load_fields);
 
 });
