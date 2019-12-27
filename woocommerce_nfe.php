@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.8.0
+* Version: 2.9.11
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -13,24 +13,17 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
-
-
 class WooCommerceNFe {
-
 	public $domain = 'WooCommerceNFe';
-
+	public $version = '2.9.11';
 	protected static $_instance = NULL;
 	public static function instance() {
-
 		if ( is_null( self::$_instance ) ) {
 			self::$_instance = new self();
 		}
 		return self::$_instance;
 	}
-
 	function init(){
-
-
 		global $domain;
 		add_action( 'admin_notices', array($this, 'display_messages') );
 		// Verify WooCommerce Plugin
@@ -54,6 +47,8 @@ class WooCommerceNFe {
 		$this->includes();
 		$this->init_backend();
 		$this->init_frontend();
+		add_action( 'admin_init', array($this, 'wmbr_compatibility_issues') );
+		add_action( 'wp_ajax_force_digital_certificate_update', array($this, 'force_digital_certificate_update') );
 		$WooCommerceNFe_Api = new WooCommerceNFe_Api;
 		$WooCommerceNFe_Api->init();
 		// Set Global Vars
@@ -86,9 +81,7 @@ class WooCommerceNFe {
 		do_action('woocommercenfe_loaded');
 	}
 	function init_backend(){
-
 		$WC_NFe_Backend = new WooCommerceNFe_Backend();
-
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
 
 		// Get value from 'Emissão Automática' option
@@ -100,7 +93,7 @@ class WooCommerceNFe {
 		} else if ( $option == 2 ) {
 			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
 		}
-    
+
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
@@ -118,41 +111,42 @@ class WooCommerceNFe {
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array($WC_NFe_Backend, 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array($WC_NFe_Backend, 'update_settings' ));
 		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'global_admin_scripts') );
-		add_action ('product_cat_add_form_fields', array($WC_NFe_Backend, 'add_category_ncm'));
-		add_action ('product_cat_edit_form_fields', array($WC_NFe_Backend, 'edit_category_ncm'), 10, 2);
-		add_action('edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
-		add_action('create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
-		add_action('admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
-		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
-			/*
-			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
-			@author Claudio Sanches
-			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
-			*/
-			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
-			add_filter( 'woocommerce_customer_meta_fields', array( $WC_NFe_Backend, 'customer_meta_fields' ) );
-			add_filter( 'woocommerce_user_column_billing_address', array( $WC_NFe_Backend, 'user_column_billing_address' ), 1, 2 );
-			add_filter( 'woocommerce_user_column_shipping_address', array( $WC_NFe_Backend, 'user_column_shipping_address' ), 1, 2 );
-			add_filter( 'woocommerce_admin_billing_fields', array( $WC_NFe_Backend, 'shop_order_billing_fields' ) );
-			add_filter( 'woocommerce_admin_shipping_fields', array( $WC_NFe_Backend, 'shop_order_shipping_fields' ) );
-			add_filter( 'woocommerce_found_customer_details', array( $WC_NFe_Backend, 'customer_details_ajax' ) );
-			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
-			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
-			add_filter( 'woocommerce_localisation_address_formats', array( 'WooCommerceNFe_Frontend', 'localisation_address_formats' ) );
-    		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
-			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
+		add_action( 'product_cat_add_form_fields', array($WC_NFe_Backend, 'add_category_ncm'));
+		add_action( 'product_cat_edit_form_fields', array($WC_NFe_Backend, 'edit_category_ncm'), 10, 2);
+		add_action( 'edited_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action( 'create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
+		add_action( 'admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
+		add_filter( "plugin_action_links_".plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
+		// NFe autommatic
+		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+		if ( $option == 1 || $option == 'yes' ) {
+			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		} else if ( $option == 2 ) {
+			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
 		}
 	}
 	function init_frontend(){
+		global $pagenow;
 
-		$WC_NFe_Frontend = new WooCommerceNFe_Frontend();
-		add_action( 'wp_enqueue_scripts', array('WooCommerceNFe_Frontend', 'scripts') );
-		if (get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'){
-			/*
-			Custom plugin: WooCommerce Extra Checkout Fields for Brazil
-			@author Claudio Sanches
-			@link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
-			*/
+		// Compatibility with WooCommerce Admin 0.20.0 or higher
+		if ( $this->wmbr_is_plugin_active('woocommerce-admin/woocommerce-admin.php') && $pagenow != 'admin.php' && $_GET['page'] != 'wc-admin' ) {
+			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_before_notices' ), -9999 );
+			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_after_notices' ), PHP_INT_MAX );
+		}
+
+		/**
+		 * Plugin: Brazilian Market on WooCommerce (Customized)
+		 * @author Claudio Sanches
+		 * @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
+		**/
+		if (
+			get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes' &&
+			!$this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')
+		){
+			$WC_NFe_Frontend = new WooCommerceNFe_Frontend();
+			$WC_NFe_Backend = new WooCommerceNFe_Backend();
+			// Frontend
+			add_action( 'wp_enqueue_scripts', array($WC_NFe_Frontend, 'scripts') );
 			add_filter( 'woocommerce_billing_fields', array($WC_NFe_Frontend, 'billing_fields') );
 			add_filter( 'woocommerce_shipping_fields', array($WC_NFe_Frontend, 'shipping_fields') );
 			add_action( 'woocommerce_checkout_process', array($WC_NFe_Frontend, 'valide_checkout_fields') );
@@ -161,6 +155,18 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_order_formatted_billing_address', array( $WC_NFe_Frontend, 'order_formatted_billing_address' ), 1, 2 );
 			add_filter( 'woocommerce_order_formatted_shipping_address', array( $WC_NFe_Frontend, 'order_formatted_shipping_address' ), 1, 2 );
 			add_filter( 'woocommerce_my_account_my_address_formatted_address', array($WC_NFe_Frontend, 'my_account_my_address_formatted_address' ), 1, 3 );
+			// Backend
+			add_filter( 'woocommerce_customer_meta_fields', array( $WC_NFe_Backend, 'customer_meta_fields' ) );
+			add_filter( 'woocommerce_user_column_billing_address', array( $WC_NFe_Backend, 'user_column_billing_address' ), 1, 2 );
+			add_filter( 'woocommerce_user_column_shipping_address', array( $WC_NFe_Backend, 'user_column_shipping_address' ), 1, 2 );
+			add_filter( 'woocommerce_admin_billing_fields', array( $WC_NFe_Backend, 'shop_order_billing_fields' ) );
+			add_filter( 'woocommerce_admin_shipping_fields', array( $WC_NFe_Backend, 'shop_order_shipping_fields' ) );
+			add_filter( 'woocommerce_found_customer_details', array( $WC_NFe_Backend, 'customer_details_ajax' ) );
+			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
+			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
+    	add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
+			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 		}
 	}
 	function includes(){
@@ -206,20 +212,25 @@ class WooCommerceNFe {
 		$messages[] = $message;
 		update_option('woocommercenfe_success_messages', $messages);
 	}
-	function validadeCertificado(){
-
-		if (get_transient('validadeCertificado')) {
+	function validadeCertificado( $force_update = false, $return_ajax = false ){
+		if (get_transient('validadeCertificado') && !$force_update ) {
 			$response = get_transient('validadeCertificado');
 		} else {
+			if ( !isset(WC_NFe()->settings) ) {
+				if ($return_ajax) return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Credenciais de acesso não cadastradas. Por favor, informe-as para obter a validade do certificado digital A1.' ), JSON_UNESCAPED_UNICODE );
+				return false;
+			}
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->validadeCertificado();
 		}
 		if (isset($response->error)){
             set_transient( 'validadeCertificado', $response, 600 );
 			WC_NFe()->add_error( __('Erro: '.$response->error, $this->domain) );
+			if ($return_ajax) return json_encode( array( 'status' => 'error', 'msg' => $response->error ), JSON_UNESCAPED_UNICODE );
 			return false;
 		} else {
             set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
+            if ($return_ajax) return json_encode( array( 'status' => 'success', 'msg' => $response ), JSON_UNESCAPED_UNICODE );
 			if ($response < 45 && $response >= 1){
 				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $this->domain) );
 				return false;
@@ -229,16 +240,11 @@ class WooCommerceNFe {
 				return false;
 			}
 		}
-
 	}
-
 	// Depreciated
 	function emitirNFeAutomaticamente( $order_id ){
-
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-
 		if ( $option == 1 || $option == 'yes' ) {
-
 			$nfe = get_post_meta( $order_id, 'nfe', true );
 			$nfce = get_post_meta( $order_id, 'nfce', true );
 
@@ -254,65 +260,42 @@ class WooCommerceNFe {
 			}
 			return false;
 		}
-
 	}
-
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
-
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
 		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
-
 			// Double check the order status
 			$order = wc_get_order( $order_id );
 			$order_status  = $order->get_status();
-
 			// If the post is Processing (Processando) or Completed (Concluído)
 			if ( $order_status == 'processing' || $order_status == 'completed' ) {
-
 				// Get the field with all "NF-e" informations
 				$nfes = get_post_meta( $order_id, 'nfe', true );
-
 				// Check if is empty or invalid
 				if( !empty($nfes) && is_array($nfes) ) {
-
 					// If exists, find for any approved document
 					foreach ( $nfes as $nfe ) {
-
 						if ( $nfe['status'] == 'aprovado' ) {
 								return false;
 						}
-
 					}
-
 				}
-
 				// If all conditions was match, call function
 				self::emitirNFe( array( $order_id ) );
-
 			}
-
 		}
-
 	}
-
 	function emitirNFe( $order_ids = array() ){
-
 		foreach ($order_ids as $order_id) {
-
 			$data = self::order_data( $order_id );
-
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
-
 			if (isset($response->error) || $response->status == 'reprovado') {
-
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 				$mensagem .= '<ul style="padding-left:20px;">';
 				$mensagem .= '<li>'.$response->error.'</li>';
-
 				if (isset($response->log)){
 					if ($response->log->xMotivo){
 						if(isset($response->log->aProt[0]->xMotivo)){
@@ -329,20 +312,16 @@ class WooCommerceNFe {
 						}
 					}
 				}
-
 				$mensagem .= '</ul>';
 				WC_NFe()->add_error( $mensagem );
 				return false;
 			} else {
 				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
 			}
-
 			// If API respond with status, register 'NF-e'
 			if ( is_object($response) && $response->status ) {
-
 				$nfe = get_post_meta( $order_id, 'nfe', true );
 				if (!$nfe) $nfe = array();
-
 				$nfe[] = array(
 					'uuid'   => (string) $response->uuid,
 					'status' => (string) $response->status,
@@ -354,14 +333,11 @@ class WooCommerceNFe {
 					'url_danfe' => (string) $response->danfe,
 					'data' => date_i18n('d/m/Y'),
 				);
-
 				update_post_meta( $order_id, 'nfe', $nfe );
 				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
 				return $nfe;
 			}
-
 		}
-
 	}
 
 	function emitirNFCe( $order_ids = array() ){
@@ -416,14 +392,10 @@ class WooCommerceNFe {
 	}
 	function order_data( $post_id, $modelo = 1 ){
 		global $wpdb;
-
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
 		$payment_methods       = get_option('wc_settings_woocommercenfe_payment_methods', array());
 		$payment_keys = array_keys($payment_methods);
-
-
 		$order = new WC_Order( $post_id );
-
 		//Antigo código EAN
 		$default_gtin            = get_option('wc_settings_woocommercenfe_ean');
 		$default_gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
@@ -470,14 +442,26 @@ class WooCommerceNFe {
 			}
 		}
 		$total_discount = $order->get_total_discount() + $total_discount;
-
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
 		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $oder );
 		$order_key = $order->order_key;
+
+		$natureza_operacao_pedido = get_post_meta($order->id, '_nfe_natureza_operacao_pedido', true);
+		if ( $natureza_operacao_pedido ) {
+			$natureza_operacao = $natureza_operacao_pedido;
+		} else {
+			$natureza_operacao = get_option('wc_settings_woocommercenfe_natureza_operacao');
+		}
+
+		if ( isset($_POST['natureza_operacao_pedido']) && $_POST['natureza_operacao_pedido'] != '' && $_POST['natureza_operacao_pedido'] != $natureza_operacao ) {
+			$natureza_operacao = $_POST['natureza_operacao_pedido'];
+		}
+
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
+			'origem'			=> 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
@@ -496,23 +480,18 @@ class WooCommerceNFe {
 
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
-
 			//Caso pagseguro, verificar post meta para método de pagamento
 			//Senão, pegar valor salvo nas configurações
 			if($order->payment_method == 'pagseguro'){
-
 				$payment_type = get_post_meta($post_id, __( 'Payment type', 'woocommerce-pagseguro' ), true);
-
 				if( strtolower($payment_type) == 'boleto'){
 					$data['pedido']['forma_pagamento'] = '15';
 				}elseif($payment_type == 'Cartão de Crédito'){
 					$data['pedido']['forma_pagamento'] = '03';
 				}
-
 			}else{
 				$data['pedido']['forma_pagamento'] = $payment_methods[$order->payment_method];
 			}
-
 		}
 
 		if ($modelo == 2) {
@@ -579,26 +558,20 @@ class WooCommerceNFe {
 		$bundles = array();
 		if(!isset($data['produtos'])) $data['produtos'] = array();
 		foreach ($order->get_items() as $key => $item){
-
 			$product      = $order->get_product_from_item( $item );
 			$product_type = $product->get_type();
 			$product_id   = $item['product_id'];
-
 			$bundled_by = isset($item['bundled_by']);
 			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
 				$bundled_by = $item->meta_exists('_bundled_by');
 			}
-
 			$variation_id = $item['variation_id'];
 			if( $product_type == 'bundle' || $product_type == 'yith_bundle' || $product_type == 'mix-and-match' || $bundled_by ){
 				$bundles[] = $item;
 				continue;
 			}
-
 			$product_info = self::get_product_nfe_info($item, $order);
-
 			$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
-
 			if($ignorar_nfe == 1){
 				$data['pedido']['total'] -= $item['line_subtotal'];
                 if ($coupons_percentage){
@@ -621,14 +594,12 @@ class WooCommerceNFe {
 		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
-
 	  //Default transportadora info
 		$shipping_method = @array_shift($order->get_shipping_methods());
 		$shipping_method_id = $shipping_method['method_id'];
 		if(strpos($shipping_method_id, ':')){
 			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
 		}
-
 		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
 		if($include_shipping_info == 'on' && isset($transportadoras[$shipping_method_id])){
 			$transp = $transportadoras[$shipping_method_id];
@@ -640,59 +611,45 @@ class WooCommerceNFe {
 			$data['transporte']['cidade']       = $transp['city'];
 			$data['transporte']['cep']          = $transp['cep'];
 		}
-
 		$order_specifics = array(
 			'volume' => '_nfe_transporte_volume',
 			'especie' => '_nfe_transporte_especie',
 			'peso_bruto' => '_nfe_transporte_peso_bruto',
 			'peso_liquido' => '_nfe_transporte_peso_liquido'
 		);
-
 		foreach($order_specifics as $api_key => $meta_key){
-
 			$value = $_POST[str_replace('_nfe_', '', $meta_key)];
 			if (!isset($value)) $value = get_post_meta($post_id, $meta_key, true);
 			if ($value){
 				$data['transporte'][$api_key] = $value;
 			}
-
 		}
-
 		return $data;
-
 	}
-
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
 		$product_id  = $item['product_id'];
 		$product     = $order->get_product_from_item( $item );
 		$ignorar_nfe = get_post_meta($product_id, '_nfe_ignorar_nfe', true);
-
 		//Antigo código ean
 		$codigo_gtin  = get_post_meta($product_id, '_nfe_codigo_ean', true);
 		$gtin_tributavel = get_post_meta($product_id, '_nfe_gtin_tributavel', true);
-
 		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
 		$codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
 		$origem      = get_post_meta($product_id, '_nfe_origem', true);
 		$imposto     = get_post_meta($product_id, '_nfe_classe_imposto', true);
 		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
-
 		$peso        = $product->get_weight();
 		if (!$peso){
 			$peso = '0.100';
 		}
-
 		if (!$codigo_gtin){
 			$codigo_gtin = get_option('wc_settings_woocommercenfe_ean');
 		}
-
 		if(!$gtin_tributavel){
 			$gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
 		}
-
-
 		if (!$codigo_ncm){
 			$product_cat = get_the_terms($product_id, 'product_cat');
 			if(is_array($product_cat)){
@@ -700,7 +657,6 @@ class WooCommerceNFe {
 					if(function_exists('get_term_meta')){
 						$ncm = get_term_meta($cat->term_id, '_ncm', true);
 					}
-
 		      if($ncm){
 						$codigo_ncm = $ncm;
 						break;
@@ -718,19 +674,14 @@ class WooCommerceNFe {
 		if (!$imposto){
 			$imposto = get_option('wc_settings_woocommercenfe_imposto');
 		}
-
-
 		if(!$ind_escala){
 			$ind_escala = get_option('wc_settings_woocommercenfe_ind_escala');
 			if($ind_escala == 'null') $ind_escala = '';
 		}
-
 		if(!$cnpj_fabricante){
 			$cnpj_fabricante = get_option('wc_settings_woocommercenfe_cnpj_fabricante');
 		}
-
 		$variacoes = ''; //Used to append variation name to product name
-
 		foreach (array_keys($item['item_meta']) as $meta){
 			if (strpos($meta,'pa_') !== false) {
 				$atributo = $item[$meta];
@@ -741,7 +692,6 @@ class WooCommerceNFe {
 			}
 		}
 			$product_active_price = $order->get_item_subtotal( $item, false, false );
-
 			$info = array(
 				'nome' => $item['name'].$variacoes, // Nome do produto
 				'sku' => $product->get_sku(), // Código identificador - SKU
@@ -755,33 +705,25 @@ class WooCommerceNFe {
 				'unidade' => 'UN', // Unidade de medida da quantidade de itens
 				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
 				'origem' => (int) $origem, // Origem do produto
-				'subtotal' => number_format($product->get_price(), 2, '.', '' ), //[Felipe] Preço unitário do produto - sem descontos
-				'total' => number_format($product->get_price()*$item['qty'], 2, '.', '' ), //[Felipe] Preço total (quantidade x preço unitário) - sem descontos
+				'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
+				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
-
 			return $info;
-
 	}
-
 	function set_bundle_products_array( $bundles, $order){
-
 		$total_bundle = 0;
 		$total_products = 0;
 		$bundle_products = array();
-
 		foreach($bundles as $item){
 			$product = $order->get_product_from_item( $item );
 			$product_type = $product->get_type();
 			$product_price = $product->get_price();
-
 			$bundled_by = isset($item['bundled_by']);
 			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
 				$bundled_by = $item->meta_exists('_bundled_by');
 			}
-
 			$product_total = $product_price * $item['qty'];
-
 			if($bundled_by){
 				$total_products += $product_total;
 				if(!isset($bundle_products[$item['product_id']])){
@@ -797,46 +739,30 @@ class WooCommerceNFe {
 			}elseif($product_type == 'yith_bundle'){
 				$total_bundle += $product_price*$item['qty'];
 			}elseif($product_type == 'mix-and-match'){
-
 				$total_products_bundle = 0;
 				$mnm_products_price = 0;
 				$mnm_qty = $item['qty'];
-
 				foreach ( $order->get_items() as $key => $item ) {
-
 					// Get if the product belongs to Mix and Match to calculate discount
 					$mnm_configs = wc_get_order_item_meta( $key, '_mnm_config', true);
-
 					if ( $mnm_configs ) {
-
 						// Get the total and quantity from Mix and Match bundle
 						$mnm_product_price_total = wc_get_order_item_meta( $key, '_line_subtotal', true); // Get subtotal to aply coupon discount after, line_total aplies this discount before needed
 						$mnm_product_price_qty = wc_get_order_item_meta( $key, '_qty', true);
-
 						// Use the products inside the bundle
 						foreach ( $mnm_configs as $mnm_config ) {
-
 							// Load the product
 							$product_mnm = wc_get_product( $mnm_config['product_id'] );
-
 							// Store the discount from bundle
 							$mnm_products_price += $product_mnm->get_price() * ( $mnm_config['quantity'] * $mnm_product_price_qty );
-
 						}
-
 						// Update total discount
 						$mnm_products_price -= $mnm_product_price_total;
-
 					}
-
 				}
-
 				$total_discount = $mnm_products_price;
-
 			}
-
 		}
-
 		if($total_products < $total_bundle && $product_type != 'mix-and-match'){
 			end($bundle_products);
 			$end_key = key($bundle_products);
@@ -858,33 +784,21 @@ class WooCommerceNFe {
 	function default_plugin_url( $url ){
 		return str_replace('inc/', '', $url);
 	}
-
-
 	public function get_pagseguro_bandeira($order_id){
-
 		$payment_type = get_post_meta($order_id, __( 'Payment method', 'woocommerce-pagseguro' ), true);
 		$payment_code = '99';
-
 		$bandeiras = $this->get_bandeiras_list();
-
 		$payment_type = str_replace(array('Cartão de crédito', 'Cartão de débito'), '', $payment_type);
 		$payment_type = trim($payment_type);
-
 		foreach($bandeiras as $code => $brand){
-
 			if(stripos($brand, $payment_type) !== false){
 				$payment_code = $code;
 				break;
 			}
-
 		}
-
 		return $payment_code;
-
 	}
-
 	public function get_bandeiras_list(){
-
 		$bandeiras = array(
 			'01' => 'Visa / Visa Electron',
 			'02' => 'Mastercard / Maestro',
@@ -896,12 +810,47 @@ class WooCommerceNFe {
 			'08' => 'Aura',
 			'09' => 'Cabal'
 		);
-
 		return $bandeiras;
-
 	}
-
-
+	/**
+	 * Config button
+	**/
+	public static function plugin_add_settings_link( $links ) {
+	    $action_links = array(
+	      'settings' => '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) . '" aria-label="Visualizar Configurações">Configurações</a>',
+	    );
+	    return array_merge( $action_links, $links );
+	}
+	/**
+	 * Return alerts to users from plugins that has incompatibility
+	**/
+	public function wmbr_compatibility_issues() {
+		if ( isset($_POST['action']) ) return;
+		$plugins_list = array(
+			'redis-cache/redis-cache.php' => 'Redis Object Cache'
+		);
+		foreach ( $plugins_list as $plugin_path => $plugin_name ) {
+			if ( $this->wmbr_is_plugin_active($plugin_path) ) {
+				echo '<div class="error">
+						<p>O plugin <b>'.$plugin_name.'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>
+						<p>Por favor, desative-o para prosseguir com as emissões de Nota Fiscal.</p>
+					</div>';
+			}
+		}
+	}
+	/**
+	 * Function to handle ajax requisistion for force digital certificate update
+	**/
+	public function force_digital_certificate_update() {
+		echo $this->validadeCertificado( true, true );
+		wp_die();
+	}
+	/**
+	 * Custom function to verify if plugin is active
+	**/
+	public function wmbr_is_plugin_active( $plugin ) {
+		return in_array( $plugin, (array) get_option( 'active_plugins', array() ) );
+	}
 }
 
 class WebmaniaBR_Rest_Controller extends WP_REST_Controller {
