@@ -309,7 +309,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             	),
                 'default' => '0',
                 'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
-            ),  
+            ),
 						'envio_email' => array(
 							'name' => __( 'Envio automático de email', $domain ),
 							'type' =>'checkbox',
@@ -913,6 +913,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				$nfe_emitida = false;
         $nfce_emitida = false;
 
+						if ($nfe)
             	foreach ( $nfe as $item ) {
 
             		// If array has any approved document define $nfe_emitida as true
@@ -922,6 +923,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
             	}
 
+						if ($nfce)
             	foreach ( $nfce as $item ) {
 
             		// If array has any approved document define $nfe_emitida as true

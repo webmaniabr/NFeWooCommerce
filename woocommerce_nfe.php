@@ -1,10 +1,10 @@
 <?php
 /**
-* Plugin Name: Nota Fiscal Eletrônica WooCommerce
-* Plugin URI: webmaniabr.com
+* Plugin Name: Nota Fiscal Eletrônica WooCommerce - Update por Shirkit
+* Plugin URI: shirkit.webmaniabr.com
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
-* Author URI: https://webmaniabr.com
+* Author URI: https://github.com/shirkit
 * Version: 2.8.0
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
@@ -100,7 +100,7 @@ class WooCommerceNFe {
 		} else if ( $option == 2 ) {
 			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
 		}
-    
+
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
@@ -258,12 +258,19 @@ class WooCommerceNFe {
 	}
 
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+		self::emitirNFeAutomaticamenteWithForce($order_id, false);
+	}
+
+
+	function emitirNFeAutomaticamenteWithForce( $order_id, $force ) {
 
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
 
+		$force = apply_filters('webmaniabr_emissao_automatica', $force,  $option, $order_id);
+
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
-		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
+		if ( ( $option == 1 || $option == 2 || $option == 'yes' || $force ) && get_post_type( $order_id ) == 'shop_order' ) {
 
 			// Double check the order status
 			$order = wc_get_order( $order_id );
@@ -274,6 +281,7 @@ class WooCommerceNFe {
 
 				// Get the field with all "NF-e" informations
 				$nfes = get_post_meta( $order_id, 'nfe', true );
+				$nfces = get_post_meta( $order_id, 'nfce', true );
 
 				// Check if is empty or invalid
 				if( !empty($nfes) && is_array($nfes) ) {
@@ -289,8 +297,27 @@ class WooCommerceNFe {
 
 				}
 
+				if( !empty($nfces) && is_array($nfces) ) {
+
+					// If exists, find for any approved document
+					foreach ( $nfces as $nfce ) {
+
+						if ( $nfce['status'] == 'aprovado' ) {
+								return false;
+						}
+
+					}
+
+				}
+
 				// If all conditions was match, call function
-				self::emitirNFe( array( $order_id ) );
+				$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
+				if ($tipo == 'nfe') {
+				  return self::emitirNFe( array( $order_id ) );
+			  } else if ($tipo == 'nfce') {
+					return self::emitirNFCe( array( $order_id ) );
+				}
+				return false;
 
 			}
 
@@ -395,6 +422,10 @@ class WooCommerceNFe {
 				WC_NFe()->add_error( $mensagem );
 				return false;
 			} else {
+				WC_NFe()->add_success( 'NFC-e emitida com sucesso do Pedido #'.$order_id );
+			}
+
+			if ( is_object($response) && $response->status ) {
 				$nfce = get_post_meta( $order_id, 'nfce', true );
 				if (!$nfce) $nfce = array();
 				$nfce[] = array(
@@ -474,7 +505,7 @@ class WooCommerceNFe {
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
-		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $oder );
+		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $order );
 		$order_key = $order->order_key;
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
@@ -939,10 +970,14 @@ class WebmaniaBR_Rest_Controller extends WP_REST_Controller {
   public function get_nota_fiscal( WP_REST_Request $request ) {
     //Let Us use the helper methods to get the parameters
     $id = $request->get_param( 'id' );
-		if (!$id)
-			return false;
+		$force = $request->get_param( 'force' );
+		if (!$force)
+			$force = false;
 
-		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamente($id);
+		if (!$id)
+			return array(false);
+
+		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamenteWithForce($id, $force);
 
 		if (!$return) {
 			$nfe = get_post_meta( $id, 'nfe', true );
