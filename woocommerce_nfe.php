@@ -258,12 +258,19 @@ class WooCommerceNFe {
 	}
 
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+		self::emitirNFeAutomaticamenteWithForce($order_id, false);
+	}
+
+
+	function emitirNFeAutomaticamenteWithForce( $order_id, $force ) {
 
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
 
+		$force = apply_filters('webmaniabr_emissao_automatica', $force,  $option, $order_id);
+
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
-		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
+		if ( ( $option == 1 || $option == 2 || $option == 'yes' || $force ) && get_post_type( $order_id ) == 'shop_order' ) {
 
 			// Double check the order status
 			$order = wc_get_order( $order_id );
@@ -963,10 +970,14 @@ class WebmaniaBR_Rest_Controller extends WP_REST_Controller {
   public function get_nota_fiscal( WP_REST_Request $request ) {
     //Let Us use the helper methods to get the parameters
     $id = $request->get_param( 'id' );
-		if (!$id)
-			return false;
+		$force = $request->get_param( 'force' );
+		if (!$force)
+			$force = false;
 
-		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamenteOnStatusChange($id);
+		if (!$id)
+			return array(false);
+
+		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamenteWithForce($id, $force);
 
 		if (!$return) {
 			$nfe = get_post_meta( $id, 'nfe', true );
