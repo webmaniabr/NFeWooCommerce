@@ -501,7 +501,7 @@ class WooCommerceNFe {
 			'origem'			=> 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
-			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
+			'natureza_operacao' => $natureza_operacao, // Natureza da Operação
 			'modelo'            => $modelo, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
@@ -577,7 +577,14 @@ class WooCommerceNFe {
 			}
 
 			$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
+		if (!$tipo_pessoa) {
+			if ( !empty(get_post_meta($post_id, '_billing_cpf', true)) ) {
+				$tipo_pessoa = 1;
+			} elseif ( !empty(get_post_meta($post_id, '_billing_cnpj', true)) ) {
+				$tipo_pessoa = 2;
+			}
 	    if (!$tipo_pessoa) $tipo_pessoa = 1;
+		}
 			if ($tipo_pessoa == 1){
 				$cpf        = get_post_meta($post_id, '_billing_cpf', true);
 				$first_name = get_post_meta($post_id, '_billing_first_name', true);

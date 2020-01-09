@@ -784,13 +784,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         <input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
     </div>
 
-		<div class="field">
-        <p class="label" style="margin-bottom:8px;">
-            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
-        </p>
-        <input type="text" name="cnpj_credenciadora" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_credenciadora', true ); ?>" style="width:100%;padding:5px;">
-    </div>
-
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Indicador de escala relevante</label>
