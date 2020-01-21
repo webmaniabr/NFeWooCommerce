@@ -244,7 +244,7 @@ class WooCommerceNFe {
 		do_action( 'before_emitirNFeAutomaticamenteOnStatusChange', $order_id );
 
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-		// If the option "Emitir Automat	icamente" is enabled and
+		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
 		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
 			// Double check the order status
