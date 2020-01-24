@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 2.9.11
+* Version: 2.10.1
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 class WooCommerceNFe {
 	public $domain = 'WooCommerceNFe';
-	public $version = '2.9.11';
+	public $version = '2.10.1';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -152,7 +152,7 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_found_customer_details', array( $WC_NFe_Backend, 'customer_details_ajax' ) );
 			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
-    	add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+    		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
 			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
 			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 		}
@@ -241,12 +241,15 @@ class WooCommerceNFe {
 		}
 	}
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+
 		do_action( 'before_emitirNFeAutomaticamenteOnStatusChange', $order_id );
 
-		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
+		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+
 		if ( ( $option == 1 || $option == 2 || $option == 'yes' ) && get_post_type( $order_id ) == 'shop_order' ) {
+
 			// Double check the order status
 			$order = wc_get_order( $order_id );
 			$order_status  = $order->get_status();
@@ -264,17 +267,28 @@ class WooCommerceNFe {
 					}
 				}
 				// If all conditions was match, call function
-				self::emitirNFe( array( $order_id ) );
+				$response = self::emitirNFe( array( $order_id ) );
 			}
+
 		}
 
-		do_action( 'after_emitirNFeAutomaticamenteOnStatusChange', $order_id );
+		do_action( 'after_emitirNFeAutomaticamenteOnStatusChange', $order_id, $response );
+
 	}
-	function emitirNFe( $order_ids = array() ){
+	function emitirNFe( $order_ids = array(), $is_massa = false ){
+
+		$result = array();
+
 		foreach ($order_ids as $order_id) {
+
 			$data = self::order_data( $order_id );
+			if ($is_massa) {
+				$data['assincrono'] = 1;
+			}
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
+			$result[] = $response;
+
 			if (isset($response->error) || $response->status == 'reprovado') {
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 				$mensagem .= '<ul style="padding-left:20px;">';
@@ -318,6 +332,9 @@ class WooCommerceNFe {
 				update_post_meta( $order_id, 'nfe', $nfe );
 			}
 		}
+
+		return $result;
+
 	}
 	function order_data( $post_id ){
 		global $wpdb;
@@ -397,8 +414,15 @@ class WooCommerceNFe {
 			'modelo'            => 1, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
-			'ambiente'          => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
+			'ambiente'          => ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente')) // Identificação do Ambiente do Sefaz
 		);
+
+		$data_emissao = get_option('wc_settings_woocommercenfe_data_emissao');
+		if ( isset($data_emissao) && $data_emissao == 'yes' ) {
+			$data['data_emissao'] = get_the_time('Y-m-d H:i:s', $post_id);
+			$data['data_entrada_saida'] = get_the_time('Y-m-d H:i:s', $post_id);
+		}
+
 		$data['pedido'] = array(
 			'presenca'         => 2, // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => (int) $modalidade_frete, // Modalidade do frete
@@ -406,6 +430,7 @@ class WooCommerceNFe {
 			'desconto'         => $total_discount, // Total do desconto
 			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
+
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
 			//Caso pagseguro, verificar post meta para método de pagamento
@@ -440,9 +465,10 @@ class WooCommerceNFe {
 			'cidade'      => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
 			'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
 			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
-			'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
+			'telefone'    => (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : get_post_meta($post_id, '_billing_phone', true)), // Telefone do cliente
 			'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
 		);
+
 		if($envio_email && $envio_email == 'yes'){
 			$data['cliente']['email'] = get_post_meta($post_id, '_billing_email', true);
 		}else{
@@ -556,6 +582,9 @@ class WooCommerceNFe {
 		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
 		$peso        = $product->get_weight();
+		$informacoes_adicionais = '';
+		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
+
 		if (!$peso){
 			$peso = '0.100';
 		}
@@ -624,6 +653,11 @@ class WooCommerceNFe {
 				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
+
+			if ( $informacoes_adicionais != '' ) {
+				$info['informacoes_adicionais'] = $informacoes_adicionais;
+			}
+
 			return $info;
 	}
 	function set_bundle_products_array( $bundles, $order){
