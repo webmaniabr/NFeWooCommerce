@@ -241,6 +241,8 @@ class WooCommerceNFe {
 		}
 	}
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+		do_action( 'before_emitirNFeAutomaticamenteOnStatusChange', $order_id );
+
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
@@ -265,6 +267,8 @@ class WooCommerceNFe {
 				self::emitirNFe( array( $order_id ) );
 			}
 		}
+
+		do_action( 'after_emitirNFeAutomaticamenteOnStatusChange', $order_id );
 	}
 	function emitirNFe( $order_ids = array() ){
 		foreach ($order_ids as $order_id) {
