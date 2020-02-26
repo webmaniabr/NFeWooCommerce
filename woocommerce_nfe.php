@@ -96,6 +96,8 @@ class WooCommerceNFe {
 
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
+		add_action( 'woocommerce_product_bulk_edit_start', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_input') );
+		add_action( 'woocommerce_product_bulk_edit_save', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_save') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
 		add_action( 'woocommerce_api_nfe_callback', array($WC_NFe_Backend, 'nfe_callback') );
 		add_action( 'save_post', array($WC_NFe_Backend, 'save_informacoes_fiscais'), 10, 2);

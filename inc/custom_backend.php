@@ -1433,4 +1433,76 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			$html .= '</div>';
 			echo $html;
 		}
+
+		public function nfe_custom_field_bulk_edit_input() {
+		    ?>
+		    <div class="inline-edit-group">
+					<label class="alignleft _nfe_classe_imposto">
+		         <span class="title">Classe de Imposto</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_classe_imposto" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_classe_imposto">
+		         <span class="title">GTIN (antigo código EAN)</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_ean" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_gtin_tributavel">
+		         <span class="title">GTIN tributável</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_gtin_tributavel" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_codigo_ncm">
+		         <span class="title">Código NCM</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_ncm" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_codigo_cest">
+		         <span class="title">Código CEST</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_cest" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_cnpj_fabricante">
+		         <span class="title">CNPJ do Frabricante</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_cnpj_fabricante" class="text" value="">
+		         </span>
+					</label>
+
+		    </div>
+		    <?php
+		}
+
+		public function nfe_custom_field_bulk_edit_save( $product ) {
+			$post_id = $product->get_id();
+			if ( isset( $_REQUEST['_nfe_classe_imposto'] ) && !empty($_REQUEST['_nfe_classe_imposto']) ) {
+				$custom_field = $_REQUEST['_nfe_classe_imposto'];
+				update_post_meta( $post_id, '_nfe_classe_imposto', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_ean'] ) && !empty($_REQUEST['_nfe_codigo_ean']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_ean'];
+				update_post_meta( $post_id, '_nfe_codigo_ean', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_gtin_tributavel'] ) && !empty($_REQUEST['_nfe_gtin_tributavel']) ) {
+				$custom_field = $_REQUEST['_nfe_gtin_tributavel'];
+				update_post_meta( $post_id, '_nfe_gtin_tributavel', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_ncm'] ) && !empty($_REQUEST['_nfe_codigo_ncm']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_ncm'];
+				update_post_meta( $post_id, '_nfe_codigo_ncm', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_cest'] ) && !empty($_REQUEST['_nfe_codigo_cest']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_cest'];
+				update_post_meta( $post_id, '_nfe_codigo_cest', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_cnpj_fabricante'] ) && !empty($_REQUEST['_nfe_cnpj_fabricante']) ) {
+				$custom_field = $_REQUEST['_nfe_cnpj_fabricante'];
+				update_post_meta( $post_id, '_nfe_cnpj_fabricante', wc_clean( $custom_field ) );
+			}
+		}
 }
