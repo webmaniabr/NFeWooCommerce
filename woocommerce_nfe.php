@@ -291,7 +291,7 @@ class WooCommerceNFe {
 				if( !empty($nfes) && is_array($nfes) ) {
 					// If exists, find for any approved document
 					foreach ( $nfes as $nfe ) {
-						if ( $nfe['status'] == 'aprovado' ) {
+						if ( !empty($nfe['status'])) {
 								return false;
 						}
 					}
@@ -302,7 +302,7 @@ class WooCommerceNFe {
 					// If exists, find for any approved document
 					foreach ( $nfces as $nfce ) {
 
-						if ( $nfce['status'] == 'aprovado' ) {
+						if ( !empty($nfce['status'])) {
 								return false;
 						}
 
