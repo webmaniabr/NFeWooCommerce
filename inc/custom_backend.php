@@ -570,13 +570,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             return false;
         }else{
 					$new_status = $response->status;
-					$nfe_data = get_post_meta($post_id, 'nfe', true);
+					$id = 'nfe';
+					$nfe_data = get_post_meta($post_id, $id, true);
+					if (!$nfce_data) {
+						$id = 'nfce';
+						$nfe_data = get_post_meta($post_id, $id, true);
+					}
 					foreach($nfe_data as &$order_nfe){
 						if($order_nfe['chave_acesso'] == $chave){
 							$order_nfe['status'] = $new_status;
 						}
 					}
-					update_post_meta($post_id, 'nfe', $nfe_data);
+					update_post_meta($post_id, $id, $nfe_data);
 					WC_NFe()->add_success( 'NF-e atualizada com sucesso' );
 				}
 			}
