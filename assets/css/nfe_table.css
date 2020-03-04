@@ -113,6 +113,7 @@
 }
 
 .nfe-status.processando,
+.nfe-status.processamento ,
 .nfe-status.contingencia{
   background-color: #eccb28;
   color: #000;
