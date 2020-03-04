@@ -560,7 +560,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			if(!is_admin()){
 				return false;
 			}
-			if(isset($_GET['atualizar_ne']) && $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
+			if(isset($_GET['atualizar_ne']) || $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
 				$post_id = (int) sanitize_text_field($_GET['post']);
 				$chave = sanitize_text_field($_GET['chave']);
 				$webmaniabr = new NFe(WC_NFe()->settings);
