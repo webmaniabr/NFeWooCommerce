@@ -854,36 +854,40 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             // Else if $nfe has information, check status from array
             } elseif ($nfe || $nfce) {
 
+							$data = empty($nfe) ? $nfce : $nfe;
+
 				// Define as false
-				$nfe_emitida = false;
-        $nfce_emitida = false;
+				$status = 0;
 
-						if ($nfe)
-            	foreach ( $nfe as $item ) {
-            		// If array has any approved document define $nfe_emitida as true
+						if ($data)
+            	foreach ( $data as $item ) {
+            		// If array has any approved document define $status as value according to it
             		if ( $item['status'] == 'aprovado' ) {
-            			$nfe_emitida = true;
-            		}
+									$status = 1;
+            		} else if ( $item['status'] == 'processamento' || $item['status'] == 'processando' || $item['status'] == 'contingencia') {
+									$status = 2;
+								} else if ( $item['status'] == 'reprovado' || $item['status'] == 'cancelado') {
+									$status = 3;
+								}
             	}
 
-						if ($nfce)
-            	foreach ( $nfce as $item ) {
+							$tipo = empty($nfce) ? 'NF-e' : 'NFC-e';
 
-            		// If array has any approved document define $nfe_emitida as true
-            		if ( $item['status'] == 'aprovado' ) {
-            			$nfce_emitida = true;
-            		}
-
-            	}
-
-            	// Print depending of the case
-            	if ( $nfe_emitida ) {
-            		echo '<div class="nfe_success">NF-e Emitida</div>';
-              } elseif ($nfce_emitida) {
-                echo '<div class="nfe_success">NFC-e Emitida</div>';
-            	} else {
-            		echo '<div class="nfe_alert">NF-e não emitida</div>';
-            	}
+							// Print depending of the case
+							switch ($status) {
+								case 0:
+									echo '<div class="nfe_alert">' . $tipo  . ' não emitida</div>';
+									break;
+								case 1:
+									echo '<div class="nfe_success">' . $tipo  . ' emitida</div>';
+									break;
+								case 2:
+									echo '<div class="nfe_alert">' . $tipo  . ' processando</div>';
+									break;
+								case 3:
+									echo '<div class="nfe_error">Sem ' . $tipo  . ' válida</div>';
+									break;
+							}
             } else {
             	echo '<div class="nfe_alert">NF-e não emitida</div>';
             }
@@ -913,7 +917,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	function style(){
 		?>
 		<style>
-		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
+		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #c6ab2a; }
+		.nfe_error { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
 		.nfe_success { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em;  background-color: #5cb85c; }
 		.nfe_none { color: #999; text-align:center; }
 		.nfe_danfe { padding: 0px 12px 2px; border: 1px solid #CCC; margin-top: 5px; float: left; }
