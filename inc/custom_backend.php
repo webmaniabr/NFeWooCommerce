@@ -185,7 +185,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				</div>
 
 				<?php
-				include_once(plugin_dir_path(dirname(__FILE__)).'/templates/payment-setting.php');
+				include_once(plugin_dir_path(dirname(__FILE__)).'/inc/templates/payment-setting.php');
     }
 	function force_digital_certificate_update() {
 	?>
@@ -255,6 +255,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
     }
     function get_settings(){
         global $domain;
+        $auto_invoice_report_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
         $settings = array(
             'title' => array(
                 'name'     => __( 'Credenciais de Acesso', $domain ),
@@ -307,21 +308,35 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             //     'desc' => __( 'Emitir automaticamente a NF-e sempre que um pagamento for confirmado.', $domain ),
             //     'id'   => 'wc_settings_woocommercenfe_emissao_automatica',
             // ),
-						'emissao_automatica' => array(
+					'emissao_automatica' => array(
                 'name' => __( 'Emissão automática', $domain ),
                 'type' => 'radio',
                 'options' => array(
-                	'0' => 'Não emitir automaticamente.',
+                	'0' => 'Não emitir automaticamente',
                 	'1' => 'Sempre que o pedido ter o status alterado para Processando (Pagamento confirmado)',
-                	'2' => 'Sempre que o pedido ter o status alterado para Concluído.'
+                	'2' => 'Sempre que o pedido ter o status alterado para Concluído'
             	),
                 'default' => '0',
                 'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
             ),
+            'email_notification' => array(
+                'name' => __( 'E-mail para notificação de erros de emissão', $domain ),
+                'type' => 'email',
+                'desc' => __( 'Informe um e-mail para notificações quando houver erro na emissão ou <a target="_blank" href="'.$auto_invoice_report_url.'">visualize aqui</a>.'),
+                'css' => 'width:300px;',
+                'id'   => 'wc_settings_woocommercenfe_email_notification'
+            ),
+					'data_emissao' => array(
+                'name' => __( 'Data de emissão retroativa', $domain ),
+                'type' =>'checkbox',
+            	'desc' => __( 'Emissão com a data do pedido <br /><em>*Confirmar no Sefaz do estado a permissão de emissão junto com a contabilidade.</em>'),
+                'default' => 'no',
+                'id'   => 'wc_settings_woocommercenfe_data_emissao'
+            ),
 						'envio_email' => array(
 							'name' => __( 'Envio automático de email', $domain ),
 							'type' =>'checkbox',
-							'desc' => __( 'Enviar email para o cliente após a emissão da nota fiscal eletrônica. <br /><em style="color: red">Atenção: O email será enviado mesmo para notas emitidas em ambiente de homologação.</em>'),
+							'desc' => __( 'Enviar email para o cliente após a emissão da nota fiscal eletrônica <br /><em style="color: red">Atenção: O email será enviado mesmo para notas emitidas em ambiente de homologação.</em>'),
 							'default' => 'yes',
 							'id'   => __('wc_settings_woocommercenfe_envio_email'),
 						),
@@ -641,6 +656,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			?>
 
 			<div class="inside" style="padding:0!important;">
+			    <div class="field emitir_ambiente" style="margin-bottom:10px;">
+					<p class="label" style="margin-bottom:8px;">
+						<input type="checkbox" name="emitir_homologacao"/>
+						<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Emitir em homologação</label>
+					</p>
+				</div>
+				<hr>
 				<div class="field outras_informacoes">
 			        <p class="label" style="margin-bottom:8px;">
 			            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Natureza da Operação</label>
@@ -828,6 +850,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			 <input type="hidden" name="wp_admin_nfe" value="1" />
     </div>
 
+    <div class="field">
+        <p class="label" style="margin-bottom:8px;">
+            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Informações adicionais</label>
+        </p>
+        <input type="text" name="produto_informacoes_adicionais" value="<?php echo get_post_meta( $post->ID, '_nfe_produto_informacoes_adicionais', true ); ?>" style="width:100%;padding:5px;">
+    </div>
+
 </div>
 <?php
     }
@@ -963,13 +992,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         wp_enqueue_script( 'woocommercenfe_admin_script' );
     }
 	function global_admin_scripts(){
-        wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ) );
-        wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
-        wp_enqueue_style( 'woocommercenfe_table_style' );
-        wp_enqueue_script( 'woocommercenfe_table_scripts' );
-    }
-    function customer_meta_fields( $fields ) {
-        global $domain;
+    wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ) );
+    wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
+    wp_enqueue_style( 'woocommercenfe_table_style' );
+    wp_enqueue_script( 'woocommercenfe_table_scripts' );
+  }
+  function customer_meta_fields( $fields ) {
+    global $domain;
 		// Billing fields.
 		$new_fields['billing']['title'] = __( 'Endereço de Cobrança', $domain );
 		$new_fields['billing']['fields']['billing_first_name'] = $fields['billing']['fields']['billing_first_name'];
@@ -1048,8 +1077,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		$address['neighborhood'] = get_user_meta( $user_id, 'shipping_neighborhood', true );
 		return $address;
 	}
-    function shop_order_billing_fields( $data ) {
-        global $domain;
+  function shop_order_billing_fields( $data ) {
+    global $domain;
 		$billing_data['first_name'] = array(
 			'label' => __( 'Nome', $domain ),
 			'show'  => false
@@ -1058,39 +1087,39 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			'label' => __( 'Sobrenome', $domain ),
 			'show'  => false
 		);
-        $billing_data['persontype'] = array(
-            'type'    => 'select',
-            'label'   => __( 'Tipo Pessoa', $domain ),
-            'options' => array(
-                '0' => __( 'Selecionar', $domain ),
-                '1' => __( 'Pessoa Física', $domain ),
-                '2' => __( 'Pessoa Jurídica', $domain )
-            ),
-            'show'  => false
-        );
-        $billing_data['cpf'] = array(
-            'label' => __( 'CPF', $domain ),
-            'show'  => false
-        );
-        $billing_data['cnpj'] = array(
-            'label' => __( 'CNPJ', $domain ),
-            'show'  => false
-        );
-        $billing_data['ie'] = array(
-            'label' => __( 'Inscrição Estadual', $domain ),
-            'show'  => false
-        );
-        $billing_data['company'] = array(
-            'label' => __( 'Empresa', $domain ),
-        );
-        $billing_data['birthdate'] = array(
-            'label' => __( 'Nascimento', $domain ),
-            'show'  => false
-        );
-        $billing_data['sex'] = array(
-            'label' => __( 'Sexo', $domain ),
-            'show'  => false
-        );
+    $billing_data['persontype'] = array(
+        'type'    => 'select',
+        'label'   => __( 'Tipo Pessoa', $domain ),
+        'options' => array(
+            '0' => __( 'Selecionar', $domain ),
+            '1' => __( 'Pessoa Física', $domain ),
+            '2' => __( 'Pessoa Jurídica', $domain )
+        ),
+        'show'  => false
+    );
+    $billing_data['cpf'] = array(
+        'label' => __( 'CPF', $domain ),
+        'show'  => false
+    );
+    $billing_data['cnpj'] = array(
+        'label' => __( 'CNPJ', $domain ),
+        'show'  => false
+    );
+    $billing_data['ie'] = array(
+        'label' => __( 'Inscrição Estadual', $domain ),
+        'show'  => false
+    );
+    $billing_data['company'] = array(
+        'label' => __( 'Empresa', $domain ),
+    );
+    $billing_data['birthdate'] = array(
+        'label' => __( 'Nascimento', $domain ),
+        'show'  => false
+    );
+    $billing_data['sex'] = array(
+        'label' => __( 'Sexo', $domain ),
+        'show'  => false
+    );
 		$billing_data['address_1'] = array(
 			'label' => __( 'Endereço', $domain ),
 			'show'  => false
@@ -1140,18 +1169,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		);
 		return $billing_data;
 	}
-    function shop_order_shipping_fields( $data ) {
-			global $domain;
-        $shipping_data['first_name'] = array(
+  function shop_order_shipping_fields( $data ) {
+		global $domain;
+    $shipping_data['first_name'] = array(
 			'label' => __( 'Nome', $domain ),
 			'show'  => false
 		);
 		$shipping_data['last_name'] = array(
 			'label' => __( 'Sobrenome', $domain ),
-			'show'  => false
-		);
-		$shipping_data['company'] = array(
-			'label' => __( 'Empresa', $domain ),
 			'show'  => false
 		);
 		$shipping_data['address_1'] = array(
@@ -1192,8 +1217,37 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		);
 		return $shipping_data;
 	}
-    function customer_details_ajax( $customer_data ) {
-        $user_id      = (int) trim( stripslashes( $_POST['user_id'] ) );
+	function extra_shipping_fields( $data ) {
+		global $domain;
+
+    $shipping_data['persontype'] = array(
+        'type'    => 'select',
+        'label'   => __( 'Tipo Pessoa', $domain ),
+        'options' => array(
+            '3' => __( 'Utilizar dados de cobrança', $domain ),
+            '1' => __( 'Pessoa Física', $domain ),
+            '2' => __( 'Pessoa Jurídica', $domain )
+        ),
+        'show'  => false
+    );
+    $shipping_data['cpf'] = array(
+        'label' => __( 'CPF', $domain ),
+        'show'  => false
+    );
+    $shipping_data['cnpj'] = array(
+        'label' => __( 'CNPJ', $domain ),
+        'show'  => false
+    );
+    $shipping_data['ie'] = array(
+        'label' => __( 'Inscrição Estadual', $domain ),
+        'show'  => false
+    );
+
+		return array_merge($shipping_data, $data);
+
+	}
+  function customer_details_ajax( $customer_data ) {
+    $user_id      = (int) trim( stripslashes( $_POST['user_id'] ) );
 		$type_to_load = esc_attr( trim( stripslashes( $_POST['type_to_load'] ) ) );
 		$custom_data = array(
 			$type_to_load . '_number'       => get_user_meta( $user_id, $type_to_load . '_number', true ),
@@ -1246,7 +1300,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_codigo_cest'     => $_POST['codigo_cest'],
 						'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
 						'_nfe_cnpj_credenciadora' => $_POST['cnpj_credenciadora'],
-						'_nfe_ind_escala'      => $_POST['ind_escala']
+						'_nfe_ind_escala'      => $_POST['ind_escala'],
+						'_nfe_produto_informacoes_adicionais' => $_POST['produto_informacoes_adicionais']
 						);
 						foreach ($info as $key => $value){
 							if (isset($value)) update_post_meta($post_id, $key, $value);
@@ -1342,6 +1397,72 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 			<?php }
 		}
+	  public function add_admin_menu_item() {
+
+	  	$ids_db = get_option('wmbr_auto_invoice_errors');
+
+      if ( is_array($ids_db) && count($ids_db) > 0 ) {
+      	$count = count($ids_db);
+      	$page_count = '('.$count.') ';
+        $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count'>$count</span></span>";
+      } else {
+          $update_count = "";
+      }
+
+	  	$title = 'Relatório de Nota Fiscal Eletrônica';
+	    $capability = 'manage_options';
+	    $menu_slug = 'wmbr_page_auto_invoice_errors';
+
+
+	    add_submenu_page( 'woocommerce', $page_count . $title, $title . $update_count, $capability, $menu_slug, array($this, 'page_auto_invoice_errors'));
+
+	  }
+	  public function page_auto_invoice_errors() {
+
+			$ids_db = get_option('wmbr_auto_invoice_errors');
+			include_once(plugin_dir_path(dirname(__FILE__)).'/inc/templates/page-reports.php');
+
+	  }
+		/**
+		 * Show the list of automatic invoice errors
+		 **/
+		function alert_auto_invoice_errors() {
+
+			$ids_db = get_option('wmbr_auto_invoice_errors');
+
+			if ( !empty($ids_db) ) {
+
+				$menu_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
+				$message = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="'.$menu_url.'">Visualizar Pedidos</a>');
+
+				WC_NFe()->add_error( $message );
+
+			}
+
+		}
+	  public function wmbr_remove_order_id_auto_invoice(){
+
+	    $secure = check_ajax_referer( 'G7EZCEv3tA', 'sec_nonce', false);
+
+	    if($secure){
+
+	      $order_id = $_POST['order_id'];
+	      $orders_auto_invoice_errors = get_option('wmbr_auto_invoice_errors', array());
+
+				if ( is_array($orders_auto_invoice_errors) ) {
+					if ( !array_key_exists($order_id, $orders_auto_invoice_errors) ) return false;
+
+					unset($orders_auto_invoice_errors[$order_id]);
+					update_option( 'wmbr_auto_invoice_errors', $orders_auto_invoice_errors );
+				}
+
+	      echo json_encode(array('success' => true));
+
+	    }
+
+	    die();
+
+	  }
 		function nfe_callback(){
 			if($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
 				$nfe_data = $_POST['data'];

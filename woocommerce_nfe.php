@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://github.com/shirkit
-* Version: 2.9.11
+* Version: 3.0.3
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 class WooCommerceNFe {
 	public $domain = 'WooCommerceNFe';
-	public $version = '2.9.11';
+	public $version = '3.0.3';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -117,6 +117,9 @@ class WooCommerceNFe {
 		add_action( 'create_product_cat', array($WC_NFe_Backend, 'save_product_cat_ncm'), 10, 2);
 		add_action( 'admin_notices', array($WC_NFe_Backend, 'cat_ncm_warning'));
 		add_filter( "plugin_action_links_".plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
+		add_action( 'admin_menu', array($WC_NFe_Backend, 'add_admin_menu_item'));
+		add_action( 'admin_init', array($WC_NFe_Backend, 'alert_auto_invoice_errors'));
+		add_action( 'wp_ajax_wmbr_remove_order_id_auto_invoice', array($WC_NFe_Backend, 'wmbr_remove_order_id_auto_invoice'));
 		// NFe autommatic
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
 		if ( $option == 1 || $option == 'yes' ) {
@@ -124,12 +127,19 @@ class WooCommerceNFe {
 		} else if ( $option == 2 ) {
 			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
 		}
+
+		add_filter( 'woocommerce_admin_shipping_fields', array($WC_NFe_Backend, 'extra_shipping_fields') );
+		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 	}
 	function init_frontend(){
 		global $pagenow;
 
 		// Compatibility with WooCommerce Admin 0.20.0 or higher
-		if ( $this->wmbr_is_plugin_active('woocommerce-admin/woocommerce-admin.php') && $pagenow != 'admin.php' && $_GET['page'] != 'wc-admin' ) {
+		if (
+				$this->wmbr_is_plugin_active('woocommerce-admin/woocommerce-admin.php') &&
+				$pagenow != 'admin.php' &&
+				( isset($_GET['page']) && $_GET['page'] != 'wc-admin' )
+			) {
 			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_before_notices' ), -9999 );
 			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_after_notices' ), PHP_INT_MAX );
 		}
@@ -164,9 +174,8 @@ class WooCommerceNFe {
 			add_filter( 'woocommerce_found_customer_details', array( $WC_NFe_Backend, 'customer_details_ajax' ) );
 			add_action( 'woocommerce_process_shop_order_meta', array( $WC_NFe_Backend, 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( $WC_NFe_Backend, 'wc_api_save_custom_shop_data' ), 10, 2 );
-    	add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
+  		add_action( 'woocommerce_admin_order_data_after_billing_address', array( $WC_NFe_Backend, 'order_data_after_billing_address' ) );
 			add_action( 'woocommerce_admin_order_data_after_shipping_address', array( $WC_NFe_Backend, 'order_data_after_shipping_address' ) );
-			add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 		}
 	}
 	function includes(){
@@ -262,6 +271,7 @@ class WooCommerceNFe {
 		}
 	}
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+		do_action( 'before_emitirNFeAutomaticamenteOnStatusChange', $order_id );
 		self::emitirNFeAutomaticamenteWithForce($order_id, false);
 	}
 
@@ -318,13 +328,89 @@ class WooCommerceNFe {
 				return false;
 
 			}
+
+		}
+
+		do_action( 'after_emitirNFeAutomaticamenteOnStatusChange', $order_id, $response );
+
+	}
+	/**
+	 * Send e-mail notification to user when auto invoice fail
+	 **/
+	function send_error_email( $message, $order_id ) {
+
+		$email = get_option('wc_settings_woocommercenfe_email_notification');
+
+		if ( !isset($email) ) return;
+
+		$subject = 'Erro ao emitir NF-e - Pedido #'.$order_id;
+		$message = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+		  <html xmlns="http://www.w3.org/1999/xhtml">
+		  <head><meta charset="UTF-8"></head>
+		  	<body>
+		  		<p>Houve um erro de emissão automatica no Pedido #'.$order_id.': <a target="_blank" href="'.get_admin_url().'/post.php?post='.$order_id.'&action=edit">Acesse o pedido</a></p>
+		  		'.$message.'
+			</body>
+		</html>';
+
+		$headers = array(
+		  	'Content-Type: text/html; charset=UTF-8'
+		);
+		$emails = array($email);
+		$enviar_email = wp_mail($emails, $subject, $message, $headers);
+	}
+	/**
+	 * Add order id to list of automatic invoice errors
+	 **/
+	function add_id_to_invoice_errors( $message, $order_id ) {
+
+		$ids_db = get_option('wmbr_auto_invoice_errors');
+		if ( is_array($ids_db) ) {
+			if ( array_key_exists($order_id, $ids_db) ) return false;
+		}
+
+		$nfes = get_post_meta( $order_id, 'nfe', true );
+		if( !empty($nfes) && is_array($nfes) ) {
+			foreach ( $nfes as $nfe ) {
+				if ( $nfe['status'] == 'aprovado' ) {
+						return false;
+				}
+			}
+		}
+		$ids_db[$order_id] = array(
+			'datetime' => current_time("d-m-Y H:i:s"),
+			'error' => $message
+		);
+		update_option( 'wmbr_auto_invoice_errors', $ids_db );
+	}
+	/**
+	 * Remove order id to list of automatic invoice errors
+	 **/
+	function remove_id_to_invoice_errors( $order_id ) {
+
+		$ids_db = get_option('wmbr_auto_invoice_errors');
+		if ( is_array($ids_db) ) {
+			if ( !array_key_exists($order_id, $ids_db) ) return false;
+
+			unset($ids_db[$order_id]);
+			update_option( 'wmbr_auto_invoice_errors', $ids_db );
 		}
 	}
-	function emitirNFe( $order_ids = array() ){
+	function emitirNFe( $order_ids = array(), $is_massa = false ){
+
+		$result = array();
+
 		foreach ($order_ids as $order_id) {
+
 			$data = self::order_data( $order_id );
+			if ($is_massa) {
+				$data['assincrono'] = 1;
+			}
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
+			$result[] = $response;
+
 			if (isset($response->error) || $response->status == 'reprovado') {
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 				$mensagem .= '<ul style="padding-left:20px;">';
@@ -346,10 +432,15 @@ class WooCommerceNFe {
 					}
 				}
 				$mensagem .= '</ul>';
+
+				$invoice_error = isset($response->error) ? $response->error : $error;
+				$this->send_error_email( $mensagem, $order_id );
+				$this->add_id_to_invoice_errors( $invoice_error, $order_id );
 				WC_NFe()->add_error( $mensagem );
 				return false;
 			} else {
 				WC_NFe()->add_success( 'NF-e emitida com sucesso do Pedido #'.$order_id );
+				$this->remove_id_to_invoice_errors($order_id);
 			}
 			// If API respond with status, register 'NF-e'
 			if ( is_object($response) && $response->status ) {
@@ -371,6 +462,9 @@ class WooCommerceNFe {
 				return $nfe;
 			}
 		}
+
+		return $result;
+
 	}
 
 	function emitirNFCe( $order_ids = array() ){
@@ -505,8 +599,15 @@ class WooCommerceNFe {
 			'modelo'            => $modelo, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
-			'ambiente'          => (int) get_option('wc_settings_woocommercenfe_ambiente') // Identificação do Ambiente do Sefaz
+			'ambiente'          => ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente')) // Identificação do Ambiente do Sefaz
 		);
+
+		$data_emissao = get_option('wc_settings_woocommercenfe_data_emissao');
+		if ( isset($data_emissao) && $data_emissao == 'yes' ) {
+			$data['data_emissao'] = get_the_time('Y-m-d H:i:s', $post_id);
+			$data['data_entrada_saida'] = get_the_time('Y-m-d H:i:s', $post_id);
+		}
+
 		$data['pedido'] = array(
 			'presenca'         => apply_filters('webmaniabr_pedido_presenca', $modelo == 1 ? 2 : 1, $post_id, $modelo, $order), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => (int) $modalidade_frete, // Modalidade do frete
@@ -558,39 +659,14 @@ class WooCommerceNFe {
 		}
 		if ($order->get_user() !== false) {
 			// Customer
-			$data['cliente'] = array(
-				'endereco'    => get_post_meta($post_id, '_shipping_address_1', true), // Endereço de entrega dos produtos
-				'complemento' => get_post_meta($post_id, '_shipping_address_2', true), // Complemento do endereço de entrega
-				'numero'      => get_post_meta($post_id, '_shipping_number', true), // Número do endereço de entrega
-				'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true), // Bairro do endereço de entrega
-				'cidade'      => get_post_meta($post_id, '_shipping_city', true), // Cidade do endereço de entrega
-				'uf'          => get_post_meta($post_id, '_shipping_state', true), // Estado do endereço de entrega
-				'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)), // CEP do endereço de entrega
-				'telefone'    => get_user_meta($post_id, 'billing_phone', true), // Telefone do cliente
-				'email'       => ($envio_email ? get_post_meta($post_id, '_billing_email', true) : ''), // E-mail do cliente para envio da NF-e
-			);
+			$compare_addresses = self::compare_addresses($order->id, $envio_email);
+			$data['cliente'] = $compare_addresses['cliente'];
 
-			if($envio_email && $envio_email == 'yes'){
-				$data['cliente']['email'] = get_post_meta($post_id, '_billing_email', true);
-			}else{
-				$data['cliente']['email'] = '';
-			}
-
-			$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-	    if (!$tipo_pessoa) $tipo_pessoa = 1;
-			if ($tipo_pessoa == 1){
-				$cpf        = get_post_meta($post_id, '_billing_cpf', true);
-				$first_name = get_post_meta($post_id, '_billing_first_name', true);
-				$last_name  = get_post_meta($post_id, '_billing_last_name', true);
-				$full_name  = $first_name.' '.$last_name;
-				$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
-				$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
-			}else if($tipo_pessoa == 2) {
-				$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
-				$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
-				$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
+			if ( isset($compare_addresses['transporte']['entrega']) ) {
+				$data['transporte']['entrega'] = $compare_addresses['transporte']['entrega'];
 			}
 		}
+
 		// Products
 		$bundles = array();
 		if(!isset($data['produtos'])) $data['produtos'] = array();
@@ -678,6 +754,9 @@ class WooCommerceNFe {
 		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
 		$peso        = $product->get_weight();
+		$informacoes_adicionais = '';
+		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
+
 		if (!$peso){
 			$peso = '0.100';
 		}
@@ -746,6 +825,11 @@ class WooCommerceNFe {
 				'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 				'classe_imposto' => $imposto // Referência do imposto cadastrado
 			);
+
+			if ( $informacoes_adicionais != '' ) {
+				$info['informacoes_adicionais'] = $informacoes_adicionais;
+			}
+
 			return $info;
 	}
 	function set_bundle_products_array( $bundles, $order){
@@ -888,6 +972,119 @@ class WooCommerceNFe {
 	public function wmbr_is_plugin_active( $plugin ) {
 		return in_array( $plugin, (array) get_option( 'active_plugins', array() ) );
 	}
+	/**
+	 * Verify if shipping and billing informations are different
+	**/
+	public function compare_addresses($post_id, $envio_email) {
+
+		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
+
+		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : get_post_meta($post_id, '_billing_phone', true));
+		$email = ($envio_email && $envio_email == 'yes' ? get_post_meta($post_id, '_billing_email', true) : '');
+
+		$billing = array(
+			'endereco'    => get_post_meta($post_id, '_billing_address_1', true),
+			'complemento' => get_post_meta($post_id, '_billing_address_2', true),
+			'numero'      => get_post_meta($post_id, '_billing_number', true),
+			'bairro'      => get_post_meta($post_id, '_billing_neighborhood', true),
+			'cidade'      => get_post_meta($post_id, '_billing_city', true),
+			'uf'          => get_post_meta($post_id, '_billing_state', true),
+			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_billing_postcode', true)),
+			'telefone'    => $phone,
+			'email'       => $email
+		);
+		$shipping = array(
+			'endereco'    => get_post_meta($post_id, '_shipping_address_1', true),
+			'complemento' => get_post_meta($post_id, '_shipping_address_2', true),
+			'numero'      => get_post_meta($post_id, '_shipping_number', true),
+			'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true),
+			'cidade'      => get_post_meta($post_id, '_shipping_city', true),
+			'uf'          => get_post_meta($post_id, '_shipping_state', true),
+			'cep'         => $WooCommerceNFe_Format->cep(get_post_meta($post_id, '_shipping_postcode', true)),
+			'telefone'    => $phone,
+			'email'       => $email
+		);
+
+		// Compare and return transporte->entrega if are different addressses
+		if ( $billing === $shipping ) {
+
+			// Detect persontype and merge informations
+			$tipo_pessoa_shipping = self::detect_persontype($post_id, '_shipping');
+			$shipping = array_merge( self::get_persontype_info($post_id, $tipo_pessoa_shipping, '_shipping'), $shipping);
+
+			$return['cliente'] = $shipping;
+
+		} else {
+
+			// Detect persontype and merge informations
+			$tipo_pessoa_billing = self::detect_persontype($post_id, '_billing');
+			$tipo_pessoa_shipping = self::detect_persontype($post_id, '_shipping');
+
+			$billing = array_merge( self::get_persontype_info($post_id, $tipo_pessoa_billing, '_billing'), $billing);
+			$shipping = array_merge( self::get_persontype_info($post_id, $tipo_pessoa_shipping, '_shipping'), $shipping);
+
+			$return['cliente'] = $billing;
+			$return['transporte']['entrega'] = $shipping;
+		}
+
+		return $return;
+
+	}
+	/**
+	 * Detect persontype from order
+	**/
+	public function detect_persontype($post_id, $type = '_billing') {
+
+		$tipo_pessoa = get_post_meta($post_id, $type.'_persontype', true);
+
+		if ( !$tipo_pessoa && $type == '_shipping' ) {
+			return 3;
+		} elseif ( !$tipo_pessoa ) {
+
+			if ( !empty(get_post_meta($post_id, $type.'_cpf', true)) ) {
+				$tipo_pessoa = 1;
+			} elseif ( !empty(get_post_meta($post_id, $type.'_cnpj', true)) ) {
+				$tipo_pessoa = 2;
+			}
+
+			if (!$tipo_pessoa) $tipo_pessoa = 1;
+
+		}
+
+		return $tipo_pessoa;
+
+	}
+	/**
+	 * Get informations from persontype
+	**/
+	public function get_persontype_info($post_id, $persontype = 1, $type = '_billing') {
+
+		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
+
+		if ( $persontype == 3 && $type == '_shipping' ) {
+			$persontype = self::detect_persontype($post_id, '_billing');
+			$type = '_billing';
+		}
+
+		if ( $persontype == 1 ) {
+
+			// Full name and CPF
+			$person_info['nome_completo'] = get_post_meta($post_id, $type.'_first_name', true).' '.get_post_meta($post_id, $type.'_last_name', true);
+			$person_info['cpf'] = $WooCommerceNFe_Format->cpf(get_post_meta($post_id, $type.'_cpf', true));
+
+		} elseif ( $persontype == 2 ) {
+
+			// Razao Social, CNPJ and IE
+			$person_info['razao_social'] = get_post_meta($post_id, $type.'_company', true);
+			$person_info['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, $type.'_cnpj', true));
+			$person_info['ie'] = str_replace(array('-','.',','), '', get_post_meta($post_id, $type.'_ie', true));
+
+		}
+
+		return $person_info;
+
+	}
+
 }
 
 class WebmaniaBR_Rest_Controller extends WP_REST_Controller {

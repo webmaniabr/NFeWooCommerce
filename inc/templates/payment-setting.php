@@ -1,3 +1,8 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+?>
 <h3>Informações de Pagamento</h3>
 <p>Informe a forma de pagamento dos gateways utilizados na loja virtual.</p>
 
@@ -5,20 +10,18 @@
 	<div class="nfe-table-head nfe-table-head--payment">
 		<div><h4 style="padding-left:10px">Gateway</h4></div>
 		<div><h4>Forma de pagamento</h4></div>
-		
-		
-		
 	</div>
 	<?php
 
-// TODO: como resolver o problema dos gateways?
 	$available_gateways = WC()->payment_gateways->payment_gateways();
 	$cnpj               = get_option('wc_settings_woocommercenfe_cnpj_payments', array());
 
 	$active_gateways = array();
 
 	foreach($available_gateways as $gateway){
-		$active_gateways[] = $gateway;
+    if ( isset( $gateway->enabled ) && 'yes' === $gateway->enabled ) {
+      $active_gateways[] = $gateway;
+    }
 	}
 
 	?>

@@ -185,6 +185,25 @@ jQuery( function ( $ ) {
       }
     }
 
+    load_fields_shipping = function(){
+
+      if(  $('#_shipping_persontype').val() == 2 ) {
+        $("._shipping_cnpj_field").show();
+        $("._shipping_ie_field").show();
+
+        $("._shipping_cpf_field").hide();
+      } else if( $('#_shipping_persontype').val() == 1 ) {
+        $("._shipping_cpf_field").show();
+
+        $("._shipping_cnpj_field").hide();
+        $("._shipping_ie_field").hide();
+      } else {
+        $("._shipping_cpf_field").hide();
+        $("._shipping_cnpj_field").hide();
+        $("._shipping_ie_field").hide();
+      }
+
+    }
 
     $( 'a.load_customer_billing' ).on( 'click', load_billing );
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
@@ -195,5 +214,8 @@ jQuery( function ( $ ) {
 
     $('#_billing_persontype').on('change', show_hide_fields);
     $('.edit_address').on('click', load_fields);
+
+    $('#_shipping_persontype').on('change', load_fields_shipping);
+    $('.edit_address').on('click', load_fields_shipping);
 
 });
