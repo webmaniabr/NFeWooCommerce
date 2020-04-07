@@ -96,6 +96,8 @@ class WooCommerceNFe {
 
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
+		add_action( 'woocommerce_product_bulk_edit_start', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_input') );
+		add_action( 'woocommerce_product_bulk_edit_save', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_save') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
 		add_action( 'woocommerce_api_nfe_callback', array($WC_NFe_Backend, 'nfe_callback') );
 		add_action( 'save_post', array($WC_NFe_Backend, 'save_informacoes_fiscais'), 10, 2);
@@ -299,7 +301,7 @@ class WooCommerceNFe {
 				if( !empty($nfes) && is_array($nfes) ) {
 					// If exists, find for any approved document
 					foreach ( $nfes as $nfe ) {
-						if ( $nfe['status'] == 'aprovado' ) {
+						if ( !empty($nfe['status'])) {
 								return false;
 						}
 					}
@@ -310,7 +312,7 @@ class WooCommerceNFe {
 					// If exists, find for any approved document
 					foreach ( $nfces as $nfce ) {
 
-						if ( $nfce['status'] == 'aprovado' ) {
+						if ( !empty($nfce['status'])) {
 								return false;
 						}
 
@@ -595,7 +597,7 @@ class WooCommerceNFe {
 			'origem'			=> 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
-			'natureza_operacao' => get_option('wc_settings_woocommercenfe_natureza_operacao'), // Natureza da Operação
+			'natureza_operacao' => $natureza_operacao, // Natureza da Operação
 			'modelo'            => $modelo, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
@@ -662,8 +664,31 @@ class WooCommerceNFe {
 			$compare_addresses = self::compare_addresses($order->id, $envio_email);
 			$data['cliente'] = $compare_addresses['cliente'];
 
+<<<<<<< HEAD
 			if ( isset($compare_addresses['transporte']['entrega']) ) {
 				$data['transporte']['entrega'] = $compare_addresses['transporte']['entrega'];
+=======
+			$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
+		if (!$tipo_pessoa) {
+			if ( !empty(get_post_meta($post_id, '_billing_cpf', true)) ) {
+				$tipo_pessoa = 1;
+			} elseif ( !empty(get_post_meta($post_id, '_billing_cnpj', true)) ) {
+				$tipo_pessoa = 2;
+			}
+	    if (!$tipo_pessoa) $tipo_pessoa = 1;
+		}
+			if ($tipo_pessoa == 1){
+				$cpf        = get_post_meta($post_id, '_billing_cpf', true);
+				$first_name = get_post_meta($post_id, '_billing_first_name', true);
+				$last_name  = get_post_meta($post_id, '_billing_last_name', true);
+				$full_name  = $first_name.' '.$last_name;
+				$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
+				$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
+			}else if($tipo_pessoa == 2) {
+				$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
+				$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
+				$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
+>>>>>>> dev
 			}
 		}
 

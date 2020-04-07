@@ -575,7 +575,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			if(!is_admin()){
 				return false;
 			}
-			if(isset($_GET['atualizar_ne']) && $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
+			if(isset($_GET['atualizar_ne']) || $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
 				$post_id = (int) sanitize_text_field($_GET['post']);
 				$chave = sanitize_text_field($_GET['chave']);
 				$webmaniabr = new NFe(WC_NFe()->settings);
@@ -585,13 +585,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             return false;
         }else{
 					$new_status = $response->status;
-					$nfe_data = get_post_meta($post_id, 'nfe', true);
+					$id = 'nfe';
+					$nfe_data = get_post_meta($post_id, $id, true);
+					if (!$nfce_data) {
+						$id = 'nfce';
+						$nfe_data = get_post_meta($post_id, $id, true);
+					}
 					foreach($nfe_data as &$order_nfe){
 						if($order_nfe['chave_acesso'] == $chave){
 							$order_nfe['status'] = $new_status;
 						}
 					}
-					update_post_meta($post_id, 'nfe', $nfe_data);
+					update_post_meta($post_id, $id, $nfe_data);
 					WC_NFe()->add_success( 'NF-e atualizada com sucesso' );
 				}
 			}
@@ -806,13 +811,6 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
         <input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
     </div>
 
-		<div class="field">
-        <p class="label" style="margin-bottom:8px;">
-            <label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Frabricante</label>
-        </p>
-        <input type="text" name="cnpj_credenciadora" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_credenciadora', true ); ?>" style="width:100%;padding:5px;">
-    </div>
-
     <div class="field">
         <p class="label" style="margin-bottom:8px;">
             <label style="font-size:13px;line-height:1.5em;font-weight:bold;">Indicador de escala relevante</label>
@@ -885,36 +883,40 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             // Else if $nfe has information, check status from array
             } elseif ($nfe || $nfce) {
 
+							$data = empty($nfe) ? $nfce : $nfe;
+
 				// Define as false
-				$nfe_emitida = false;
-        $nfce_emitida = false;
+				$status = 0;
 
-						if ($nfe)
-            	foreach ( $nfe as $item ) {
-            		// If array has any approved document define $nfe_emitida as true
+						if ($data)
+            	foreach ( $data as $item ) {
+            		// If array has any approved document define $status as value according to it
             		if ( $item['status'] == 'aprovado' ) {
-            			$nfe_emitida = true;
-            		}
+									$status = 1;
+            		} else if ( $item['status'] == 'processamento' || $item['status'] == 'processando' || $item['status'] == 'contingencia') {
+									$status = 2;
+								} else if ( $item['status'] == 'reprovado' || $item['status'] == 'cancelado') {
+									$status = 3;
+								}
             	}
 
-						if ($nfce)
-            	foreach ( $nfce as $item ) {
+							$tipo = empty($nfce) ? 'NF-e' : 'NFC-e';
 
-            		// If array has any approved document define $nfe_emitida as true
-            		if ( $item['status'] == 'aprovado' ) {
-            			$nfce_emitida = true;
-            		}
-
-            	}
-
-            	// Print depending of the case
-            	if ( $nfe_emitida ) {
-            		echo '<div class="nfe_success">NF-e Emitida</div>';
-              } elseif ($nfce_emitida) {
-                echo '<div class="nfe_success">NFC-e Emitida</div>';
-            	} else {
-            		echo '<div class="nfe_alert">NF-e não emitida</div>';
-            	}
+							// Print depending of the case
+							switch ($status) {
+								case 0:
+									echo '<div class="nfe_alert">' . $tipo  . ' não emitida</div>';
+									break;
+								case 1:
+									echo '<div class="nfe_success">' . $tipo  . ' emitida</div>';
+									break;
+								case 2:
+									echo '<div class="nfe_alert">' . $tipo  . ' processando</div>';
+									break;
+								case 3:
+									echo '<div class="nfe_error">Sem ' . $tipo  . ' válida</div>';
+									break;
+							}
             } else {
             	echo '<div class="nfe_alert">NF-e não emitida</div>';
             }
@@ -944,7 +946,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	function style(){
 		?>
 		<style>
-		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
+		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #c6ab2a; }
+		.nfe_error { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
 		.nfe_success { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em;  background-color: #5cb85c; }
 		.nfe_none { color: #999; text-align:center; }
 		.nfe_danfe { padding: 0px 12px 2px; border: 1px solid #CCC; margin-top: 5px; float: left; }
@@ -1560,5 +1563,77 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			}
 			$html .= '</div>';
 			echo $html;
+		}
+
+		public function nfe_custom_field_bulk_edit_input() {
+		    ?>
+		    <div class="inline-edit-group">
+					<label class="alignleft _nfe_classe_imposto">
+		         <span class="title">Classe de Imposto</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_classe_imposto" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_classe_imposto">
+		         <span class="title">GTIN (antigo código EAN)</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_ean" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_gtin_tributavel">
+		         <span class="title">GTIN tributável</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_gtin_tributavel" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_codigo_ncm">
+		         <span class="title">Código NCM</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_ncm" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_codigo_cest">
+		         <span class="title">Código CEST</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_codigo_cest" class="text" value="">
+		         </span>
+					</label>
+					<label class="alignleft _nfe_cnpj_fabricante">
+		         <span class="title">CNPJ do Frabricante</span>
+		         <span class="input-text-wrap">
+		            <input type="text" name="_nfe_cnpj_fabricante" class="text" value="">
+		         </span>
+					</label>
+
+		    </div>
+		    <?php
+		}
+
+		public function nfe_custom_field_bulk_edit_save( $product ) {
+			$post_id = $product->get_id();
+			if ( isset( $_REQUEST['_nfe_classe_imposto'] ) && !empty($_REQUEST['_nfe_classe_imposto']) ) {
+				$custom_field = $_REQUEST['_nfe_classe_imposto'];
+				update_post_meta( $post_id, '_nfe_classe_imposto', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_ean'] ) && !empty($_REQUEST['_nfe_codigo_ean']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_ean'];
+				update_post_meta( $post_id, '_nfe_codigo_ean', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_gtin_tributavel'] ) && !empty($_REQUEST['_nfe_gtin_tributavel']) ) {
+				$custom_field = $_REQUEST['_nfe_gtin_tributavel'];
+				update_post_meta( $post_id, '_nfe_gtin_tributavel', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_ncm'] ) && !empty($_REQUEST['_nfe_codigo_ncm']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_ncm'];
+				update_post_meta( $post_id, '_nfe_codigo_ncm', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_codigo_cest'] ) && !empty($_REQUEST['_nfe_codigo_cest']) ) {
+				$custom_field = $_REQUEST['_nfe_codigo_cest'];
+				update_post_meta( $post_id, '_nfe_codigo_cest', wc_clean( $custom_field ) );
+			}
+			if ( isset( $_REQUEST['_nfe_cnpj_fabricante'] ) && !empty($_REQUEST['_nfe_cnpj_fabricante']) ) {
+				$custom_field = $_REQUEST['_nfe_cnpj_fabricante'];
+				update_post_meta( $post_id, '_nfe_cnpj_fabricante', wc_clean( $custom_field ) );
+			}
 		}
 }
