@@ -664,31 +664,8 @@ class WooCommerceNFe {
 			$compare_addresses = self::compare_addresses($order->id, $envio_email);
 			$data['cliente'] = $compare_addresses['cliente'];
 
-<<<<<<< HEAD
 			if ( isset($compare_addresses['transporte']['entrega']) ) {
 				$data['transporte']['entrega'] = $compare_addresses['transporte']['entrega'];
-=======
-			$tipo_pessoa = get_post_meta($post_id, '_billing_persontype', true);
-		if (!$tipo_pessoa) {
-			if ( !empty(get_post_meta($post_id, '_billing_cpf', true)) ) {
-				$tipo_pessoa = 1;
-			} elseif ( !empty(get_post_meta($post_id, '_billing_cnpj', true)) ) {
-				$tipo_pessoa = 2;
-			}
-	    if (!$tipo_pessoa) $tipo_pessoa = 1;
-		}
-			if ($tipo_pessoa == 1){
-				$cpf        = get_post_meta($post_id, '_billing_cpf', true);
-				$first_name = get_post_meta($post_id, '_billing_first_name', true);
-				$last_name  = get_post_meta($post_id, '_billing_last_name', true);
-				$full_name  = $first_name.' '.$last_name;
-				$data['cliente']['cpf'] = $WooCommerceNFe_Format->cpf($cpf); //Pessoa Física: Número do CPF
-				$data['cliente']['nome_completo'] = $full_name; //Nome completo do cliente
-			}else if($tipo_pessoa == 2) {
-				$data['cliente']['cnpj'] = $WooCommerceNFe_Format->cnpj(get_post_meta($post_id, '_billing_cnpj', true)); // (pessoa jurídica) Número do CNPJ
-				$data['cliente']['razao_social'] = get_post_meta($post_id, '_billing_company', true); // (pessoa jurídica) Razão Social
-				$data['cliente']['ie'] =  get_post_meta($post_id, '_billing_ie', true); // (pessoa jurídica) Número da Inscrição Estadual
->>>>>>> dev
 			}
 		}
 
