@@ -659,7 +659,7 @@ class WooCommerceNFe {
 		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){
 			$data['pedido']['informacoes_complementares'] = $consumidor_inf;
 		}
-		if ($order->get_user() !== false) {
+		if ($order->get_user() !== false || $modelo == 1) {
 			// Customer
 			$compare_addresses = self::compare_addresses($order->id, $envio_email);
 			$data['cliente'] = $compare_addresses['cliente'];
