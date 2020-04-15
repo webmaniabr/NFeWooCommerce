@@ -323,12 +323,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'radio',
                 'options' => array(
                 	'0' => 'Não emitir automaticamente',
-                	'1' => 'Sempre que o pedido ter o status alterado para Processando (Pagamento confirmado)',
-                	'2' => 'Sempre que o pedido ter o status alterado para Concluído'
+                	'1' => 'Sempre que o pedido ter o status alterado para um dos Status abaixo',
             	),
                 'default' => '0',
                 'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
             ),
+						'emissao_automatica_status' => array(
+	                'name' => __( 'Status para emissão automática', $domain ),
+	                'type' => 'multiselect',
+	                'id'   => 'wc_settings_woocommercenfe_emissao_automatica_status',
+									'css'  => 'height: 100px;',
+									'desc' => 'Segure CONTROL ou SHIFT para selecionar mais de uma opção.'
+	            ),
             'email_notification' => array(
                 'name' => __( 'E-mail para notificação de erros de emissão', $domain ),
                 'type' => 'email',
@@ -477,6 +483,11 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id' => 'wc_settings_woocommercenfe_end4'
             ),
         );
+				$opt = array();
+				foreach(wc_get_order_statuses() as $status => $desc) {
+					$opt[$status] = $desc;
+				}
+				$settings['emissao_automatica_status']['options'] = $opt;
         // WooCommerce Extra Checkout Fields for Brazil
         if ($this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')){
         	unset($settings['title5']);

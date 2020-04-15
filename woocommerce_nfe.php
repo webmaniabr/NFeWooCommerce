@@ -124,12 +124,11 @@ class WooCommerceNFe {
 		add_action( 'wp_ajax_wmbr_remove_order_id_auto_invoice', array($WC_NFe_Backend, 'wmbr_remove_order_id_auto_invoice'));
 		// NFe autommatic
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-		if ( $option == 1 || $option == 'yes' ) {
-			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
-		} else if ( $option == 2 ) {
-			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+		if ($option == 1 || $option == 'yes') {
+			foreach (get_option('wc_settings_woocommercenfe_emissao_automatica_status') as $status ) {
+				add_action( 'woocommerce_order_status_' . ((strpos($status, 'wc-', 0) === 0) ? substr($status, 3) : $status), array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
+			}
 		}
-
 		add_filter( 'woocommerce_admin_shipping_fields', array($WC_NFe_Backend, 'extra_shipping_fields') );
 		add_action( 'admin_enqueue_scripts', array($WC_NFe_Backend, 'scripts') );
 	}
