@@ -273,15 +273,11 @@ class WooCommerceNFe {
 		}
 	}
 	function emitirNFeAutomaticamenteOnStatusChange( $order_id ) {
+
 		do_action( 'before_emitirNFeAutomaticamenteOnStatusChange', $order_id );
-		self::emitirNFeAutomaticamenteWithForce($order_id, false);
-	}
 
-
-	function emitirNFeAutomaticamenteWithForce( $order_id, $force ) {
-
+		$response = false;
 		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-
 		$force = apply_filters('webmaniabr_emissao_automatica', $force,  $option, $order_id);
 
 		// If the option "Emitir Automaticamente" is enabled and
@@ -304,31 +300,26 @@ class WooCommerceNFe {
 				}
 
 				if( !empty($nfces) && is_array($nfces) ) {
-
 					// If exists, find for any approved document
 					foreach ( $nfces as $nfce ) {
-
 						if ( !empty($nfce['status'])) {
 								return false;
 						}
-
 					}
-
 				}
 
 				// If all conditions was match, call function
 				$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
 				if ($tipo == 'nfe') {
-				  return self::emitirNFe( array( $order_id ) );
+				  $response = self::emitirNFe( array( $order_id ) );
 			  } else if ($tipo == 'nfce') {
-					return self::emitirNFCe( array( $order_id ) );
+					$response = self::emitirNFCe( array( $order_id ) );
 				}
-				return false;
-
-
 		}
 
 		do_action( 'after_emitirNFeAutomaticamenteOnStatusChange', $order_id, $response );
+
+		return $response;
 
 	}
 	/**
@@ -1130,7 +1121,12 @@ class WebmaniaBR_Rest_Controller extends WP_REST_Controller {
 		if (!$id)
 			return array(false);
 
-		$return = WooCommerceNFe::instance()->emitirNFeAutomaticamenteWithForce($id, $force);
+			$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
+			$force = apply_filters('webmaniabr_emissao_automatica', $force,  $option, $id);
+
+			if ( ($force || $option == 1 ||  $option == 'yes' ) && get_post_type( $id ) == 'shop_order' ) {
+				$return = WooCommerceNFe::instance()->emitirNFeAutomaticamenteOnStatusChange($id, $force);
+			}
 
 		if (!$return) {
 			$nfe = get_post_meta( $id, 'nfe', true );
