@@ -83,17 +83,6 @@ class WooCommerceNFe {
 	function init_backend(){
 		$WC_NFe_Backend = new WooCommerceNFe_Backend();
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-
-		// Get value from 'Emissão Automática' option
-		$option = get_option('wc_settings_woocommercenfe_emissao_automatica');
-
-		if ( $option == 1 || $option == 'yes' ) {
-			// add_action( 'woocommerce_payment_complete', array($this, 'emitirNFeAutomaticamente'), 10, 1 ); Depreciated
-			add_action( 'woocommerce_order_status_processing', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
-		} else if ( $option == 2 ) {
-			add_action( 'woocommerce_order_status_completed', array($this, 'emitirNFeAutomaticamenteOnStatusChange'), 1000, 1 );
-		}
-
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
 		add_action( 'woocommerce_product_bulk_edit_start', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_input') );
