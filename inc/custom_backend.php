@@ -168,13 +168,18 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 								<?php echo $this->get_shipping_methods_select(); ?>
 							</div>
 							<div class="shipping-info-col">
+									<p>Se for pessoa jurídica, preencher os campos de Razão Social, CNPJ e Inscrição Estadual. Se for pessoa física, preencher os campos CPF e Nome Completo.</p>
 									<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_0"/></p>
 									<p><label class="nfe-shipping-label">CNPJ:</label> <input type="text" name="shipping_info_cnpj_0"/></p>
 									<p><label class="nfe-shipping-label">Inscrição estadual:</label> <input type="text" name="shipping_info_ie_0"/></p>
+									<p><label class="nfe-shipping-label">CPF:</label> <input type="text" name="shipping_info_cpf_0"/></p>
+									<p><label class="nfe-shipping-label">Nome Completo:</label> <input type="text" name="shipping_info_name_0"/></p>
 									<p><label class="nfe-shipping-label">Endereço:</label> <input type="text" name="shipping_info_address_0"/></p>
 									<p><label class="nfe-shipping-label">CEP:</label> <input type="text" name="shipping_info_cep_0"/></p>
 									<p><label class="nfe-shipping-label">Cidade:</label> <input type="text" name="shipping_info_city_0"/></p>
 									<p><label class="nfe-shipping-label">UF:</label> <input type="text" name="shipping_info_uf_0"/></p>
+									<p><label class="nfe-shipping-label">Placa do Veículo:</label> <input type="text" name="shipping_info_plate_0"/></p>
+									<p><label class="nfe-shipping-label">UF do Veículo:</label> <input type="text" name="shipping_info_uf_vehicle_0"/></p>
 							</div>
 							<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>
 						</div>
@@ -234,10 +239,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				'razao_social' => 'rs',
 				'cnpj'         => 'cnpj',
 				'ie'           => 'ie',
+				'cpf'          => 'cpf',
+				'nome'         => 'name',
 				'address'      => 'address',
 				'cep'          => 'cep',
 				'city'         => 'city',
-				'uf'           => 'uf'
+				'uf'           => 'uf',
+				'placa'        => 'plate',
+				'uf_veiculo'   => 'uf_vehicle'
 			);
 			foreach($keys as $name => $post_key){
 				$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
@@ -487,10 +496,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				$html .= '<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_'.$i.'" value="'.$transp['razao_social'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">CNPJ: </label><input type="text" name="shipping_info_cnpj_'.$i.'" value="'.$transp['cnpj'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">Inscrição estadual: </label><input type="text" name="shipping_info_ie_'.$i.'" value="'.$transp['ie'].'"/></p>';
+				$html .= '<p><label class="nfe-shipping-label">CPF: </label><input type="text" name="shipping_info_cpf_'.$i.'" value="'.$transp['cpf'].'"/></p>';
+				$html .= '<p><label class="nfe-shipping-label">Nome Completo: </label><input type="text" name="shipping_info_name_'.$i.'" value="'.$transp['nome'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">Endereço: </label><input type="text" name="shipping_info_address_'.$i.'" value="'.$transp['address'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">CEP: </label><input type="text" name="shipping_info_cep_'.$i.'" value="'.$transp['cep'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">Cidade: </label><input type="text" name="shipping_info_city_'.$i.'" value="'.$transp['city'].'"/></p>';
 				$html .= '<p><label class="nfe-shipping-label">UF: </label><input type="text" name="shipping_info_uf_'.$i.'" value="'.$transp['uf'].'"/></p>';
+				$html .= '<p><label class="nfe-shipping-label">Placa do Veículo: </label><input type="text" name="shipping_info_plate_'.$i.'" value="'.$transp['placa'].'"/></p>';
+				$html .= '<p><label class="nfe-shipping-label">UF do Veículo: </label><input type="text" name="shipping_info_uf_vehicle_'.$i.'" value="'.$transp['uf_veiculo'].'"/></p>';
 				$html .= '<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>';
 				$html .= '</div>';
 				$html .= '</div>';
@@ -1331,10 +1344,14 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_transporte_cnpj'  		=> $_POST['transporte_cnpj'],
 						'_nfe_transporte_razao_social'  => $_POST['transporte_razao_social'],
 						'_nfe_transporte_ie'    		=> $_POST['transporte_ie'],
+						'_nfe_transporte_cpf'    		=> $_POST['transporte_cpf'],
+						'_nfe_transporte_nome'    		=> $_POST['transporte_nome'],
 						'_nfe_transporte_endereco'  	=> $_POST['transporte_endereco'],
 						'_nfe_transporte_estado'    	=> $_POST['transporte_estado'],
 						'_nfe_transporte_cidade'    	=> $_POST['transporte_cidade'],
 						'_nfe_transporte_cep'   		=> $_POST['transporte_cep'],
+						'_nfe_transporte_placa'    		=> $_POST['transporte_placa'],
+						'_nfe_transporte_uf_veiculo'    		=> $_POST['transporte_uf_veiculu'],
 						'_nfe_transporte_seguro'    	=> str_replace(',', '.', $_POST['transporte_seguro']),
 					);
 					foreach ($info as $key => $value){

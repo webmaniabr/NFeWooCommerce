@@ -578,7 +578,7 @@ class WooCommerceNFe {
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
-		if (!$modalidade_frete || $modalidade_frete == 'null') $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $order );
+		if (!$modalidade_frete || $modalidade_frete == 'null' || empty($modalidade_frete)) $modalidade_frete = apply_filters('webmaniabr_pedido_modalidade_frete', $modelo == 1 ? 0 : 9, $modalidade_frete, $modelo, $post_id, $order );
 		$order_key = $order->order_key;
 
 		$natureza_operacao_pedido = get_post_meta($order->id, '_nfe_natureza_operacao_pedido', true);
@@ -721,10 +721,14 @@ class WooCommerceNFe {
 			$data['transporte']['cnpj']         = $transp['cnpj'];
 			$data['transporte']['razao_social'] = $transp['razao_social'];
 			$data['transporte']['ie']           = $transp['ie'];
+			$data['transporte']['cpf']          = $transp['cpf'];
+			$data['transporte']['nome_completo']= $transp['nome'];
 			$data['transporte']['endereco']     = $transp['address'];
 			$data['transporte']['uf']           = $transp['uf'];
 			$data['transporte']['cidade']       = $transp['city'];
 			$data['transporte']['cep']          = $transp['cep'];
+			$data['transporte']['placa']        = $transp['placa'];
+			$data['transporte']['uf_veiculo']   = $transp['uf_veiculo'];
 		}
 		$order_specifics = array(
 			'volume' => '_nfe_transporte_volume',
