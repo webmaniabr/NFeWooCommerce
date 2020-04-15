@@ -221,7 +221,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	<?php
 	}
     function update_settings(){
-        woocommerce_update_options( $this->get_settings() );
+        woocommerce_update_options( $this->get_settings(true) );
 		//Transportadoras
 		$count = (int) $_POST['shipping-info-count'];
 		$transportadoras = array();
@@ -262,9 +262,10 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			update_option('wc_settings_woocommercenfe_transp_include', 'off');
 		}
     }
-    function get_settings(){
+    function get_settings($update = false){
         global $domain;
-        $auto_invoice_report_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
+
+        $auto_invoice_report_url = $update ? '' : menu_page_url('wmbr_page_auto_invoice_errors', false);
         $settings = array(
             'title' => array(
                 'name'     => __( 'Credenciais de Acesso', $domain ),
@@ -588,7 +589,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 			if(!is_admin()){
 				return false;
 			}
-			if(isset($_GET['atualizar_ne']) || $_GET['atualizar_nfe'] && $_GET['post'] && $_GET['chave']){
+			if(isset($_GET['atualizar_ne']) || isset($_GET['atualizar_nfe']) && $_GET['post'] && $_GET['chave']){
 				$post_id = (int) sanitize_text_field($_GET['post']);
 				$chave = sanitize_text_field($_GET['chave']);
 				$webmaniabr = new NFe(WC_NFe()->settings);
