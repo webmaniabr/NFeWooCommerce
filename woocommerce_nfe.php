@@ -286,13 +286,9 @@ class WooCommerceNFe {
 
 		// If the option "Emitir Automaticamente" is enabled and
 		// the post type is equal to 'shop_order'
-		if ( ( $option == 1 || $option == 2 || $option == 'yes' || $force ) && get_post_type( $order_id ) == 'shop_order' ) {
+		if (get_post_type( $order_id ) == 'shop_order' ) {
 
-			// Double check the order status
 			$order = wc_get_order( $order_id );
-			$order_status  = $order->get_status();
-			// If the post is Processing (Processando) or Completed (Concluído)
-			if ( $order_status == 'processing' || $order_status == 'completed' ) {
 				// Get the field with all "NF-e" informations
 				$nfes = get_post_meta( $order_id, 'nfe', true );
 				$nfces = get_post_meta( $order_id, 'nfce', true );
@@ -329,7 +325,6 @@ class WooCommerceNFe {
 				}
 				return false;
 
-			}
 
 		}
 
