@@ -1003,8 +1003,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 	}
 
     function scripts(){
-        wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $this->version );
-        wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $this->version );
+        wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, self::version );
+        wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, self::version );
         wp_enqueue_style( 'woocommercenfe_admin_style' );
         wp_enqueue_script( 'woocommercenfe_admin_script' );
     }
