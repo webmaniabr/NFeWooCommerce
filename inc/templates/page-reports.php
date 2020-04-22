@@ -79,8 +79,8 @@ a.order-action:hover{
 }
 
 .empty-orders{
-  font-size: 52px;
-  color: #dcdcdc;
+  font-size: 20px;
+  color: #a2a2a2;
 }
 
 .widefat td {
@@ -96,15 +96,15 @@ a.order-action:hover{
 </style>
 
 
-<div class="wrap-page" style="background:#FFF; padding:15px; margin: 5px 15px 2px;">
+<div class="wrap-page" style="background:#FFF; padding:15px; margin: 5px 15px 2px;border-radius: 10px;">
   <h1 class="page-title">
-    Emissões com falha
+    Notificações - Nota Fiscal Eletrônica
   </h1>
 
 <?php if(empty($ids_db)): ?>
-  <p class="empty-orders">Nenhum pedido pendente</p>
+  <p class="empty-orders">Tudo certo 😉, as emissões de Nota Fiscal estão ocorrendo normalmente.</p>
 <?php else: ?>
-  <p>Foram realizadas emissões que resultaram em falha nos seguintes pedidos:</p>
+  <p>Foram realizadas emissões de Nota Fiscal que resultaram em falha nos seguintes pedidos:</p>
   <ul class="pending-orders">
 
     <?php
