@@ -691,6 +691,10 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						<input type="checkbox" name="emitir_homologacao"/>
 						<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Emitir em homologação</label>
 					</p>
+					<p class="label" style="margin-bottom:8px;">
+						<input type="checkbox" name="nao_emitir"/>
+						<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Não emitir nota deste pedido</label>
+					</p>
 				</div>
 				<hr>
 				<div class="field outras_informacoes">
@@ -1350,6 +1354,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
 						'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
 						'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
+						'_nfe_emitir_homologacao'      	=> $_POST['emitir_homologacao'],
+						'_nfe_nao_emitir'             	=> $_POST['nao_emitir'],
 						'_nfe_transporte_marca' 		=> $_POST['transporte_marca'],
 						'_nfe_transporte_numeracao' 	=> $_POST['transporte_numeracao'],
 						'_nfe_transporte_lacres'    	=> $_POST['transporte_lacres'],
@@ -1363,7 +1369,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 						'_nfe_transporte_cidade'    	=> $_POST['transporte_cidade'],
 						'_nfe_transporte_cep'   		=> $_POST['transporte_cep'],
 						'_nfe_transporte_placa'    		=> $_POST['transporte_placa'],
-						'_nfe_transporte_uf_veiculo'    		=> $_POST['transporte_uf_veiculu'],
+						'_nfe_transporte_uf_veiculo'    		=> $_POST['transporte_uf_veiculo'],
 						'_nfe_transporte_seguro'    	=> str_replace(',', '.', $_POST['transporte_seguro']),
 					);
 					foreach ($info as $key => $value){

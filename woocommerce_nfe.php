@@ -296,12 +296,15 @@ class WooCommerceNFe {
 					}
 				}
 
-				// If all conditions was match, call function
-				$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
-				if ($tipo == 'nfe') {
-				  $response = self::emitirNFe( array( $order_id ) );
-			  } else if ($tipo == 'nfce') {
-					$response = self::emitirNFCe( array( $order_id ) );
+				$nao_emitir = get_post_meta($order_id, '_nfe_nao_emitir', true);
+				if (!$nao_emitir) {
+					// If all conditions was match, call function
+					$tipo = apply_filters('webmaniabr_modelo_nota', 'nfe', $order_id);
+					if ($tipo == 'nfe') {
+					  $response = self::emitirNFe( array( $order_id ) );
+				  } else if ($tipo == 'nfce') {
+						$response = self::emitirNFCe( array( $order_id ) );
+					}
 				}
 		}
 
@@ -575,7 +578,7 @@ class WooCommerceNFe {
 			'modelo'            => $modelo, // Modelo da Nota Fiscal (NF-e ou NFC-e)
 			'emissao'           => 1, // Tipo de Emissão da NF-e
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
-			'ambiente'          => ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente')) // Identificação do Ambiente do Sefaz
+			'ambiente'          => ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (get_post_meta($order->id, '_nfe_emitir_homologacao', true) ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente')) ) // Identificação do Ambiente do Sefaz
 		);
 
 		$data_emissao = get_option('wc_settings_woocommercenfe_data_emissao');
