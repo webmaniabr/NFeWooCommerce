@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://github.com/shirkit
-* Version: 3.0.3
+* Version: 3.0.7
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 class WooCommerceNFe {
 	public $domain = 'WooCommerceNFe';
-	public static $version = '3.0.3';
+	public static $version = '3.0.6';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -28,19 +28,19 @@ class WooCommerceNFe {
 		add_action( 'admin_notices', array($this, 'display_messages') );
 		// Verify WooCommerce Plugin
 		if ( !class_exists( 'WooCommerce' ) ) {
-			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
+			WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $domain) );
 			return false;
 		}
 		// Verify if curl command exist
 		if (!function_exists('curl_version')){
-			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $domain) );
+			WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $domain) );
 			return false;
 		}
 		global $woocommerce;
 		$vars = get_object_vars($woocommerce);
 		// Verify WooCommerce Version
 		if ($vars['version'] < '2.0.0'){
-			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Para o funcionamento correto do plugin atualize o WooCommerce na versão mais recente.', $domain) );
+			WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Para o funcionamento correto do plugin atualize o WooCommerce na versão mais recente.', $domain) );
 			return false;
 		}
 		// Init Back-end and Front-end
@@ -61,7 +61,7 @@ class WooCommerceNFe {
 		!$consumer_key ||
 		!$consumer_secret
 		) {
-			WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $domain) );
+			WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $domain) );
 			return false;
 		}
 		// Set Settings
@@ -218,7 +218,7 @@ class WooCommerceNFe {
 			$response = get_transient('validadeCertificado');
 		} else {
 			if ( !isset(WC_NFe()->settings) ) {
-				if ($return_ajax) return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Credenciais de acesso não cadastradas. Por favor, informe-as para obter a validade do certificado digital A1.' ), JSON_UNESCAPED_UNICODE );
+				if ($return_ajax) return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Por favor, informe as credenciais de acesso para obter a validade do Certificado Digital A1.' ), JSON_UNESCAPED_UNICODE );
 				return false;
 			}
 			$webmaniabr = new NFe(WC_NFe()->settings);
@@ -233,11 +233,11 @@ class WooCommerceNFe {
             set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
             if ($return_ajax) return json_encode( array( 'status' => 'success', 'msg' => $response ), JSON_UNESCAPED_UNICODE );
 			if ($response < 45 && $response >= 1){
-				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $this->domain) );
+				WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $this->domain) );
 				return false;
 			}
 			if (!$response) {
-				WC_NFe()->add_error( __('<strong>WooCommerce NF-e:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', $this->domain) );
+				WC_NFe()->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', $this->domain) );
 				return false;
 			}
 		}
@@ -347,9 +347,6 @@ class WooCommerceNFe {
 	function add_id_to_invoice_errors( $message, $order_id ) {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
-		if ( is_array($ids_db) ) {
-			if ( array_key_exists($order_id, $ids_db) ) return false;
-		}
 
 		$nfes = get_post_meta( $order_id, 'nfe', true );
 		if( !empty($nfes) && is_array($nfes) ) {
@@ -388,9 +385,14 @@ class WooCommerceNFe {
 			if ($is_massa) {
 				$data['assincrono'] = 1;
 			}
+
+			do_action('nfe_before_response', $data, $order_id);
+
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 			$result[] = $response;
+
+			do_action('nfe_after_response', $response, $order_id);
 
 			if (isset($response->error) || $response->status == 'reprovado') {
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
@@ -520,7 +522,8 @@ class WooCommerceNFe {
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
 		$coupons = $order->get_used_coupons();
 		$coupons_percentage = array();
-		$total_discount = 0;
+		$total_discount = $total_fee = 0;
+		$fee_aditional_informations = '';
 		if ($coupons){
 			foreach($coupons as $coupon_code){
 				$coupon_obj = new WC_Coupon($coupon_code);
@@ -529,31 +532,7 @@ class WooCommerceNFe {
 				}
 			}
 		}
-		if ($order->get_fees()){
-			foreach ($order->get_fees() as $key => $item){
-				if ($item['line_total'] < 0){
-					$discount = abs($item['line_total']);
-					$total_discount = $discount + $total_discount;
-				} else {
-					$data['produtos'][] = array(
-						'nome'           => $item['name'], // Nome do produto
-						'sku'            => '', // Código identificador - SKU
-						'gtin'            => $default_gtin,
-						'gtin_tributavel' => $default_gtin_tributavel, //GTIN tributável
-						'ncm'            => $default_ncm, // Código NCM
-						'cest'           => $default_cest, // Código CEST
-						'quantidade'     => 1, // Quantidade de itens
-						'unidade'        => 'UN', // Unidade de medida da quantidade de itens
-						'peso'           => $default_weight, // Peso em KG. Ex: 800 gramas = 0.800 KG
-						'origem'         => (int) $default_origem, // Origem do produto
-						'subtotal'       => number_format($item['line_subtotal'], 2, '.', ''), // Preço unitário do produto - sem descontos
-						'total'          => number_format($item['line_total'], 2, '.', ''), // Preço total (quantidade x preço unitário) - sem descontos
-						'classe_imposto' => $default_imposto // Referência do imposto cadastrado
-					);
-				}
-			}
-		}
-		$total_discount = $order->get_total_discount() + $total_discount;
+
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 		if (!isset($modalidade_frete)) $modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
@@ -573,7 +552,7 @@ class WooCommerceNFe {
 
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
-			'origem'			=> 'woocommerce',
+			'origem'					  => 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => $natureza_operacao, // Natureza da Operação
@@ -582,6 +561,22 @@ class WooCommerceNFe {
 			'finalidade'        => 1, // Finalidade de emissão da Nota Fiscal
 			'ambiente'          => ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (get_post_meta($order->id, '_nfe_emitir_homologacao', true) ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente')) ) // Identificação do Ambiente do Sefaz
 		);
+
+		if ($order->get_fees()){
+			foreach ($order->get_fees() as $key => $item){
+				if ($item['line_total'] < 0){
+					$discount = abs($item['line_total']);
+					$total_discount = $discount + $total_discount;
+				} else {
+					if ( $fee_aditional_informations != '' ) $fee_aditional_informations .= ' / ';
+					$fee_aditional_informations .= $item['name'] . ': R$' . number_format($item['line_total'], 2, ',', '');
+					$fee = $item['line_total'];
+					$total_fee = $fee + $total_fee;
+				}
+			}
+		}
+
+		$total_discount = $order->get_total_discount() + $total_discount;
 
 		$data_emissao = get_option('wc_settings_woocommercenfe_data_emissao');
 		if ( isset($data_emissao) && $data_emissao == 'yes' ) {
@@ -596,6 +591,65 @@ class WooCommerceNFe {
 			'desconto'         => $total_discount, // Total do desconto
 			'total'            => $order->order_total // Total do pedido - sem descontos
 		);
+
+		if ( $total_fee && $total_fee > 0 ) {
+			$data['pedido']['despesas_acessorias'] = number_format($total_fee, 2, '.', '');
+		}
+
+		/** Check before create installments informations
+		 * - Plugin "EBANX Local Payment Gateway for WooCommerce" is active
+		 * - Option in "Nota Fiscal" configuration oage is enabled
+		 * - The order has a credit card payment
+		 */
+		if (
+			self::wmbr_is_plugin_active('ebanx-local-payment-gateway-for-woocommerce/woocommerce-gateway-ebanx.php') &&
+			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
+			get_post_meta( $post_id, '_cards_brand_name', true) != ''
+		) {
+
+			$parcelas = get_post_meta( $post_id, '_instalments_number', true);
+			// Check if the order has installments or if is greater than 1
+			if ( isset($parcelas) || $parcelas > 1 ) {
+
+				$valor_total = $order->order_total;
+
+				// Create 'fatura' array
+				$data['fatura'] =  array(
+					'numero'		=> '000001',
+					'valor'		 	=> $valor_total + $total_discount,
+					'desconto'		=> $total_discount,
+					'valor_liquido' => $valor_total
+				);
+
+				// Declare vars
+				$data['parcelas'] = array();
+				$valor_parcela = round($valor_total / $parcelas, 2);
+				$valor_somatorio = 0;
+				$data_pedido = get_the_time('Y-m-d', $post_id);
+
+				for ( $i = 1; $i <= $parcelas; $i++ ) {
+
+					// When reach the last intallment, calculate the total
+					if ( $i == $parcelas ) {
+						$valor_parcela = $valor_total - $valor_somatorio;
+					} else {
+						$valor_somatorio += $valor_parcela;
+					}
+
+					// Add installment to NF-e invoice
+					$data['parcelas'][] = array(
+						'vencimento' => $data_pedido,
+						'valor' => $valor_parcela
+					);
+
+					// Add 30 days to next installment
+					$data_pedido = date('Y-m-d', strtotime("+1 month", strtotime($data_pedido)));
+
+				}
+
+			}
+
+		}
 
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
@@ -635,6 +689,9 @@ class WooCommerceNFe {
 		}
 		//Informações Complementares ao Consumidor
 		$consumidor_inf = get_option('wc_settings_woocommercenfe_cons_inf');
+		if ( $fee_aditional_informations != '' ) {
+			$consumidor_inf .= $fee_aditional_informations;
+		}
 		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){
 			$data['pedido']['informacoes_complementares'] = $consumidor_inf;
 		}
@@ -722,7 +779,7 @@ class WooCommerceNFe {
 				$data['transporte'][$api_key] = $value;
 			}
 		}
-		return $data;
+		return apply_filters('nfe_order_data', $data, $post_id);
 	}
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
@@ -815,7 +872,7 @@ class WooCommerceNFe {
 				$info['informacoes_adicionais'] = $informacoes_adicionais;
 			}
 
-			return $info;
+			return apply_filters('nfe_order_data_product', $info, $order->id);
 	}
 	function set_bundle_products_array( $bundles, $order){
 		$total_bundle = 0;

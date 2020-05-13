@@ -121,21 +121,19 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					}
 				</style>
 
-				<h3>Certificado digital A1</h3>
-				<h4>Atualize manualmente seu certificado digital A1</h4>
-
+				<h3>Certificado Digital A1</h3>
 				<?php
 					add_action( 'admin_footer', array($this, 'force_digital_certificate_update') );
 					$certificate = json_decode($this->validadeCertificado(false, true));
 					echo '<span id="update-digital-certificate-response">';
 						if ( isset($certificate->status) && $certificate->status == 'success' ) {
-							echo '<h4 class="cert_ajax_success">Faltam ' . $certificate->msg . ' dias para o certificado digital A1 expirar.</h4>';
+							echo '<h4 class="cert_ajax_success">Faltam ' . $certificate->msg . ' dias para o Certificado Digital A1 expirar.</h4>';
 						} elseif ( isset($certificate->status) && $certificate->status == 'error' ) {
-							echo '<h4 class="cert_ajax_error">Certificado digital A1 expirado</h4>';
+							echo '<h4 class="cert_ajax_error">Certificado Digital A1 expirado</h4>';
 						} elseif ( isset($certificate->status) && $certificate->status == 'null_credentials' ) {
 							echo '<h4 class="cert_ajax_error">'.$certificate->msg.'</h4>';
 						} else {
-							echo '<h4 class="cert_ajax_error">Não foi possível atualizar seu certificado digital A1. Por favor, solicite suporte para <a target="_blank" href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a>.</h4>';
+							echo '<h4 class="cert_ajax_error">Não foi possível atualizar seu Certificado Digital A1. Por favor, solicite suporte para <a target="_blank" href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a>.</h4>';
 						}
 					echo '</span>';
 				?>
@@ -204,13 +202,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					$("#update-digital-certificate").prop('disabled', true);
 					jQuery.post(ajaxurl, data, function(response) {
 						if ( response.status == 'success' ) {
-							response = '<h4 class="cert_ajax_success">Seu certificado digital A1 foi atualizado: Faltam ' + response.msg + ' dias para o certificado digital A1 expirar.</h4>';
+							response = '<h4 class="cert_ajax_success">Seu Certificado Digital A1 foi atualizado: Faltam ' + response.msg + ' dias para o certificado digital A1 expirar.</h4>';
 						} else if ( response.status == 'error' ) {
-							response = '<h4 class="cert_ajax_error">Erro ao atualizar o certificado digital A1: ' + response.msg + '</h4> ';
+							response = '<h4 class="cert_ajax_error">Erro ao atualizar o Certificado Digital A1: ' + response.msg + '</h4> ';
 						} else if ( response.status == 'null_credentials' ) {
 							response = '<h4 class="cert_ajax_error">' + response.msg + '</h4> ';
 						} else {
-							response = '<h4 class="cert_ajax_error">Não foi possível atualizar seu certificado digital A1. Por favor, solicite suporte para <a href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a></h4>';
+							response = '<h4 class="cert_ajax_error">Não foi possível atualizar seu Certificado Digital A1. Por favor, solicite suporte para <a href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a></h4>';
 						}
 						$("#update-digital-certificate-response").html(response);
 						$("#update-digital-certificate").prop('disabled', false);
@@ -264,8 +262,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
     }
     function get_settings($update = false){
         global $domain;
+        $auto_invoice_report_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
 
-        $auto_invoice_report_url = $update ? '' : menu_page_url('wmbr_page_auto_invoice_errors', false);
         $settings = array(
             'title' => array(
                 'name'     => __( 'Credenciais de Acesso', $domain ),
@@ -299,7 +297,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'ambiente' => array(
                 'name' => __( 'Ambiente Sefaz', $domain ),
                 'type' => 'radio',
-                'options' => array('1' => 'Produção', '2' => 'Desenvolvimento'),
+                'options' => array('1' => 'Produção', '2' => 'Desenvolvimento (Testes)'),
                 'default' => '2',
                 'id'   => 'wc_settings_woocommercenfe_ambiente'
             ),
@@ -310,15 +308,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'title2' => array(
                 'name'     => __( 'Configuração Padrão', $domain ),
                 'type'     => 'title',
-                'desc'     => 'A configuração padrão será utilizada para todos os produtos.<br>Caso deseje a configuração também pode ser personalizada em cada produto.'
+                'desc'     => 'A configuração padrão será utilizada para todos os produtos.<br>Caso deseje a configuração também pode ser personalizada em cada produto ou categoria.'
             ),
-            // 'emissao_automatica' => array(
-            //     'name' => __( 'Emissão automática', $domain ),
-            //     'type' => 'checkbox',
-            //     'desc' => __( 'Emitir automaticamente a NF-e sempre que um pagamento for confirmado.', $domain ),
-            //     'id'   => 'wc_settings_woocommercenfe_emissao_automatica',
-            // ),
-					'emissao_automatica' => array(
+						'emissao_automatica' => array(
                 'name' => __( 'Emissão automática', $domain ),
                 'type' => 'radio',
                 'options' => array(
@@ -343,9 +335,9 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'id'   => 'wc_settings_woocommercenfe_email_notification'
             ),
 					'data_emissao' => array(
-                'name' => __( 'Data de emissão retroativa', $domain ),
+                'name' => __( 'Emissão com data retroativa', $domain ),
                 'type' =>'checkbox',
-            	'desc' => __( 'Emissão com a data do pedido <br /><em>*Confirmar no Sefaz do estado a permissão de emissão junto com a contabilidade.</em>'),
+            	'desc' => __( 'Emissão de Nota Fiscal com a data do pedido (retroativa)<br /><em>*Recurso limitado para alguns Sefaz, consulte contabilidade caso necessário.</em>'),
                 'default' => 'no',
                 'id'   => 'wc_settings_woocommercenfe_data_emissao'
             ),
@@ -356,6 +348,13 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 							'default' => 'yes',
 							'id'   => __('wc_settings_woocommercenfe_envio_email'),
 						),
+						'email_notification' => array(
+                'name' => __( 'Notificação de erros', $domain ),
+                'type' => 'email',
+                'desc' => __( 'Informe um e-mail para notificações de erros na emissão ou <a target="_blank" href="'.$auto_invoice_report_url.'">visualize as notificações</a>.'),
+                'css' => 'width:300px;',
+                'id'   => 'wc_settings_woocommercenfe_email_notification'
+            ),
             'natureza_operacao' => array(
                 'name' => __( 'Natureza da Operação', $domain ),
                 'type' => 'text',
@@ -431,24 +430,40 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
                 'type' => 'sectionend',
                 'id' => 'wc_settings_woocommercenfe_end2'
             ),
-						'title4' => array(
-								'name'     => __( 'Informações Complementares (Opcional)', $domain ),
-								'type'     => 'title',
-								'desc'     => 'Informações fiscais complementares.'
-						),
-						'fisco_inf' => array(
+			'title4' => array(
+					'name'     => __( 'Informações Complementares (Opcional)', $domain ),
+					'type'     => 'title',
+					'desc'     => 'Informações fiscais complementares.'
+			),
+			'fisco_inf' => array(
                 'name' => __( 'Informações ao Fisco', $domain ),
                 'type' => 'textarea',
                 'id'   => 'wc_settings_woocommercenfe_fisco_inf',
-								'class' => 'nfe_textarea',
+				'class' => 'nfe_textarea',
             ),
-						'cons_inf' => array(
+			'cons_inf' => array(
                 'name' => __( 'Informações Complementares ao Consumidor', $domain ),
                 'type' => 'textarea',
                 'id'   => 'wc_settings_woocommercenfe_cons_inf',
-								'class' => 'nfe_textarea',
+				'class' => 'nfe_textarea',
             ),
-						'section_end3' => array(
+			'section_ebanx' => array(
+                'type' => 'sectionend',
+                'id' => 'wc_settings_woocommercenfe_ebanx'
+            ),
+            'ebanx_title' => array(
+                'name'     => __( 'Configurações EBANX', $domain ),
+                'type'     => 'title',
+                'desc'     => 'Defina as configurações do plugin EBANX.'
+            ),
+            'ebanx_parcelas' => array(
+                'name' => __( 'Exibir parcelas como duplicata', $domain ),
+                'type' => 'checkbox',
+                'desc' => __( 'Exibir parcelas como duplicata na emissão da NF-e do pedido pagos pelo plugin EBANX.', $domain ),
+                'id'   => 'wc_settings_parcelas_ebanx',
+                'default' => 'no',
+            ),
+			'section_end3' => array(
                 'type' => 'sectionend',
                 'id' => 'wc_settings_woocommercenfe_end3'
             ),
@@ -481,7 +496,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
             'section_end4' => array(
                 'type' => 'sectionend',
                 'id' => 'wc_settings_woocommercenfe_end4'
-            ),
+            )
         );
 				$opt = array();
 				foreach(wc_get_order_statuses() as $status => $desc) {
@@ -489,12 +504,19 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 				}
 				$settings['emissao_automatica_status']['options'] = $opt;
         // WooCommerce Extra Checkout Fields for Brazil
-        if ($this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php')){
+        if ( $this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php') ) {
         	unset($settings['title5']);
         	unset($settings['tipo_pessoa']);
         	unset($settings['mascara_campos']);
         	unset($settings['cep']);
         }
+
+		if ( !$this->wmbr_is_plugin_active('ebanx-local-payment-gateway-for-woocommerce/woocommerce-gateway-ebanx.php') ) {
+        	unset($settings['section_ebanx']);
+        	unset($settings['ebanx_title']);
+        	unset($settings['ebanx_parcelas']);
+		}
+
         return $settings;
     }
 		function get_transportadoras_entries(){
@@ -1466,12 +1488,12 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
       if ( is_array($ids_db) && count($ids_db) > 0 ) {
       	$count = count($ids_db);
       	$page_count = '('.$count.') ';
-        $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count'>$count</span></span>";
+        $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count' style='background: red;'>$count</span></span>";
       } else {
-          $update_count = "";
+          $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count'>0</span></span>";
       }
 
-	  	$title = 'Relatório de Nota Fiscal Eletrônica';
+	  	$title = 'Notificações Nota Fiscal';
 	    $capability = 'manage_options';
 	    $menu_slug = 'wmbr_page_auto_invoice_errors';
 
