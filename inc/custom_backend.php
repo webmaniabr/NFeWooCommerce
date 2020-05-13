@@ -1377,6 +1377,30 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 					}
 				}
     }
+
+		// Create new fields for variations
+		function variation_field_nfe( $loop, $variation_data, $variation ) {
+		  echo '<div class="variation-custom-fields">';
+					woocommerce_wp_text_input(
+		        array(
+		          'id'          => '_nfe_codigo_ncm['. $loop .']',
+		          'label'       => __( 'Código NCM', $domain ),
+		          'placeholder' => '',
+		          'wrapper_class' => 'form-row form-row-first',
+		          'value'       => get_post_meta($variation->ID, '_nfe_codigo_ncm', true)
+		        )
+		      );
+		  echo "</div>";
+		}
+
+		/** Save new fields for variations */
+		function save_variation_data( $variation_id, $i) {
+		    // Text Field
+		    $codigo_ncm = stripslashes( $_POST['_nfe_codigo_ncm'][$i] );
+				if( ! empty( $codigo_ncm ) ) {
+		    	update_post_meta( $variation_id, '_nfe_codigo_ncm', esc_attr( $text_field ) );
+				}
+		}
 		function add_category_ncm($taxonomy){ ?>
 
 			<div class="form-field term-ncm-wrap">

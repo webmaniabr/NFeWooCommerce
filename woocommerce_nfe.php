@@ -85,6 +85,8 @@ class WooCommerceNFe {
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_listar_nfe') );
 		add_action( 'add_meta_boxes', array($WC_NFe_Backend, 'register_metabox_nfe_emitida') );
+		add_action( 'woocommerce_product_after_variable_attributes', array($WC_NFe_Backend, 'variation_field_nfe'), 10, 3 );
+		add_action( 'woocommerce_save_product_variation', array($WC_NFe_Backend, 'save_variation_data'), 10, 2 );
 		add_action( 'woocommerce_product_bulk_edit_start', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_input') );
 		add_action( 'woocommerce_product_bulk_edit_save', array($WC_NFe_Backend, 'nfe_custom_field_bulk_edit_save') );
 		add_action( 'init', array($WC_NFe_Backend, 'atualizar_status_nota'), 100 );
