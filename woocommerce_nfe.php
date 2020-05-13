@@ -5,7 +5,7 @@
 * Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.0.6
+* Version: 3.0.7
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -354,9 +354,14 @@ class WooCommerceNFe {
 			if ($is_massa) {
 				$data['assincrono'] = 1;
 			}
+
+			do_action('nfe_before_response', $data, $order_id);
+
 			$webmaniabr = new NFe(WC_NFe()->settings);
 			$response = $webmaniabr->emissaoNotaFiscal( $data );
 			$result[] = $response;
+
+			do_action('nfe_after_response', $response, $order_id);
 
 			if (isset($response->error) || $response->status == 'reprovado') {
 				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
@@ -458,7 +463,7 @@ class WooCommerceNFe {
 		
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
-			'origem'			=> 'woocommerce',
+			'origem'					  => 'woocommerce',
 			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
 			'operacao'          => 1, // Tipo de Operação da Nota Fiscal
 			'natureza_operacao' => $natureza_operacao, // Natureza da Operação
@@ -663,7 +668,7 @@ class WooCommerceNFe {
 				$data['transporte'][$api_key] = $value;
 			}
 		}
-		return $data;
+		return apply_filters('nfe_order_data', $data, $post_id);
 	}
 	function get_product_nfe_info($item, $order){
 		global $wpdb;
@@ -756,7 +761,7 @@ class WooCommerceNFe {
 				$info['informacoes_adicionais'] = $informacoes_adicionais;
 			}
 
-			return $info;
+			return apply_filters('nfe_order_data_product', $info, $order->id);
 	}
 	function set_bundle_products_array( $bundles, $order){
 		$total_bundle = 0;
