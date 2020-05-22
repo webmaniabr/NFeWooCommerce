@@ -704,6 +704,10 @@ class WooCommerceNFe {
 				$data['transporte']['entrega'] = $compare_addresses['transporte']['entrega'];
 			}
 		}
+		$cellphone = get_user_meta($post_id, 'billing_cellphone', true) ? get_user_meta($post_id, 'billing_cellphone', true) : get_user_meta($post_id, '_billing_cellphone', true);
+		if ( $data['cliente']['telefone'] && $cellphone ) {
+			$data['pedido']['informacoes_complementares'] .= ' / Celular: ' . $cellphone;
+		}
 
 		// Products
 		$bundles = array();
