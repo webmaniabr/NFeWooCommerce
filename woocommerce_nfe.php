@@ -796,6 +796,7 @@ class WooCommerceNFe {
 		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
 		$codigo_cest = get_post_meta($product_id, '_nfe_codigo_cest', true);
 		$origem      = get_post_meta($product_id, '_nfe_origem', true);
+		$unidade     = get_post_meta($product_id, '_nfe_unidade', true);
 		$imposto     = get_post_meta($product_id, '_nfe_classe_imposto', true);
 		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
@@ -864,7 +865,7 @@ class WooCommerceNFe {
 				'ind_escala' => $ind_escala,
 				'cnpj_fabricante' => $cnpj_fabricante,
 				'quantidade' => $item['qty'], // Quantidade de itens
-				'unidade' => 'UN', // Unidade de medida da quantidade de itens
+				'unidade' => $unidade ? $unidade : 'UN', // Unidade de medida da quantidade de itens
 				'peso' => $peso, // Peso em KG. Ex: 800 gramas = 0.800 KG
 				'origem' => (int) $origem, // Origem do produto
 				'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
@@ -1026,6 +1027,8 @@ class WooCommerceNFe {
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
 
 		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : get_post_meta($post_id, '_billing_phone', true));
+		if (empty($phone))
+			$phone = (get_user_meta($post_id, 'billing_cellphone', true) ? get_user_meta($post_id, 'billing_cellphone', true) : get_post_meta($post_id, '_billing_cellphone', true));
 		$email = ($envio_email && $envio_email == 'yes' ? get_post_meta($post_id, '_billing_email', true) : '');
 
 		$billing = array(
@@ -1106,16 +1109,19 @@ class WooCommerceNFe {
 	public function get_persontype_info($post_id, $persontype = 1, $type = '_billing') {
 
 		$WooCommerceNFe_Format = new WooCommerceNFe_Format;
+		$was_shipping = false;
 
 		if ( $persontype == 3 && $type == '_shipping' ) {
 			$persontype = self::detect_persontype($post_id, '_billing');
 			$type = '_billing';
+			$was_shipping = true;
 		}
 
 		if ( $persontype == 1 ) {
 
 			// Full name and CPF
-			$person_info['nome_completo'] = get_post_meta($post_id, $type.'_first_name', true).' '.get_post_meta($post_id, $type.'_last_name', true);
+			// Pegar a informação que o cliente digitou é mais importante que não colocar a informação correta na nota, já que o cliente explicitamente solicitou a entrega para outra pessoa, mas não tem a opção de digitar o CPF da mesma.
+			$person_info['nome_completo'] = get_post_meta($post_id, $was_shipping ? '_shipping' : $type.'_first_name', true).' '.get_post_meta($post_id, $was_shipping ? '_shipping' : $type.'_last_name', true);
 			$person_info['cpf'] = $WooCommerceNFe_Format->cpf(get_post_meta($post_id, $type.'_cpf', true));
 
 		} elseif ( $persontype == 2 ) {
