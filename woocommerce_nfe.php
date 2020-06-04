@@ -1121,7 +1121,7 @@ class WooCommerceNFe {
 
 			// Full name and CPF
 			// Pegar a informação que o cliente digitou é mais importante que não colocar a informação correta na nota, já que o cliente explicitamente solicitou a entrega para outra pessoa, mas não tem a opção de digitar o CPF da mesma.
-			$person_info['nome_completo'] = get_post_meta(($post_id, $was_shipping ? '_shipping' : $type) . '_first_name', true).' '.get_post_meta($post_id, ($was_shipping ? '_shipping' : $type) . '_last_name', true);
+			$person_info['nome_completo'] = get_post_meta($post_id, ($was_shipping ? '_shipping' : $type) . '_first_name', true).' '.get_post_meta($post_id, ($was_shipping ? '_shipping' : $type) . '_last_name', true);
 			$person_info['cpf'] = $WooCommerceNFe_Format->cpf(get_post_meta($post_id, $type.'_cpf', true));
 
 		} elseif ( $persontype == 2 ) {
