@@ -1,0 +1,523 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Nota Fiscal Eletrônica WooCommerce\n"
+"POT-Creation-Date: 2020-06-16 17:23-0300\n"
+"PO-Revision-Date: 2020-06-16 17:23-0300\n"
+"Last-Translator: \n"
+"Language-Team: https://webmaniabr.com\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3.1\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: inc/custom_backend.php:8
+msgid "Nota Fiscal"
+msgstr ""
+
+#: inc/custom_backend.php:260
+msgid "Credenciais de Acesso"
+msgstr ""
+
+#: inc/custom_backend.php:265
+msgid "Consumer Key"
+msgstr ""
+
+#: inc/custom_backend.php:271
+msgid "Consumer Secret"
+msgstr ""
+
+#: inc/custom_backend.php:277
+msgid "Access Token"
+msgstr ""
+
+#: inc/custom_backend.php:283
+msgid "Access Token Secret"
+msgstr ""
+
+#: inc/custom_backend.php:289
+msgid "Ambiente Sefaz"
+msgstr ""
+
+#: inc/custom_backend.php:300
+msgid "Configuração Padrão"
+msgstr ""
+
+#: inc/custom_backend.php:305
+msgid "Emissão automática"
+msgstr ""
+
+#: inc/custom_backend.php:316
+msgid "Emissão com data retroativa"
+msgstr ""
+
+#: inc/custom_backend.php:318
+msgid ""
+"Emissão de Nota Fiscal com a data do pedido (retroativa)<br /><em>*Recurso "
+"limitado para alguns Sefaz, consulte contabilidade caso necessário.</em>"
+msgstr ""
+
+#: inc/custom_backend.php:323
+msgid "Envio automático de email"
+msgstr ""
+
+#: inc/custom_backend.php:325
+msgid ""
+"Enviar email para o cliente após a emissão da nota fiscal eletrônica <br /"
+"><em style=\"color: red\">Atenção: O email será enviado mesmo para notas "
+"emitidas em ambiente de homologação.</em>"
+msgstr ""
+
+#: inc/custom_backend.php:327
+msgid "wc_settings_woocommercenfe_envio_email"
+msgstr ""
+
+#: inc/custom_backend.php:330
+msgid "Notificação de erros"
+msgstr ""
+
+#: inc/custom_backend.php:332
+msgid ""
+"Informe um e-mail para notificações de erros na emissão ou <a target=\"_blank"
+"\" href=\""
+msgstr ""
+
+#: inc/custom_backend.php:337
+msgid "Natureza da Operação"
+msgstr ""
+
+#: inc/custom_backend.php:343
+msgid "Classe de Imposto"
+msgstr ""
+
+#: inc/custom_backend.php:348
+msgid "GTIN (Antigo código EAN)"
+msgstr ""
+
+#: inc/custom_backend.php:353
+msgid "GTIN tributável"
+msgstr ""
+
+#: inc/custom_backend.php:358
+msgid "Código NCM"
+msgstr ""
+
+#: inc/custom_backend.php:363
+msgid "Código CEST"
+msgstr ""
+
+#: inc/custom_backend.php:368
+msgid "CNPJ do fabricante da mercadoria"
+msgstr ""
+
+#: inc/custom_backend.php:373
+msgid "Indicador de escala relevante"
+msgstr ""
+
+#: inc/custom_backend.php:383
+msgid "Origem dos Produtos"
+msgstr ""
+
+#: inc/custom_backend.php:405
+msgid "Informações Complementares (Opcional)"
+msgstr ""
+
+#: inc/custom_backend.php:410
+msgid "Informações ao Fisco"
+msgstr ""
+
+#: inc/custom_backend.php:416
+msgid "Informações Complementares ao Consumidor"
+msgstr ""
+
+#: inc/custom_backend.php:426
+msgid "Configurações EBANX"
+msgstr ""
+
+#: inc/custom_backend.php:431
+msgid "Exibir parcelas como duplicata"
+msgstr ""
+
+#: inc/custom_backend.php:433
+msgid ""
+"Exibir parcelas como duplicata na emissão da NF-e do pedido pagos pelo "
+"plugin EBANX."
+msgstr ""
+
+#: inc/custom_backend.php:442
+msgid "Campos Personalizados no Checkout"
+msgstr ""
+
+#: inc/custom_backend.php:447
+msgid "Exibir Tipo de Pessoa"
+msgstr ""
+
+#: inc/custom_backend.php:449
+msgid ""
+"Caso esteja marcado exibe os campos de Tipo de Pessoa, CPF, CNPJ e Empresa "
+"nas informações de cobrança."
+msgstr ""
+
+#: inc/custom_backend.php:454
+msgid "Habilitar Máscara de Campos"
+msgstr ""
+
+#: inc/custom_backend.php:456
+msgid ""
+"Caso esteja marcado adiciona máscaras de preenchimento para os campos de CPF "
+"e CNPJ."
+msgstr ""
+
+#: inc/custom_backend.php:461
+msgid "Preenchimento automático do Endereço"
+msgstr ""
+
+#: inc/custom_backend.php:463
+msgid ""
+"Caso esteja marcado o endereço será automaticamente preenchido quando o "
+"usuário informar o CEP."
+msgstr ""
+
+#: inc/custom_backend.php:592 woocommerce_nfe.php:227
+msgid "Erro: "
+msgstr ""
+
+#: inc/custom_backend.php:710
+msgid "Contratação do Frete por conta do Remetente (CIF)"
+msgstr ""
+
+#: inc/custom_backend.php:711
+msgid "Contratação do Frete por conta do Destinatário (FOB)"
+msgstr ""
+
+#: inc/custom_backend.php:712
+msgid "Contratação do Frete por conta de Terceiros"
+msgstr ""
+
+#: inc/custom_backend.php:713
+msgid "Transporte Próprio por conta do Remetente"
+msgstr ""
+
+#: inc/custom_backend.php:714
+msgid "Transporte Próprio por conta do Destinatário"
+msgstr ""
+
+#: inc/custom_backend.php:715
+msgid "Sem Ocorrência de Transporte"
+msgstr ""
+
+#: inc/custom_backend.php:824 inc/custom_backend.php:1058
+msgid "Selecionar"
+msgstr ""
+
+#: inc/custom_backend.php:825
+msgid "S - Produzido em Escala Relevante"
+msgstr ""
+
+#: inc/custom_backend.php:826
+msgid "N - Produzido em Escala NÃO Relevante"
+msgstr ""
+
+#: inc/custom_backend.php:839
+msgid "Selecionar Origem do Produto"
+msgstr ""
+
+#: inc/custom_backend.php:840
+msgid "0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8"
+msgstr ""
+
+#: inc/custom_backend.php:841
+msgid "1 - Estrangeira - Importação direta, exceto a indicada no código 6"
+msgstr ""
+
+#: inc/custom_backend.php:842
+msgid ""
+"2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7"
+msgstr ""
+
+#: inc/custom_backend.php:843
+msgid ""
+"3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e "
+"inferior ou igual a 70%"
+msgstr ""
+
+#: inc/custom_backend.php:844
+msgid ""
+"4 - Nacional, cuja produção tenha sido feita em conformidade com os "
+"processos produtivos básicos de que tratam as legislações citadas nos Ajustes"
+msgstr ""
+
+#: inc/custom_backend.php:845
+msgid ""
+"5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual "
+"a 40%"
+msgstr ""
+
+#: inc/custom_backend.php:846
+msgid ""
+"6 - Estrangeira - Importação direta, sem similar nacional, constante em "
+"lista da CAMEX e gás natural"
+msgstr ""
+
+#: inc/custom_backend.php:847
+msgid ""
+"7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, "
+"constante lista CAMEX e gás natural"
+msgstr ""
+
+#: inc/custom_backend.php:848
+msgid ""
+"8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%"
+msgstr ""
+
+#: inc/custom_backend.php:868
+msgid "Status NF-e"
+msgstr ""
+
+#: inc/custom_backend.php:905 inc/custom_backend.php:915
+msgid "Emitir NF-e"
+msgstr ""
+
+#: inc/custom_backend.php:967
+msgid "Endereço de Cobrança"
+msgstr ""
+
+#: inc/custom_backend.php:971 inc/custom_backend.php:1065
+#: inc/custom_backend.php:1198 inc/custom_backend.php:1486
+#: inc/custom_frontend.php:49 inc/custom_frontend.php:248
+#: inc/custom_frontend.php:254
+msgid "CPF"
+msgstr ""
+
+#: inc/custom_backend.php:975 inc/custom_backend.php:1069
+#: inc/custom_backend.php:1202 inc/custom_backend.php:1489
+#: inc/custom_frontend.php:55 inc/custom_frontend.php:264
+#: inc/custom_frontend.php:276
+msgid "CNPJ"
+msgstr ""
+
+#: inc/custom_backend.php:980 inc/custom_backend.php:1073
+#: inc/custom_backend.php:1206 inc/custom_frontend.php:61
+msgid "Inscrição Estadual"
+msgstr ""
+
+#: inc/custom_backend.php:984 inc/custom_backend.php:1080
+#: inc/custom_frontend.php:86
+msgid "Nascimento"
+msgstr ""
+
+#: inc/custom_backend.php:988 inc/custom_backend.php:1084
+#: inc/custom_backend.php:1498 inc/custom_frontend.php:93
+msgid "Sexo"
+msgstr ""
+
+#: inc/custom_backend.php:993 inc/custom_backend.php:1020
+#: inc/custom_backend.php:1092 inc/custom_backend.php:1151
+#: inc/custom_frontend.php:135 inc/custom_frontend.php:223
+msgid "Número"
+msgstr ""
+
+#: inc/custom_backend.php:998 inc/custom_backend.php:1025
+#: inc/custom_backend.php:1100 inc/custom_backend.php:1159
+#: inc/custom_frontend.php:123 inc/custom_frontend.php:211
+msgid "Bairro"
+msgstr ""
+
+#: inc/custom_backend.php:1008 inc/custom_backend.php:1128
+#: inc/custom_frontend.php:153
+msgid "Celular"
+msgstr ""
+
+#: inc/custom_backend.php:1014
+msgid "Customer Shipping Address"
+msgstr ""
+
+#: inc/custom_backend.php:1047 inc/custom_backend.php:1139
+#: inc/custom_frontend.php:73 inc/custom_frontend.php:178
+msgid "Nome"
+msgstr ""
+
+#: inc/custom_backend.php:1051 inc/custom_backend.php:1143
+#: inc/custom_frontend.php:79 inc/custom_frontend.php:184
+msgid "Sobrenome"
+msgstr ""
+
+#: inc/custom_backend.php:1056 inc/custom_backend.php:1189
+#: inc/custom_frontend.php:40
+msgid "Tipo Pessoa"
+msgstr ""
+
+#: inc/custom_backend.php:1059 inc/custom_backend.php:1192
+#: inc/custom_frontend.php:44
+msgid "Pessoa Física"
+msgstr ""
+
+#: inc/custom_backend.php:1060 inc/custom_backend.php:1193
+#: inc/custom_frontend.php:45
+msgid "Pessoa Jurídica"
+msgstr ""
+
+#: inc/custom_backend.php:1077
+msgid "Empresa"
+msgstr ""
+
+#: inc/custom_backend.php:1088 inc/custom_backend.php:1147
+#: inc/custom_backend.php:1477 inc/custom_backend.php:1479
+#: inc/custom_backend.php:1515 inc/custom_backend.php:1517
+#: inc/custom_frontend.php:129 inc/custom_frontend.php:217
+msgid "Endereço"
+msgstr ""
+
+#: inc/custom_backend.php:1096 inc/custom_backend.php:1155
+#: inc/custom_frontend.php:141 inc/custom_frontend.php:229
+msgid "Complemento"
+msgstr ""
+
+#: inc/custom_backend.php:1104 inc/custom_backend.php:1163
+#: inc/custom_frontend.php:117 inc/custom_frontend.php:205
+msgid "Cidade"
+msgstr ""
+
+#: inc/custom_backend.php:1108 inc/custom_backend.php:1167
+#: inc/custom_frontend.php:110 inc/custom_frontend.php:198
+msgid "Estado"
+msgstr ""
+
+#: inc/custom_backend.php:1112 inc/custom_backend.php:1171
+msgid "País"
+msgstr ""
+
+#: inc/custom_backend.php:1116 inc/custom_backend.php:1175
+msgid "Selecione um País&hellip;"
+msgstr ""
+
+#: inc/custom_backend.php:1120 inc/custom_backend.php:1179
+#: inc/custom_frontend.php:103 inc/custom_frontend.php:191
+msgid "CEP"
+msgstr ""
+
+#: inc/custom_backend.php:1124 inc/custom_frontend.php:147
+msgid "Telefone Fixo"
+msgstr ""
+
+#: inc/custom_backend.php:1132 inc/custom_frontend.php:159
+msgid "E-mail"
+msgstr ""
+
+#: inc/custom_backend.php:1191
+msgid "Utilizar dados de cobrança"
+msgstr ""
+
+#: inc/custom_backend.php:1399
+msgid ""
+"<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos "
+"com erros de emissão. <a href=\""
+msgstr ""
+
+#: inc/custom_backend.php:1477
+msgid "Nenhum endereço de cobrança definido."
+msgstr ""
+
+#: inc/custom_backend.php:1483
+msgid "Informações do cliente"
+msgstr ""
+
+#: inc/custom_backend.php:1488 inc/custom_frontend.php:67
+#: inc/custom_frontend.php:270
+msgid "Razão Social"
+msgstr ""
+
+#: inc/custom_backend.php:1491
+msgid "I.E"
+msgstr ""
+
+#: inc/custom_backend.php:1496
+msgid "Data de nascimento"
+msgstr ""
+
+#: inc/custom_backend.php:1500
+msgid "Telefone"
+msgstr ""
+
+#: inc/custom_backend.php:1503
+msgid "Telefone Cel."
+msgstr ""
+
+#: inc/custom_backend.php:1505
+msgid "Email"
+msgstr ""
+
+#: inc/custom_backend.php:1515
+msgid "Nenhum endereço de envio definido."
+msgstr ""
+
+#: inc/custom_backend.php:1522
+msgid "Nota do cliente"
+msgstr ""
+
+#: inc/custom_frontend.php:98
+msgid "Feminino"
+msgstr ""
+
+#: inc/custom_frontend.php:99
+msgid "Masculino"
+msgstr ""
+
+#: inc/custom_frontend.php:248 inc/custom_frontend.php:264
+#: inc/custom_frontend.php:270
+msgid "é um campo obrigatório"
+msgstr ""
+
+#: inc/custom_frontend.php:254 inc/custom_frontend.php:276
+msgid "informado não é válido"
+msgstr ""
+
+#: woocommerce_nfe.php:33
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal "
+"Eletrônica é necessário ativar o plugin WooCommerce."
+msgstr ""
+
+#: woocommerce_nfe.php:38
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL "
+"no servidor, entre em contato com a sua hospedagem ou administrador do "
+"servidor."
+msgstr ""
+
+#: woocommerce_nfe.php:45
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Para o funcionamento correto do "
+"plugin atualize o WooCommerce na versão mais recente."
+msgstr ""
+
+#: woocommerce_nfe.php:66
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso "
+"da aplicação em WooCommerce > Configurações > Nota Fiscal."
+msgstr ""
+
+#: woocommerce_nfe.php:234
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital "
+"A1 - vencerá em "
+msgstr ""
+
+#: woocommerce_nfe.php:238
+msgid ""
+"<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. "
+"Emita um novo para continuar operando."
+msgstr ""
+
+#: woocommerce_nfe.php:572
+msgid "Payment type"
+msgstr ""
+
+#: woocommerce_nfe.php:842
+msgid "Payment method"
+msgstr ""

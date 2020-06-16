@@ -103,17 +103,22 @@ class NFe {
 
 				// Init connection
 				$rest = curl_init();
-				curl_setopt($rest, CURLOPT_CONNECTTIMEOUT , $timeout);
-				curl_setopt($rest, CURLOPT_TIMEOUT, $timeout);
-				curl_setopt($rest, CURLOPT_URL, $endpoint.'?time='.time());
-				curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
-				curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
-				curl_setopt($rest, CURLOPT_SSL_VERIFYHOST, false);
-				curl_setopt($rest, CURLOPT_CUSTOMREQUEST, $request);
-				curl_setopt($rest, CURLOPT_POSTFIELDS, json_encode( $data ));
-				curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
-				curl_setopt($rest, CURLOPT_FRESH_CONNECT, true);
-				curl_setopt($rest, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($rest, CURLOPT_CONNECTTIMEOUT , $timeout);
+        curl_setopt($rest, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($rest, CURLOPT_URL, $endpoint);
+        curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($rest, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($rest, CURLOPT_CUSTOMREQUEST, $request);
+        curl_setopt($rest, CURLOPT_POSTFIELDS, json_encode( $data ));
+        curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($rest, CURLOPT_FRESH_CONNECT, true);
+        curl_setopt($rest, CURLOPT_FOLLOWLOCATION, 1);
+        curl_setopt($rest, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt($rest, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
+        curl_setopt($rest, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
+        curl_setopt($rest, CURLOPT_VERBOSE, 1);
+        curl_setopt($rest, CURLOPT_HEADER, 1);
 				// Connect to API
 				$response = curl_exec($rest);
 				$http_status = curl_getinfo($rest, CURLINFO_HTTP_CODE);
@@ -138,7 +143,7 @@ class NFe {
 
 					// cURL errors
 					if (!$http_status){
-						$curl_error->error = 'Não foi possível obter conexão na API da WebmaniaBR®, possível relação com bloqueio no Firewall ou versão antiga do PHP. Verifique junto ao programador e a sua hospedagem a comunicação na URL: https://webmaniabr.com/api/. (cURL: '.$curl_strerror.' | PHP: '.phpversion().' | cURL: '.curl_version().')';
+						$curl_error->error = 'Não foi possível obter conexão na API da WebmaniaBR®, possível relação com bloqueio no Firewall ou versão antiga do PHP. Verifique junto ao programador e a sua hospedagem a comunicação na URL: https://webmaniabr.com/api/. (cURL: '.$curl_strerror.' | PHP: '.phpversion().' | cURL: '.curl_version()['version'].')';
 					} elseif ($http_status == 500) {
 						$curl_error->error = 'Ocorreu um erro ao processar a sua requisição. A nossa equipe já foi notificada, em caso de dúvidas entre em contato com o suporte da WebmaniaBR®. (cURL: '.$curl_strerror.' | HTTP Code: '.$http_status.' | IP: '.$ip.')';
 					} elseif (!in_array($http_status, array(401, 403))) {

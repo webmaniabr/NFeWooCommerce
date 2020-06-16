@@ -2,10 +2,10 @@
 /**
 * Plugin Name: Nota Fiscal Eletrônica WooCommerce
 * Plugin URI: webmaniabr.com
-* Description: Módulo de emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
+* Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.0.7
+* Version: 3.0.8
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -14,8 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 class WooCommerceNFe {
+
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.0.6';
+	public $version = '3.0.8';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -23,6 +24,7 @@ class WooCommerceNFe {
 		}
 		return self::$_instance;
 	}
+	
 	function init(){
 		global $domain;
 		add_action( 'admin_notices', array($this, 'display_messages') );
@@ -45,6 +47,7 @@ class WooCommerceNFe {
 		}
 		// Init Back-end and Front-end
 		$this->includes();
+		$this->load_plugin_text_domain();
 		$this->init_backend();
 		$this->init_frontend();
 		add_action( 'admin_init', array($this, 'wmbr_compatibility_issues') );
@@ -176,6 +179,9 @@ class WooCommerceNFe {
 	function init_hooks(){
 		// WooCommerceNFe
 		add_action( 'admin_notices', array($this, 'validadeCertificado') );
+	}
+	function load_plugin_text_domain(){
+		load_plugin_textdomain( $this->domain, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 	function display_messages(){
 		if (get_option('woocommercenfe_error_messages')){
