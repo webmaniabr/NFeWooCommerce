@@ -116,9 +116,8 @@ class NFe {
         curl_setopt($rest, CURLOPT_FOLLOWLOCATION, 1);
         curl_setopt($rest, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         curl_setopt($rest, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_NONE);
-        curl_setopt($rest, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
-        curl_setopt($rest, CURLOPT_VERBOSE, 1);
-        curl_setopt($rest, CURLOPT_HEADER, 1);
+				curl_setopt($rest, CURLOPT_SSLVERSION, CURL_SSLVERSION_DEFAULT);
+				
 				// Connect to API
 				$response = curl_exec($rest);
 				$http_status = curl_getinfo($rest, CURLINFO_HTTP_CODE);
