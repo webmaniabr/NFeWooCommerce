@@ -5,7 +5,7 @@
 * Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.0.12
+* Version: 3.0.13
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.0.12';
+	public $version = '3.0.13';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -910,6 +910,22 @@ class WooCommerceNFe {
 		return in_array( $plugin, (array) get_option( 'active_plugins', array() ) );
 	}
 	/**
+	 * Verify if is a digital order
+	**/
+	public function is_digital_order($order_id) {
+		$order = wc_get_order( $order_id );
+
+		foreach ($order->get_items() as $item_id => $item_data) {
+			$product_id = $item_data->get_product_id();
+
+			if ( get_post_meta($product_id, '_virtual', true) != 'yes' ) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	/**
 	 * Verify if shipping and billing informations are different
 	**/
 	public function compare_addresses($post_id, $envio_email) {
@@ -941,6 +957,18 @@ class WooCommerceNFe {
 			'telefone'    => $phone,
 			'email'       => $email
 		);
+		
+		if ( $shipping['endereco'] == '' ) {
+			$is_digital_order = self::is_digital_order($post_id);
+
+			if ( $is_digital_order ) {
+				$tipo_pessoa_billing = self::detect_persontype($post_id, '_billing');
+				$billing = array_merge( self::get_persontype_info($post_id, $tipo_pessoa_billing, '_billing'), $billing);
+				
+				$return['cliente'] = $billing;
+				return $return;
+			}
+		}
 
 		// Compare and return transporte->entrega if are different addressses
 		if ( $billing === $shipping ) {
