@@ -5,7 +5,7 @@
 * Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.0.13
+* Version: 3.0.14
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.0.13';
+	public $version = '3.0.14';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -916,13 +916,25 @@ class WooCommerceNFe {
 		$order = wc_get_order( $order_id );
 
 		foreach ($order->get_items() as $item_id => $item_data) {
-			$product_id = $item_data->get_product_id();
 
-			if ( get_post_meta($product_id, '_virtual', true) != 'yes' ) {
-				return false;
+			if ($variation_id = $item_data->get_variation_id()) {
+
+				if (get_post_meta($variation_id, '_virtual', true) != 'yes') {
+					return false;
+				}
+
+			} else {
+
+				$product_id = $item_data->get_product_id();
+
+				if (get_post_meta($product_id, '_virtual', true) != 'yes') {
+					return false;
+				}
+
 			}
+
 		}
-		
+
 		return true;
 	}
 	/**
