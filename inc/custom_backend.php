@@ -244,7 +244,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 		update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
 		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
 		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
-		$include = $_POST['wc_settings_woocommercenfe_transp_include'];
+		$include = isset($_POST['wc_settings_woocommercenfe_transp_include']) ? $_POST['wc_settings_woocommercenfe_transp_include'] : false;
 		if($include){
 			update_option('wc_settings_woocommercenfe_transp_include', 'on');
 		}else{
@@ -253,7 +253,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
     }
     function get_settings(){
         global $domain;
-        $auto_invoice_report_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
+        $auto_invoice_report_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
         
         $settings = array(
             'title' => array(
@@ -1369,7 +1369,8 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
       	$page_count = '('.$count.') ';
         $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count' style='background: red;'>$count</span></span>";
       } else {
-          $update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count'>0</span></span>";
+		$page_count = '';
+		$update_count = " <span class='update-plugins rsssl-update-count'><span class='update-count'>0</span></span>";
       }
 
 	  	$title = 'Notificações Nota Fiscal';
@@ -1395,7 +1396,7 @@ class WooCommerceNFe_Backend extends WooCommerceNFe {
 
 			if ( !empty($ids_db) ) {
 
-				$menu_url = menu_page_url('wmbr_page_auto_invoice_errors', false);
+				$menu_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
 				$message = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="'.$menu_url.'">Visualizar Pedidos</a>');
 
 				WC_NFe()->add_error( $message );

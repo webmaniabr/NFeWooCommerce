@@ -5,7 +5,7 @@
 * Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.0.14
+* Version: 3.0.16
 * Copyright: © 2009-2019 WebmaniaBR.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.0.14';
+	public $version = '3.0.16';
 	protected static $_instance = NULL;
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -434,7 +434,6 @@ class WooCommerceNFe {
 		$default_cest    = get_option('wc_settings_woocommercenfe_cest');
 		$default_origem  = get_option('wc_settings_woocommercenfe_origem');
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
-		$default_weight  = '0.100';
 		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
 		$coupons = $order->get_used_coupons();
@@ -570,19 +569,27 @@ class WooCommerceNFe {
 
 		//Define forma de pagamento (obrigatório NFe 4.0)
 		if( in_array($order->payment_method, $payment_keys) ){
+			$origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
+
 			//Caso pagseguro, verificar post meta para método de pagamento
 			//Senão, pegar valor salvo nas configurações
 			if($order->payment_method == 'pagseguro'){
+
 				$payment_type = get_post_meta($post_id, __( 'Payment type', 'woocommerce-pagseguro' ), true);
+
 				if( strtolower($payment_type) == 'boleto'){
 					$data['pedido']['forma_pagamento'] = '15';
-				}elseif($payment_type == 'Cartão de Crédito'){
+				} elseif ($payment_type == 'Cartão de Crédito' && $origem_state == 'BR:SC'){
+					$data['pedido']['forma_pagamento'] = '99';
+				} elseif ($payment_type == 'Cartão de Crédito'){
 					$data['pedido']['forma_pagamento'] = '03';
 				}
+
 			}else{
 				$data['pedido']['forma_pagamento'] = $payment_methods[$order->payment_method];
 			}
 		}
+
 		//Informações Complementares ao Fisco
 		$fisco_inf = get_option('wc_settings_woocommercenfe_fisco_inf');
 		if(!empty($fisco_inf) && strlen($fisco_inf) <= 2000){
@@ -694,9 +701,6 @@ class WooCommerceNFe {
 		$informacoes_adicionais = '';
 		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
 
-		if (!$peso){
-			$peso = '0.100';
-		}
 		if (!$codigo_gtin){
 			$codigo_gtin = get_option('wc_settings_woocommercenfe_ean');
 		}
@@ -884,6 +888,8 @@ class WooCommerceNFe {
 	**/
 	public function wmbr_compatibility_issues() {
 		if ( isset($_POST['action']) ) return;
+		if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') return;
+
 		$plugins_list = array(
 			'redis-cache/redis-cache.php' => 'Redis Object Cache'
 		);
