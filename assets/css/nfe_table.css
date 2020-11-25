@@ -106,16 +106,17 @@
 }
 
 .nfe-status.reprovado,
-.nfe-status.cancelado {
+.nfe-status.cancelado,
+.nfe-status.denegado {
   color: #a94442;
   background-color: #f2dede;
   border-color: #ebccd1;
 }
 
-.nfe-status.processando,
+.nfe-status.processamento,
 .nfe-status.contingencia{
-  background-color: #eccb28;
-  color: #000;
+  background-color: #ffd050;
+  color: #8c6e1a;
   font-weight: 600;
 }
 
