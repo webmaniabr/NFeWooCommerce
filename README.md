@@ -29,6 +29,12 @@ Através do emissor de Nota Fiscal da WebmaniaBR®, você conta com a emissão e
 - [Configurar Impostos](https://ajuda.webmaniabr.com/hc/pt-br/articles/360013334051-Configurar-impostos-no-WooCommerce)
 - [Emitir Nota Fiscal](https://ajuda.webmaniabr.com/hc/pt-br/articles/360013106692-Emiss%C3%A3o-de-NF-e-no-WooCommerce)
 
+## Hooks no módulo de Nota Fiscal WooCommerce
+
+Hooks do Wordpress são recursos que permitem que você manipule processos sem modificar o arquivo no núcleo do WordPress e do módulo de Nota Fiscal WooCommerce. Dessa forma é possível realizar diversas integrações, como a emissão de NFC-e no ponto de venda, de forma simplificada e sem interferir nos arquivos do módulo.
+
+[Visualizar lista de Actions e Filters](https://ajuda.webmaniabr.com/hc/pt-br/articles/360052999091)
+
 ## Controle das Notas Fiscais
 
 Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no painel da WebmaniaBR®. Simples e fácil.
@@ -40,3 +46,9 @@ Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no 
 ## Suporte
 
 Qualquer dúvida entre em contato na nossa [Central de Ajuda](https://ajuda.webmaniabr.com) ou no e-mail suporte@webmaniabr.com.
+
+## Contribuições
+
+Agradecemos a todos que contribuem para o emissor de Nota Fiscal ser cada vez melhor.
+
+- @Shirkit - Adaptações para NFC-e no ponto de venda
