@@ -278,6 +278,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
   function valide_checkout_fields(){
 
     $billing_persontype = isset( $_POST['billing_persontype'] ) ? $_POST['billing_persontype'] : 0;
+    $format = new WooCommerceNFeFormat;
 
     if ($billing_persontype == 1){
 
@@ -287,7 +288,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFe_Format::is_cpf( $_POST['billing_cpf'] )){
+      if (!empty( $_POST['billing_cpf'] ) && !$format->is_cpf( $_POST['billing_cpf'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 
@@ -309,7 +310,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFe_Format::is_cnpj( $_POST['billing_cnpj'] )){
+      if (!empty( $_POST['billing_cnpj'] ) && !$format->is_cnpj( $_POST['billing_cnpj'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 

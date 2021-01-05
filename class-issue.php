@@ -130,12 +130,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
 		$payment_keys = array_keys($payment_methods);
 		$order = new WC_Order( $post_id );
-		$default_gtin = get_option('wc_settings_woocommercenfe_ean');
-		$default_gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
+		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$default_ncm = get_option('wc_settings_woocommercenfe_ncm');
 		$default_cest = get_option('wc_settings_woocommercenfe_cest');
 		$default_origem = get_option('wc_settings_woocommercenfe_origem');
-		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
 		$coupons = $order->get_coupon_codes();
@@ -502,14 +500,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$informacoes_adicionais = '';
 		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
 
-		if (!$codigo_gtin) {
-			$codigo_gtin = get_option('wc_settings_woocommercenfe_ean');
-		}
-
-		if (!$gtin_tributavel) {
-			$gtin_tributavel = get_option('wc_settings_woocommercenfe_gtin_tributavel');
-		}
-
 		if (!$codigo_ncm){
 
 			$product_cat = get_the_terms($product_id, 'product_cat');
@@ -544,15 +534,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		if (!$imposto){
 			$imposto = get_option('wc_settings_woocommercenfe_imposto');
-		}
-
-		if (!$ind_escala) {
-			$ind_escala = get_option('wc_settings_woocommercenfe_ind_escala');
-			if($ind_escala == 'null') $ind_escala = '';
-		}
-
-		if (!$cnpj_fabricante) {
-			$cnpj_fabricante = get_option('wc_settings_woocommercenfe_cnpj_fabricante');
 		}
 
 		$variacoes = ''; //Used to append variation name to product name
