@@ -40,8 +40,7 @@ class NFeGatewayPagarme extends WooCommerceNFe {
     if (
 			NFeGatewayPagarme::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-      $pagarme_transaction_data &&
-      $pagarme_transaction_data['card_brand'] != ''
+      $order->payment_method == 'pagarme-credit-card'
 		) {
 
 			$installments = $pagarme_transaction_data['installments'];

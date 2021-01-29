@@ -289,7 +289,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFe_Format::is_cpf( $_POST['billing_cpf'] )){
+      if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFeFormat::is_cpf( $_POST['billing_cpf'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 
@@ -311,7 +311,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFe_Format::is_cnpj( $_POST['billing_cnpj'] )){
+      if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFeFormat::is_cnpj( $_POST['billing_cnpj'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 

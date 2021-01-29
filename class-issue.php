@@ -234,20 +234,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$data['pedido']['despesas_acessorias'] = number_format($total_fee, 2, '.', '');
 		}
 
-		// Gateway Installments
-		if ($payment_gateway && method_exists( "$payment_gateway", 'installments' )){
-
-			$data = $payment_gateway::installments( $post_id, $data, $order, $args = [ 'total_discount' => $total_discount ] );
-
-		}
-
-		// Custom Installments
-		if ($custom_installments = get_post_meta( $post_id, '_nfe_installments', true )){
-
-			$data = NFeUtils::custom_installments( $post_id, $data, $order, $args = [ 'total_discount' => $total_discount ] );
-
-		}
-		
 		// Set Payment Method
 		if ( in_array($order->payment_method, $payment_keys) ){
 
@@ -257,7 +243,15 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			} else {
 
-				$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
+				if ($payment_methods[$order->payment_method]){
+
+					$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
+
+				} else {
+
+					$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
+
+				}
 
 			}
 
@@ -338,20 +332,22 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			if ($ignore_product == 1){
 
 				$data['pedido']['total'] -= $item['line_subtotal'];
+
 				if ($coupons_percentage){
+
 					foreach($coupons_percentage as $percentage){
+
 						$data['pedido']['total'] += ($percentage/100)*$item['line_subtotal'];
 						$data['pedido']['desconto'] -= ($percentage/100)*$item['line_subtotal'];
+
 					}
+
 				}
+
 				$data['pedido']['total']    = number_format($data['pedido']['total'], 2, '.', '' );
 				$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
+
 				continue;
-
-			} else {
-
-				$data['pedido']['total'] += $item['line_subtotal'];
-				$data['pedido']['total'] = number_format($data['pedido']['total'], 2, '.', '' );
 
 			}
 
@@ -374,6 +370,20 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
 		$data['pedido'] = apply_filters( 'nfe_order_payment', $data['pedido'], $post_id );
+
+		// Gateway Installments
+		if ($payment_gateway && method_exists( "$payment_gateway", 'installments' )){
+
+			$data = $payment_gateway::installments( $post_id, $data, $order, $args = [ 'total_discount' => $data['pedido']['desconto'] ] );
+
+		}
+
+		// Custom Installments
+		if ($custom_installments = get_post_meta( $post_id, '_nfe_installments', true )){
+
+			$data = NFeUtils::custom_installments( $post_id, $data, $order, $args = [ 'total_discount' => $data['pedido']['desconto'] ] );
+
+		}
 
 	  // Courier
 		$shipping_method = @array_shift($order->get_shipping_methods());

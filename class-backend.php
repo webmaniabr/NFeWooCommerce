@@ -653,18 +653,43 @@ jQuery(document).ready(function($) {
 	 */
 	function get_shipping_methods_select($index = 0, $id = ''){
 
-		$shipping = new WC_Shipping();
-		$shipping->load_shipping_methods();
-		$shipping_methods = $shipping->get_shipping_methods();
+		// HTML
 		$html = '<select class="nfe-shipping-methods-sel" name="shipping_info_method_'.$index.'">';
 		$html .= '<option value="">Selecionar</option>';
 
+		// Shipping Methods
+		$shipping = new WC_Shipping();
+		$shipping->load_shipping_methods();
+		$shipping_methods = $shipping->get_shipping_methods();
+
+		// Display options
 		foreach ($shipping_methods as $method) {
 
+			// Skip
 			if ($method->id == 'correios') {
 				continue;
 			}
 
+			// Mount HTML Frenet
+			if ($method->id == 'frenet'){
+
+				$frenet = NFeUtils::get_frenet_carriers();
+
+				if (!$frenet)
+					continue;
+
+				foreach ($frenet->ShippingSeviceAvailableArray as $var){
+
+					($method->id == 'FRENET_'.$var->ServiceCode ? $selected = 'selected' : $selected = '');
+					$html .= '<option value="FRENET_'.$var->ServiceCode.'" '.$selected.'>Frenet - '.$var->Carrier.'</option>';
+
+				}
+
+				continue;
+
+			}
+
+			// Mount HTML Others Carriers
 			($method->id == $id ? $selected = 'selected' : $selected = '');
 			$title = $method->get_title();
 

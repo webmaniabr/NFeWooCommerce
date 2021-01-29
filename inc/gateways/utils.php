@@ -26,6 +26,10 @@ class UtilsGateways {
 
       return 'NFeGatewayPaypal';
 
+    } elseif (in_array( $payment_method, NFeGatewayBacs::payment_methods() )){
+
+      return 'NFeGatewayBacs';
+
     }
 
     return false;
@@ -44,7 +48,7 @@ class UtilsGateways {
   function mount_installments_data( $post_id, $data, $order, $installments, $args ){
 
     // Vars
-    $order_total = $order->get_total();
+    $order_total = $data['pedido']['total'];
       
     // Create 'fatura' array			
     $data['fatura'] =  array(
@@ -94,5 +98,5 @@ class UtilsGateways {
     return $data;
 
   }
-
+  
 }
