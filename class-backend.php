@@ -45,7 +45,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		 * @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 		**/
 		if (
-			!$this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php') &&
+			!WooCommerceNFe::is_extra_checkout_fields_activated() &&
 			get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'
 		){
 
@@ -73,8 +73,10 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	 */
   function scripts(){
 
-    wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $this->version );
-    wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $this->version );
+		global $version_woonfe;
+
+    wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $version_woonfe );
+    wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $version_woonfe );
     wp_enqueue_style( 'woocommercenfe_admin_style' );
 		wp_enqueue_script( 'woocommercenfe_admin_script' );
 		
@@ -539,14 +541,14 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_ebanx'
 			),
 			'ebanx_title' => array(
-				'name'     => __( 'Configurações EBANX', $this->domain ),
+				'name'     => __( 'Gateways de Pagamento', $this->domain ),
 				'type'     => 'title',
-				'desc'     => 'Defina as configurações do plugin EBANX.'
+				'desc'     => 'Compatibilidade com EBANX, Pagar.me, PagSeguro e Paypal Plus.'
 			),
 			'ebanx_parcelas' => array(
-				'name' => __( 'Exibir parcelas como duplicata', $this->domain ),
+				'name' => __( 'Emitir pagamento parcelado como duplicata na Nota Fiscal', $this->domain ),
 				'type' => 'checkbox',
-				'desc' => __( 'Exibir parcelas como duplicata na emissão da NF-e do pedido pagos pelo plugin EBANX.', $this->domain ),
+				'desc' => __( 'Pagamento parcelado como duplicata na Nota Fiscal', $this->domain ),
 				'id'   => 'wc_settings_parcelas_ebanx',
 				'default' => 'no',
 			),
@@ -587,14 +589,19 @@ jQuery(document).ready(function($) {
 		);
 			
 		// WooCommerce Extra Checkout Fields for Brazil
-		if ( $this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php') ) {
+		if ( WooCommerceNFe::is_extra_checkout_fields_activated() ) {
 			unset($settings['title5']);
 			unset($settings['tipo_pessoa']);
 			unset($settings['mascara_campos']);
 			unset($settings['cep']);
 		}
 				
-		if ( !$this->wmbr_is_plugin_active('ebanx-local-payment-gateway-for-woocommerce/woocommerce-gateway-ebanx.php') ) {
+		if ( 
+			!NFeGatewayEbanx::is_activated() &&
+			!NFeGatewayPagarme::is_activated() &&
+			!NFeGatewayPagSeguro::is_activated() &&
+			!NFeGatewayPaypal::is_activated()
+		) {
 			unset($settings['section_ebanx']);
 			unset($settings['ebanx_title']);
 			unset($settings['ebanx_parcelas']);
@@ -724,7 +731,7 @@ jQuery(document).ready(function($) {
 
 		add_meta_box(
 			'woocommernfe_nfe_emitida',
-			'NF-e do Pedido',
+			'Nota Fiscal do Pedido',
 			array($this, 'metabox_content_woocommernfe_nfe_emitida'),
 			'shop_order',
 			'normal',
@@ -732,16 +739,8 @@ jQuery(document).ready(function($) {
 		);
 		add_meta_box(
 			'woocommernfe_informacoes_adicionais',
-			'Nota Fiscal',
+			'Informações Fiscais',
 			array($this, 'metabox_content_woocommernfe_informacoes_adicionais'),
-			'shop_order',
-			'side',
-			'high'
-		);
-		add_meta_box(
-			'woocommernfe_transporte',
-			'Transporte (NF-e)',
-			array($this, 'metabox_content_woocommernfe_transporte'),
 			'shop_order',
 			'side',
 			'high'
@@ -863,113 +862,159 @@ jQuery(document).ready(function($) {
 	 */
 	function metabox_content_woocommernfe_informacoes_adicionais( $post ) {
 
+		// Vars
+		$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
+		$volume_checked = get_post_meta($post->ID, '_nfe_volume_weight', true);
+		$installments_checked = get_post_meta($post->ID, '_nfe_installments', true);
+		$nfe_installments_n = get_post_meta($post->ID, '_nfe_installments_n', true);
+		$nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : '1';
+		$nfe_installments_due_date = get_post_meta( $post->ID, '_nfe_installments_due_date', true );
+		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
+
 	?>
+	<script>
+		jQuery(function($){
+
+			<?php if ($volume_checked && $volume_checked == 'on'){ ?>
+				$('.transporte').show();
+			<?php } ?>
+			<?php if ($installments_checked && $installments_checked == 'on'){ ?>
+				$('.nfe_installments').show();
+			<?php } ?>
+			
+		});
+	</script>
 
 	<div class="inside" style="padding:0!important;">
 		<div class="field emitir_ambiente" style="margin-bottom:10px;">
 			<p class="label" style="margin-bottom:8px;">
 			<input type="checkbox" name="emitir_homologacao"/>
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Emitir em homologação</label>
+			<label class="title">Emitir em homologação</label>
+			</p>
+		</div>
+		<div class="field emitir_ambiente" style="margin-bottom:10px;">
+			<p class="label" style="margin-bottom:8px;">
+			<input type="checkbox" name="previa_danfe"/>
+			<label class="title">Pré-visualizar Danfe</label>
 			</p>
 		</div>
 		<hr>
 		<div class="field outras_informacoes">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Natureza da Operação</label>
+					<label class="title">Natureza da Operação</label>
 			</p>
 			<input type="text" name="natureza_operacao_pedido" value="<?php echo get_post_meta( $post->ID, '_nfe_natureza_operacao_pedido', true ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field outras_informacoes">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Benefício Fiscal</label>
+					<label class="title">Benefício Fiscal</label>
 			</p>
 			<input type="text" name="beneficio_fiscal_pedido" value="<?php echo get_post_meta( $post->ID, '_nfe_beneficio_fiscal_pedido', true ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<input type="hidden" name="wp_admin_nfe" value="1" />
 	</div>
+	<div class="inside" style="padding:0!important;">
+		<div class="field">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Modalidade do frete</label>
+			</p>
+			<select name="modalidade_frete" id="modalidade_frete">
+				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Remetente (CIF)', $this->domain ); ?></option>
+				<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Destinatário (FOB)', $this->domain ); ?></option>
+				<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta de Terceiros', $this->domain ); ?></option>
+				<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Remetente', $this->domain ); ?></option>
+				<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Destinatário', $this->domain ); ?></option>
+				<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem Ocorrência de Transporte', $this->domain ); ?></option>
+			</select>
+		</div>
+		<div class="field nfe_volume_weight" style="margin-bottom:10px;">
+			<p class="label" style="margin-bottom:8px;">
+			<input type="checkbox" name="nfe_volume_weight" <?php if ($volume_checked) echo 'checked'; ?>>
+			<label class="title">Informar Volume e Peso</label>
+			</p>
+		</div>
+		<div class="field transporte">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Volume</label>
+			</p>
+			<input type="text" name="transporte_volume" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_volume', true ); ?>" style="width:100%;padding:5px;">
+		</div>
+		<div class="field transporte">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Espécie</label>
+			</p>
+			<input type="text" name="transporte_especie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_especie', true ); ?>" style="width:100%;padding:5px;">
+		</div>
+		<div class="field transporte">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Peso Bruto</label> (KG)
+			</p>
+			<input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+		</div>
+		<div class="field transporte">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Peso Líquido</label> (KG)
+			</p>
+			<input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+		</div>
+	</div>
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="nfe_installments" <?php if ($installments_checked) echo 'checked'; ?>>
+		<label class="title">Informar Parcelas</label>
+		</p>
+	</div>
+	<div class="field nfe_installments">
+		<p class="label" style="margin-bottom:8px;">
+			<label class="title">Parcelas</label>
+		</p>
+		<input type="number" name="nfe_installments_n" min="1" value="<?php echo $nfe_installments_n; ?>" style="width:100%;padding:5px;">
+	</div>
+	<div class="nfe_installments block">
+
+		<div class="nfe_installments row-first" data-row="1">
+			<div class="field">
+				<p class="label">
+					<label class="title"">Vencimento (DD/MM/AAAA)</label>
+				</p>
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo ($nfe_installments_due_date) ? $nfe_installments_due_date[0] : ''; ?>" style="width:100%;">
+			</div>
+			<div class="field">
+				<p class="label">
+					<label class="title">Valor (R$)</label>
+				</p>
+				<input type="text" name="nfe_installments_value[]" value="<?php echo ($nfe_installments_value) ? $nfe_installments_value[0] : ''; ?>" style="width:100%;">
+			</div>
+		</div>
+
+		<?php 
+		if ($nfe_installments_n > 1) { 
+			for ($i = 1; $i < $nfe_installments_n; $i++){
+		?>
+
+		<div class="nfe_installments row">
+			<div class="field">
+				<p class="label">
+					<label class="title">Vencimento (DD/MM/AAAA)</label>
+				</p>
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo $nfe_installments_due_date[$i]; ?>" style="width:100%;">
+			</div>
+			<div class="field">
+				<p class="label">
+					<label class="title">Valor (R$)</label>
+				</p>
+				<input type="text" name="nfe_installments_value[]" value="<?php echo $nfe_installments_value[$i]; ?>" style="width:100%;">
+			</div>
+		</div>
+
+		<?php 
+			} // end loop
+		} // end if ?>
+
+
+	</div>
 
 			<?php
-	}
-
-	/**
-	 * Metabox content
-	 * 
-	 * @return html
-	 */
-	function metabox_content_woocommernfe_transporte( $post ){
-			
-	?>
-
-	<div class="inside" style="padding:0!important;">
-	<p>
-	Informações complementares na emissão de Nota Fiscal para pedidos enviados via Transportadora.
-	</p>
-	<?php
-	$forma_envio = get_post_meta( $post->ID, '_nfe_transporte_forma_envio', true );
-	$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
-	?>
-	<script>
-		jQuery(function($) {
-			$('#transporte_forma_envio').on('change', function(){ if ($(this).val() == '1') $('.transporte').show(); else $('.transporte').hide(); });
-			<?php if (is_numeric($forma_envio) && $forma_envio == '1'){ ?>$('.transporte').show();<?php } ?>
-			$('input[name="transporte_peso_bruto"]').on('keyup', function(){
-				$('input[name="transporte_peso_liquido"]').val($(this).val());
-			});
-		});
-	</script>
-	<div class="field">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Modalidade do frete</label>
-		</p>
-		<select name="modalidade_frete" id="modalidade_frete">
-			<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Remetente (CIF)', $this->domain ); ?></option>
-			<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Destinatário (FOB)', $this->domain ); ?></option>
-			<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta de Terceiros', $this->domain ); ?></option>
-			<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Remetente', $this->domain ); ?></option>
-			<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Destinatário', $this->domain ); ?></option>
-			<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem Ocorrência de Transporte', $this->domain ); ?></option>
-		</select>
-	</div>
-	<div class="label transporte" style="margin-bottom:8px;margin-top:10px;">
-		<label style="font-size:14px;line-height:1.5em;font-weight:bold;color:red">Volumes Transportados</label>
-		<hr style="margin-top:5px;">
-	</div>
-	<div class="field transporte">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Volumes</label>
-		</p>
-		<input type="text" name="transporte_volume" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_volume', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-	<div class="field transporte">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Espécie</label>
-		</p>
-		<input type="text" name="transporte_especie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_especie', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-	<div class="field transporte">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Bruto</label> (KG)
-		</p>
-		<input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
-	</div>
-	<div class="field transporte">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Peso Líquido</label> (KG)
-		</p>
-		<input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
-	</div>
-
-	<div class="field transporte" style="display:none;">
-		<p class="label" style="margin-bottom:8px;">
-			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Valor do Seguro (R$)</label>
-		</p>
-		<input type="text" name="transporte_seguro" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_seguro', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-
-	<input type="hidden" name="wp_admin_nfe" value="1" />
-	</div>
-
-		<?php
 	}
 
 	/**
@@ -981,7 +1026,7 @@ jQuery(document).ready(function($) {
 
 		add_meta_box(
 			'woocommernfe_informacoes',
-			'Informações Fiscais<br>do Produto (Opcional)',
+			'Informações Fiscais',
 			array($this, 'metabox_content_woocommernfe_informacoes'),
 			'product',
 			'side',
@@ -996,37 +1041,58 @@ jQuery(document).ready(function($) {
 	 * @return html
 	 */
 	function metabox_content_woocommernfe_informacoes( $post ){
+
+		// Vars
+		$others_checked = get_post_meta( $post->ID, '_nfe_product_others', true );
         
 	?>
+	<script>
+		jQuery(function($){
+
+			<?php if ($others_checked && $others_checked == 'on'){ ?>
+				$('.product_others').show();
+			<?php } ?>
+
+			$('input[name="product_others"]').on('change', function(){
+				if ($(this).is(':checked')){
+					$('.product_others').show();
+				} else {
+					$('.product_others').hide();
+				}
+			});
+
+		});
+	</script>
 
 <div class="inside" style="padding:0!important;">
-	<div class="field">
-			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Ignorar Produto ao emitir Nota Fiscal</label>
-			</p>
-			<input type="checkbox" name="ignorar_nfe" value="1" <?php if(get_post_meta( $post->ID, '_nfe_ignorar_nfe', true ) == 1) echo 'checked'; ?> >
+	<div class="field emitir_ambiente" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="ignorar_nfe" value="1" <?php if(get_post_meta( $post->ID, '_nfe_ignorar_nfe', true ) == 1) echo 'checked'; ?> />
+		<label class="title">Ignorar produto Nota Fiscal</label>
+		</p>
 	</div>
+	<hr>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Classe de Imposto</label>
+					<label class="title">Classe de Imposto</label>
 			</p>
 			<input type="text" name="classe_imposto" value="<?php echo get_post_meta( $post->ID, '_nfe_classe_imposto', true ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código NCM</label>
+					<label class="title">Código NCM</label>
 			</p>
 			<input type="text" name="codigo_ncm" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ncm', true ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Código CEST</label>
+					<label class="title">Código CEST</label>
 			</p>
 			<input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Origem</label>
+					<label class="title">Origem</label>
 			</p>
 			<?php
 				$origem = get_post_meta( $post->ID, '_nfe_origem', true );
@@ -1047,43 +1113,51 @@ jQuery(document).ready(function($) {
 	</div>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">GTIN (antigo código EAN)</label>
-			</p>
-			<input type="text" name="codigo_ean" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-	<div class="field">
-			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">GTIN tributável</label>
-			</p>
-			<input type="text" name="gtin_tributavel" value="<?php echo get_post_meta( $post->ID, '_nfe_gtin_tributavel', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-	<div class="field">
-			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Indicador de escala relevante</label>
-			</p>
-			<?php
-				$ind_escala = get_post_meta( $post->ID, '_nfe_ind_escala', true );
-			?>
-			<select name="ind_escala">
-					<option value="" <?php if (!$ind_escala) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
-					<option value="S" <?php if ($ind_escala == 'S') echo 'selected'; ?> ><?php _e( 'S - Produzido em Escala Relevante', $this->domain ); ?></option>
-					<option value="N" <?php if ($ind_escala == 'N') echo 'selected'; ?> ><?php _e( 'N - Produzido em Escala NÃO Relevante', $this->domain ); ?></option>
-			</select>
-			<input type="hidden" name="wp_admin_nfe" value="1" />
-	</div>
-	<div class="field">
-			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">CNPJ do Fabricante</label>
-			</p>
-			<input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
-	</div>
-	<div class="field">
-			<p class="label" style="margin-bottom:8px;">
-					<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Informações adicionais</label>
+					<label class="title">Informações adicionais do produto</label>
 			</p>
 			<input type="text" name="produto_informacoes_adicionais" value="<?php echo get_post_meta( $post->ID, '_nfe_produto_informacoes_adicionais', true ); ?>" style="width:100%;padding:5px;">
 	</div>
-
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="product_others" <?php if ($others_checked) echo 'checked'; ?>>
+		<label class="title">Outras opções</label>
+		</p>
+	</div>
+	<div class="product_others">
+		<div class="field">
+				<p class="label" style="margin-bottom:8px;">
+						<label class="title">GTIN</label>
+				</p>
+				<input type="text" name="codigo_ean" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
+		</div>
+		<div class="field">
+				<p class="label" style="margin-bottom:8px;">
+						<label class="title">GTIN tributável</label>
+				</p>
+				<input type="text" name="gtin_tributavel" value="<?php echo get_post_meta( $post->ID, '_nfe_gtin_tributavel', true ); ?>" style="width:100%;padding:5px;">
+		</div>
+		<div class="field">
+				<p class="label" style="margin-bottom:8px;">
+						<label class="title">Indicador de escala relevante</label>
+				</p>
+				<?php
+					$ind_escala = get_post_meta( $post->ID, '_nfe_ind_escala', true );
+				?>
+				<select name="ind_escala">
+						<option value="" <?php if (!$ind_escala) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
+						<option value="S" <?php if ($ind_escala == 'S') echo 'selected'; ?> ><?php _e( 'S - Produzido em Escala Relevante', $this->domain ); ?></option>
+						<option value="N" <?php if ($ind_escala == 'N') echo 'selected'; ?> ><?php _e( 'N - Produzido em Escala NÃO Relevante', $this->domain ); ?></option>
+				</select>
+				<input type="hidden" name="wp_admin_nfe" value="1" />
+		</div>
+		<div class="field">
+				<p class="label" style="margin-bottom:8px;">
+						<label class="title">CNPJ do Fabricante</label>
+				</p>
+				<input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
+		</div>
+	</div>
+	
 </div>
 
 	<?php
@@ -1654,17 +1728,23 @@ jQuery(document).ready(function($) {
 					'_nfe_codigo_cest'     => $_POST['codigo_cest'],
 					'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
 					'_nfe_ind_escala'      => $_POST['ind_escala'],
-					'_nfe_produto_informacoes_adicionais' => $_POST['produto_informacoes_adicionais']
+					'_nfe_produto_informacoes_adicionais' => $_POST['produto_informacoes_adicionais'],
+					'_nfe_product_others'  => $_POST['product_others']
 					);
 
 					foreach ($info as $key => $value){
-						if (isset($value)) update_post_meta($post_id, $key, $value);
+						if (isset($value)) 
+							update_post_meta($post_id, $key, $value);
 					}
 
 					if ($_POST['ignorar_nfe']){
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 					} else {
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', 0 );
+					}
+
+					if (!$info['_nfe_product_others']){
+						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
 					if (is_numeric($_POST['origem']) || $_POST['origem']) 
@@ -1675,26 +1755,27 @@ jQuery(document).ready(function($) {
 			if (get_post_type($post_id) == 'shop_order' && $_POST['wp_admin_nfe']){
 
 				$info = array(
+					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
+					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
 					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
-					'_nfe_transporte_forma_envio'	=> $_POST['transporte_forma_envio'],
+					'_nfe_volume_weight' => $_POST['nfe_volume_weight'],
 					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
 					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
 					'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
 					'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
-					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
-					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
-					'_nfe_transporte_marca' 		=> $_POST['transporte_marca'],
-					'_nfe_transporte_numeracao' 	=> $_POST['transporte_numeracao'],
-					'_nfe_transporte_lacres'    	=> $_POST['transporte_lacres'],
-					'_nfe_transporte_cnpj'  		=> $_POST['transporte_cnpj'],
-					'_nfe_transporte_razao_social'  => $_POST['transporte_razao_social'],
-					'_nfe_transporte_ie'    		=> $_POST['transporte_ie'],
-					'_nfe_transporte_endereco'  	=> $_POST['transporte_endereco'],
-					'_nfe_transporte_estado'    	=> $_POST['transporte_estado'],
-					'_nfe_transporte_cidade'    	=> $_POST['transporte_cidade'],
-					'_nfe_transporte_cep'   		=> $_POST['transporte_cep'],
-					'_nfe_transporte_seguro'    	=> str_replace(',', '.', $_POST['transporte_seguro']),
+					'_nfe_installments'  => $_POST['nfe_installments'],
+					'_nfe_installments_n'  => $_POST['nfe_installments_n'],
+					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
+					'_nfe_installments_value'  => $_POST['nfe_installments_value']
 				);
+
+				if (!$info['nfe_volume_weight']){
+					delete_post_meta( $post_id, '_nfe_volume_weight' );
+				}
+
+				if (!$info['nfe_installments']){
+					delete_post_meta( $post_id, '_nfe_installments' );
+				}
 
 				foreach ($info as $key => $value){
 
@@ -2178,7 +2259,7 @@ jQuery(document).ready(function($) {
 
 		foreach ( $plugins_list as $plugin_path => $plugin_name ) {
 
-			if ( $this->wmbr_is_plugin_active($plugin_path) ) {
+			if ( self::wmbr_is_plugin_active($plugin_path) ) {
 
 				echo '<div class="error">
 						<p>O plugin <b>'.$plugin_name.'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>

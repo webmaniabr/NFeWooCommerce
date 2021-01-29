@@ -67,8 +67,16 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			} else {
 
-				$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
-				$this->remove_id_to_invoice_errors($order_id);
+				if ( is_object($response) && $data['previa_danfe'] ) {
+
+					$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
+
+				} else {
+
+					$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
+					$this->remove_id_to_invoice_errors($order_id);
+
+				}
 
 			}
 
@@ -141,6 +149,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$total_discount = $total_fee = 0;
 		$fee_aditional_informations = '';
 		$natureza_operacao = '';
+		$payment_gateway = UtilsGateways::get_gateway_class( $order->payment_method );
 
 		// Coupons
 		if ($coupons){
@@ -217,100 +226,38 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'presenca'         => apply_filters( 'nfe_order_presence', 2, $post_id ), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => apply_filters( 'nfe_order_freight', (int) $modalidade_frete, $post_id ), // Modalidade do frete
 			'frete'            => number_format(get_post_meta( $order->get_id(), '_order_shipping', true ), 2, '.', '' ), // Total do frete
-			'desconto'         => $total_discount, // Total do desconto
-			'total'            => $order->get_order_total // Total do pedido - sem descontos
+			'desconto'         => number_format($total_discount, 2, '.', '' ), // Total do desconto
+			'total'            => $order->get_total() // Total do pedido - sem descontos
 		);
 
 		if ( $total_fee && $total_fee > 0 ) {
 			$data['pedido']['despesas_acessorias'] = number_format($total_fee, 2, '.', '');
 		}
 
-		/** Check before create installments informations
-		 * - Plugin "EBANX Local Payment Gateway for WooCommerce" is active
-		 * - Option in "Nota Fiscal" configuration oage is enabled
-		 * - The order has a credit card payment
-		 */ 
-		if (
-			$this->wmbr_is_plugin_active('ebanx-local-payment-gateway-for-woocommerce/woocommerce-gateway-ebanx.php') &&
-			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-			get_post_meta( $post_id, '_cards_brand_name', true) != ''
-		) {
+		// Gateway Installments
+		if ($payment_gateway && method_exists( "$payment_gateway", 'installments' )){
 
-			$parcelas = get_post_meta( $post_id, '_instalments_number', true);
-			
-			// Check if the order has installments or if is greater than 1
-			if ( isset($parcelas) || $parcelas > 1 ) {
+			$data = $payment_gateway::installments( $post_id, $data, $order, $args = [ 'total_discount' => $total_discount ] );
 
-				$valor_total = $order->order_total;
-				
-				// Create 'fatura' array			
-				$data['fatura'] =  array(
-					'numero'		=> '000001',
-					'valor'		 	=> $valor_total + $total_discount,
-					'desconto'		=> $total_discount,
-					'valor_liquido' => $valor_total
-				);				
-				
-				// Declare vars
-				$data['parcelas'] = array();	
-				$valor_parcela = round($valor_total / $parcelas, 2);
-				$valor_somatorio = 0;
-				$data_pedido = get_the_time('Y-m-d', $post_id);
-	
-				for ( $i = 1; $i <= $parcelas; $i++ ) {
-					
-					// When reach the last intallment, calculate the total
-					if ( $i == $parcelas ) {
-						$valor_parcela = $valor_total - $valor_somatorio;
-					} else {
-						$valor_somatorio += $valor_parcela;
-					}
-					
-					// Add installment to NF-e invoice
-					$data['parcelas'][] = array(
-						'vencimento' => $data_pedido,
-						'valor' => $valor_parcela
-					);
-					
-					// Add 30 days to next installment
-					$data_pedido = date('Y-m-d', strtotime("+1 month", strtotime($data_pedido)));
-	
-				}
-
-			}
-			
 		}
 
+		// Custom Installments
+		if ($custom_installments = get_post_meta( $post_id, '_nfe_installments', true )){
+
+			$data = NFeUtils::custom_installments( $post_id, $data, $order, $args = [ 'total_discount' => $total_discount ] );
+
+		}
+		
 		// Set Payment Method
 		if ( in_array($order->payment_method, $payment_keys) ){
 
-			$origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
+			if ($payment_gateway && method_exists( "$payment_gateway", 'payment_type' )){
 
-			if ($order->payment_method == 'pagseguro') {
-
-				$payment_type = get_post_meta($post_id, __( 'Payment type', 'woocommerce-pagseguro' ), true);
-
-				if ( strtolower($payment_type) == 'boleto'){
-
-					$data['pedido']['forma_pagamento'] = '15';
-
-				} elseif ($payment_type == 'Cartão de Crédito' && $origem_state == 'BR:SC'){
-
-					$data['pedido']['forma_pagamento'] = '99';
-
-				} elseif ($payment_type == 'Cartão de Crédito'){
-
-					$data['pedido']['forma_pagamento'] = '03';
-
-				} else {
-
-					$data['pedido']['forma_pagamento'] = '99';
-
-				}
+				$data = $payment_gateway::payment_type( $post_id, $order, $data );
 
 			} else {
 
-				$data['pedido']['forma_pagamento'] = $payment_methods[$order->payment_method];
+				$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
 
 			}
 
@@ -448,27 +395,36 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$data['transporte']['uf']           = $transp['uf'];
 			$data['transporte']['cidade']       = $transp['city'];
 			$data['transporte']['cep']          = $transp['cep'];
+		}
+
+		// Product Volume and Weight
+		if ($volume_weight = get_post_meta( '_nfe_volume_weight' )){
+
+			$order_specifics = array(
+				'volume' => '_nfe_transporte_volume',
+				'especie' => '_nfe_transporte_especie',
+				'peso_bruto' => '_nfe_transporte_peso_bruto',
+				'peso_liquido' => '_nfe_transporte_peso_liquido'
+			);
+	
+			foreach ($order_specifics as $api_key => $meta_key) {
+	
+				$value = $_POST[str_replace('_nfe_', '', $meta_key)];
+	
+				if (!isset($value)) 
+					$value = get_post_meta($post_id, $meta_key, true);
+	
+				if ($value){
+					$data['transporte'][$api_key] = $value;
+				}
+	
+			}
 
 		}
 
-		$order_specifics = array(
-			'volume' => '_nfe_transporte_volume',
-			'especie' => '_nfe_transporte_especie',
-			'peso_bruto' => '_nfe_transporte_peso_bruto',
-			'peso_liquido' => '_nfe_transporte_peso_liquido'
-		);
-
-		foreach ($order_specifics as $api_key => $meta_key) {
-
-			$value = $_POST[str_replace('_nfe_', '', $meta_key)];
-
-			if (!isset($value)) 
-				$value = get_post_meta($post_id, $meta_key, true);
-
-			if ($value){
-				$data['transporte'][$api_key] = $value;
-			}
-
+		// Preview
+		if ($_POST['previa_danfe']){
+			$data['previa_danfe'] = true;
 		}
 
 		// Return
@@ -487,7 +443,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Vars
 		$product_id  = $item['product_id'];
-		$product     = wc_get_product($item['product_id']);
+		$product     = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
 		$codigo_gtin  = get_post_meta($product_id, '_nfe_codigo_ean', true);
 		$gtin_tributavel = get_post_meta($product_id, '_nfe_gtin_tributavel', true);
 		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
@@ -557,7 +513,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$info = array(
 			'nome' => $item['name'].$variacoes, // Nome do produto
 			'informacoes_adicionais' => ($informacoes_adicionais) ? $informacoes_adicionais : '', // Variações do produto
-			'sku' => ($product->get_sku()) ? $product->get_sku() : '', // Código identificador - SKU
+			'codigo' => ($product->get_sku()) ? $product->get_sku() : '', // Código do produto
 			'gtin' => ($codigo_gtin) ? $codigo_gtin : '', // Código GTIN
 			'gtin_tributavel' => ($gtin_tributavel) ? $gtin_tributavel : '',
 			'ncm' => ($codigo_ncm) ? $codigo_ncm : '', // Código NCM

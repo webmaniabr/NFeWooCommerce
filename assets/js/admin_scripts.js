@@ -218,4 +218,54 @@ jQuery( function ( $ ) {
     $('#_shipping_persontype').on('change', load_fields_shipping);
     $('.edit_address').on('click', load_fields_shipping);
 
+    // Volume
+    $('input[name="nfe_volume_weight"]').on('change', function(){
+      if ($(this).is(':checked')){
+        $('.transporte').show();
+      } else {
+        $('.transporte').hide();
+      }
+    });
+
+    $('input[name="transporte_peso_bruto"]').on('keyup', function(){
+      $('input[name="transporte_peso_liquido"]').val($(this).val());
+    });
+
+    // Installments
+    $('input[name="nfe_installments"]').on('change', function(){
+      if ($(this).is(':checked')){
+        $('.nfe_installments').show();
+      } else {
+        $('.nfe_installments').hide();
+      }
+    });
+    $('input[name="nfe_installments_n"]').on('change', function(){
+
+      value = $(this).val();
+      div = $('.nfe_installments.row-first');
+      total = $('.nfe_installments.row').length + 1;
+      
+      if (value > total){
+
+        diff = value - total;
+        if (diff > 0){
+          for (var i = 0; i < diff; i++) {
+            div.clone().appendTo(".nfe_installments.block");
+            $('.nfe_installments.row-first:last').addClass('row').removeClass('row-first');
+          }
+        }
+        
+      } else if (value < total){
+
+        diff = total - value;
+        if (diff > 0){
+          for (var i = 0; i < diff; i++) {
+            $('.nfe_installments.row:last').remove();
+          }
+        }
+
+      }
+
+    });
+
 });

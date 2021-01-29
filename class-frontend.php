@@ -12,7 +12,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
 		// Compatibility with WooCommerce Admin 0.20.0 or higher
 		if (
-				$this->wmbr_is_plugin_active('woocommerce-admin/woocommerce-admin.php') &&
+				self::wmbr_is_plugin_active('woocommerce-admin/woocommerce-admin.php') &&
 				$pagenow != 'admin.php' &&
 				( isset($_GET['page']) && $_GET['page'] != 'wc-admin' )
 			) {
@@ -26,7 +26,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 		 * @link https://github.com/claudiosmweb/woocommerce-extra-checkout-fields-for-brazil
 		**/
 		if (
-      !$this->wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php') &&
+      !WooCommerceNFe::is_extra_checkout_fields_activated() &&
       get_option('wc_settings_woocommercenfe_tipo_pessoa') == 'yes'
 		){
 
@@ -46,7 +46,9 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   public static function scripts(){
 
-      $version = $this->version;
+      global $version_woonfe;
+
+      $version = $version_woonfe;
       $array = array();
 
       $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
@@ -278,7 +280,6 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
   function valide_checkout_fields(){
 
     $billing_persontype = isset( $_POST['billing_persontype'] ) ? $_POST['billing_persontype'] : 0;
-    $format = new WooCommerceNFeFormat;
 
     if ($billing_persontype == 1){
 
@@ -288,7 +289,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cpf'] ) && !$format->is_cpf( $_POST['billing_cpf'] )){
+      if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFe_Format::is_cpf( $_POST['billing_cpf'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 
@@ -310,7 +311,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
       }
 
-      if (!empty( $_POST['billing_cnpj'] ) && !$format->is_cnpj( $_POST['billing_cnpj'] )){
+      if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFe_Format::is_cnpj( $_POST['billing_cnpj'] )){
 
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 
@@ -331,10 +332,8 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   function formatted_address_replacements( $replacements, $args ) {
 
-		extract( $args );
-
-		$replacements['{number}']       = $number;
-		$replacements['{neighborhood}'] = $neighborhood;
+		$replacements['{number}']       = (isset($args['number'])) ? $args['number'] : '';
+		$replacements['{neighborhood}'] = (isset($args['neighborhood'])) ? $args['neighborhood'] : '';
 
     return $replacements;
     

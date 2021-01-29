@@ -40,3 +40,24 @@ p.form-field._shipping_ie_field{
 input#_shipping_person_info {
     width: auto!important;
 }
+.transporte, .nfe_installments, .product_others {
+    display: none;
+}
+#woocommernfe_informacoes_adicionais .title, #woocommernfe_informacoes .title {
+    font-size:13px;
+    line-height:1.5em;
+    font-weight:bold;
+}
+.nfe_installments.row, .nfe_installments.row-first {
+    padding: 5px 15px 15px 15px !important;
+	background: #e8e8e8;
+	border-radius: 10px;
+	margin-top: 10px !important;
+}
+.nfe_installments .label {
+    margin-bottom:0px !important;
+    margin-top: 5px !important;
+}
+.nfe_installments .title {
+    font-size:12px !important;
+}
