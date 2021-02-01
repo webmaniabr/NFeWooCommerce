@@ -11,6 +11,8 @@ class NFeUtils {
    */
   static function custom_installments( $post_id, $data, $order, $args ){
 
+    // Vars
+    $data['parcelas'] = array();
     $nfe_installments_n = ($_POST['nfe_installments_n']) ? $_POST['nfe_installments_n'] : get_post_meta($post_id, '_nfe_installments_n', true);
     $nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : 0;
     $nfe_installments_due_date = ($_POST['nfe_installments_due_date']) ? $_POST['nfe_installments_due_date'] : get_post_meta( $post_id, '_nfe_installments_due_date', true );

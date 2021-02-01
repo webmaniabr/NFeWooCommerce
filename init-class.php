@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.1.2.1';
+	public $version = '3.1.2.2';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -146,6 +146,7 @@ class WooCommerceNFe {
 		include_once( 'inc/sdk/NFe.php' );
 		include_once( 'inc/utils.php' );
 		include_once( 'inc/gateways/utils.php' );
+		include_once( 'inc/gateways/bacs.php' );
 		include_once( 'inc/gateways/ebanx.php' );
 		include_once( 'inc/gateways/pagarme.php' );
 		include_once( 'inc/gateways/pagseguro.php' );

@@ -1000,7 +1000,7 @@ jQuery(document).ready(function($) {
 		<div class="nfe_installments row-first" data-row="1">
 			<div class="field">
 				<p class="label">
-					<label class="title"">Vencimento (DD/MM/AAAA)</label>
+					<label class="title">Vencimento (DD/MM/AAAA)</label>
 				</p>
 				<input type="text" name="nfe_installments_due_date[]" value="<?php echo ($nfe_installments_due_date) ? $nfe_installments_due_date[0] : ''; ?>" style="width:100%;">
 			</div>
@@ -1777,7 +1777,7 @@ jQuery(document).ready(function($) {
 
 			}
 
-			if (get_post_type($post_id) == 'shop_order' && $_POST['wp_admin_nfe']){
+			if (get_post_type($post_id) == 'shop_order' && $_POST && $_POST['wp_admin_nfe']){
 
 				$info = array(
 					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
