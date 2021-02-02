@@ -235,23 +235,19 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Set Payment Method
-		if ( in_array($order->payment_method, $payment_keys) ){
+		if ($payment_gateway && method_exists( "$payment_gateway", 'payment_type' )){
 
-			if ($payment_gateway && method_exists( "$payment_gateway", 'payment_type' )){
+			$data = $payment_gateway::payment_type( $post_id, $order, $data );
 
-				$data = $payment_gateway::payment_type( $post_id, $order, $data );
+		} elseif ( $payment_keys && in_array($order->payment_method, $payment_keys) ) {
+
+			if (isset($payment_methods[$order->payment_method])){
+
+				$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
 
 			} else {
 
-				if ($payment_methods[$order->payment_method]){
-
-					$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
-
-				} else {
-
-					$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
-
-				}
+				$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
 
 			}
 
@@ -385,8 +381,26 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		}
 
+		// Payment
+    if (
+			$data['parcelas'] && 
+			(
+				(count($data['parcelas']) > 1) || 
+				(count($data['parcelas']) == 1 && $data['parcelas'][0]['vencimento'] > current_time('Y-m-d'))
+			)
+		){
+
+      $data['pedido']['pagamento'] = 1; // 1 - Pagamento a prazo
+
+    } else {
+
+      $data['pedido']['pagamento'] = 0; // 0 - Pagamento à vista
+
+    }
+
 	  // Courier
 		$shipping_method = @array_shift($order->get_shipping_methods());
+		$shipping_data = $shipping_method->get_data();
 		$shipping_method_id = $shipping_method['method_id'];
 
 		if (strpos($shipping_method_id, ':')){
@@ -395,20 +409,34 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
 
-		if ($include_shipping_info == 'on' && isset($transportadoras[$shipping_method_id])){
+		if ($include_shipping_info == 'on' && (isset($transportadoras[$shipping_method_id]) || $shipping_method_id == 'frenet')){
 
-			$transp = $transportadoras[$shipping_method_id];
-			$data['transporte']['cnpj']         = $transp['cnpj'];
-			$data['transporte']['razao_social'] = $transp['razao_social'];
-			$data['transporte']['ie']           = $transp['ie'];
-			$data['transporte']['endereco']     = $transp['address'];
-			$data['transporte']['uf']           = $transp['uf'];
-			$data['transporte']['cidade']       = $transp['city'];
-			$data['transporte']['cep']          = $transp['cep'];
+			// Frenet
+			if ($shipping_method_id == 'frenet'){
+				if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
+					$shipping_method_id = $shipping_data['meta_data'][0]->value;
+				}
+			}
+
+			// Courier data
+			if ($shipping_method_id != 'frenet'){
+
+				$transp = $transportadoras[$shipping_method_id];
+			
+				$data['transporte']['cnpj']         = $transp['cnpj'];
+				$data['transporte']['razao_social'] = $transp['razao_social'];
+				$data['transporte']['ie']           = $transp['ie'];
+				$data['transporte']['endereco']     = $transp['address'];
+				$data['transporte']['uf']           = $transp['uf'];
+				$data['transporte']['cidade']       = $transp['city'];
+				$data['transporte']['cep']          = $transp['cep'];
+
+			}
+			
 		}
 
 		// Product Volume and Weight
-		if ($volume_weight = get_post_meta( '_nfe_volume_weight' )){
+		if ($volume_weight = get_post_meta( $post_id, '_nfe_volume_weight', true )){
 
 			$order_specifics = array(
 				'volume' => '_nfe_transporte_volume',

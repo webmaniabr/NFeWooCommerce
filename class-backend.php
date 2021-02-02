@@ -355,25 +355,27 @@ jQuery(document).ready(function($) {
 		}
 
 		// Mount carriers
-		for ($i = 1; $i < $count+1; $i++) {
+		if ($_POST){
+			for ($i = 1; $i < $count+1; $i++) {
 
-			$id = $_POST['shipping_info_method_'.$i];
-			if(!$id) continue;
-			$transportadoras[$id] = array();
-			$keys = array(
-				'razao_social' => 'rs',
-				'cnpj'         => 'cnpj',
-				'ie'           => 'ie',
-				'address'      => 'address',
-				'cep'          => 'cep',
-				'city'         => 'city',
-				'uf'           => 'uf'
-			);
+				$id = $_POST['shipping_info_method_'.$i];
+				if (!$id) continue;
+				$transportadoras[$id] = array();
+				$keys = array(
+					'razao_social' => 'rs',
+					'cnpj'         => 'cnpj',
+					'ie'           => 'ie',
+					'address'      => 'address',
+					'cep'          => 'cep',
+					'city'         => 'city',
+					'uf'           => 'uf'
+				);
 
-			foreach($keys as $name => $post_key){
-				$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
+				foreach($keys as $name => $post_key){
+					$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
+				}
+
 			}
-
 		}
 
 		// Update
@@ -653,7 +655,8 @@ jQuery(document).ready(function($) {
 	 */
 	function get_shipping_methods_select($index = 0, $id = ''){
 
-		// HTML
+		// Vars
+		$carriers = get_option('wc_settings_woocommercenfe_transportadoras', array());
 		$html = '<select class="nfe-shipping-methods-sel" name="shipping_info_method_'.$index.'">';
 		$html .= '<option value="">Selecionar</option>';
 
@@ -680,8 +683,8 @@ jQuery(document).ready(function($) {
 
 				foreach ($frenet->ShippingSeviceAvailableArray as $var){
 
-					($method->id == 'FRENET_'.$var->ServiceCode ? $selected = 'selected' : $selected = '');
-					$html .= '<option value="FRENET_'.$var->ServiceCode.'" '.$selected.'>Frenet - '.$var->Carrier.'</option>';
+					(isset($carriers['FRENET_'.$var->ServiceCode]) ? $selected = 'selected' : $selected = '');
+					$html .= '<option value="FRENET_'.$var->ServiceCode.'" '.$selected.'>Frenet - '.$var->Carrier.' ('.$var->ServiceDescription.')</option>';
 
 				}
 

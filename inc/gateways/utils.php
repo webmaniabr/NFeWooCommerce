@@ -84,17 +84,6 @@ class UtilsGateways {
 
     }
 
-    // Payment
-    if ($installments > 1){
-
-      $data['pedido']['pagamento'] = 1; // 1 - Pagamento a prazo
-
-    } else {
-
-      $data['pedido']['pagamento'] = 0; // 0 - Pagamento à vista
-
-    }
-
     return $data;
 
   }
