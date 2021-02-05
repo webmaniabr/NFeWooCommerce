@@ -239,17 +239,13 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			$data = $payment_gateway::payment_type( $post_id, $order, $data );
 
-		} elseif ( $payment_keys && in_array($order->payment_method, $payment_keys) ) {
+		} elseif ( isset($payment_methods[$order->payment_method]) && $payment_methods[$order->payment_method] ) {
 
-			if (isset($payment_methods[$order->payment_method])){
+			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
 
-				$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
+		} else {
 
-			} else {
-
-				$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
-
-			}
+			$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
 
 		}
 
