@@ -4,7 +4,7 @@ class NFeGatewayPaypal extends WooCommerceNFe {
 
   /**
    * Plugin activated
-   * 
+   *
    * @return boolean
    */
   static function is_activated(){
@@ -15,7 +15,7 @@ class NFeGatewayPaypal extends WooCommerceNFe {
 
   /**
    * EBANX Payment Methods
-   * 
+   *
    * @return boolean
    */
 	static function payment_methods(){
@@ -26,9 +26,9 @@ class NFeGatewayPaypal extends WooCommerceNFe {
 
   /**
    * Mount installments data
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function installments( $post_id, $data, $order, $args ){
@@ -45,9 +45,9 @@ class NFeGatewayPaypal extends WooCommerceNFe {
 
       $installments = ($paypal_data) ? $paypal_data : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
-			
+
     }
-    
+
     return $data;
 
   }

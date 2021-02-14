@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
-if (!class_exists('WooCommerceNFe')) 
+if (!class_exists('WooCommerceNFe'))
   require_once 'init-class.php';
 
 function WC_NFe(){

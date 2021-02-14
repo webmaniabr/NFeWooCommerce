@@ -5,7 +5,7 @@ jQuery(document).ready(function($){
     var toggle = true;
 
     block_classes.forEach(function(value, index){
-      
+
       if(target.hasClass(value)){
         toggle = false;
       }

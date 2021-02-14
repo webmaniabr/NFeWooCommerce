@@ -4,7 +4,7 @@ class NFeGatewayBacs extends WooCommerceNFe {
 
   /**
    * Plugin activated
-   * 
+   *
    * @return boolean
    */
   static function is_activated(){
@@ -15,7 +15,7 @@ class NFeGatewayBacs extends WooCommerceNFe {
 
   /**
    * Bacs Payment Methods
-   * 
+   *
    * @return boolean
    */
 	static function payment_methods(){
@@ -26,9 +26,9 @@ class NFeGatewayBacs extends WooCommerceNFe {
 
   /**
    * Mount installments data
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function installments( $post_id, $data, $order, $args ){
@@ -42,18 +42,18 @@ class NFeGatewayBacs extends WooCommerceNFe {
 			$installments = get_post_meta( $post_id, '_instalments', true);
 			$installments = ($installments) ? $installments : 1;
       $data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
-			
+
     }
-    
+
     return $data;
 
 	}
-  
+
   /**
    * Mount data with Bacs payment type
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function payment_type( $post_id, $order, $data ){
@@ -71,6 +71,6 @@ class NFeGatewayBacs extends WooCommerceNFe {
     return $data;
 
   }
-  
+
 
 }

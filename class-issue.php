@@ -7,10 +7,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	function __construct(){}
-	
+
 	/**
 	 * Validate Plugin before Load
-	 * 
+	 *
 	 * @return boolean
 	 */
   function send( $order_ids = array(), $is_massa = false ){
@@ -85,7 +85,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				$nfe = get_post_meta( $order_id, 'nfe', true );
 
-				if (!$nfe) 
+				if (!$nfe)
 					$nfe = array();
 
 				// Identify NFe repeated
@@ -127,7 +127,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Mount Order Data
-	 * 
+	 *
 	 * @return boolean
 	 */
 	function order_data( $post_id ){
@@ -160,11 +160,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				}
 			}
 		}
-		
+
 		// Order
 		$modalidade_frete = $_POST['modalidade_frete'];
 
-		if (!isset($modalidade_frete)) 
+		if (!isset($modalidade_frete))
 			$modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
 
 		if (!$modalidade_frete || $modalidade_frete == 'null')
@@ -195,7 +195,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ($order->get_fees()){
 
 			foreach ($order->get_fees() as $key => $item){
-				
+
 				if ($item['line_total'] < 0){
 
 					$discount = abs($item['line_total']);
@@ -203,9 +203,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				} else {
 
-					if ( $fee_aditional_informations != '' ) 
+					if ( $fee_aditional_informations != '' )
 						$fee_aditional_informations .= ' / ';
-					
+
 					$fee_aditional_informations .= $item['name'] . ': R$' . number_format($item['line_total'], 2, ',', '');
 					$fee = $item['line_total'];
 					$total_fee = $fee + $total_fee;
@@ -216,12 +216,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$total_discount = $order->get_total_discount() + $total_discount;
 		$data_emissao = get_option('wc_settings_woocommercenfe_data_emissao');
-		
+
 		if ( isset($data_emissao) && $data_emissao == 'yes' ) {
 			$data['data_emissao'] = get_the_time('Y-m-d H:i:s', $post_id);
 			$data['data_entrada_saida'] = get_the_time('Y-m-d H:i:s', $post_id);
 		}
-		
+
 		$data['pedido'] = array(
 			'presenca'         => apply_filters( 'nfe_order_presence', 2, $post_id ), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => apply_filters( 'nfe_order_freight', (int) $modalidade_frete, $post_id ), // Modalidade do frete
@@ -251,14 +251,14 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Tax informations
 		$fisco_inf = get_option('wc_settings_woocommercenfe_fisco_inf');
-		
+
 		if (!empty($fisco_inf) && strlen($fisco_inf) <= 2000) {
 			$data['pedido']['informacoes_fisco'] = $fisco_inf;
 		}
 
 		// Consumer information
 		$consumidor_inf = get_option('wc_settings_woocommercenfe_cons_inf');
-		
+
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
 		}
@@ -295,8 +295,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Products
 		$bundles = array();
-		
-		if (!isset($data['produtos'])) 
+
+		if (!isset($data['produtos']))
 			$data['produtos'] = array();
 
 		foreach ($order->get_items() as $key => $item){
@@ -379,9 +379,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Payment
     if (
-			$data['parcelas'] && 
+			$data['parcelas'] &&
 			(
-				(count($data['parcelas']) > 1) || 
+				(count($data['parcelas']) > 1) ||
 				(count($data['parcelas']) == 1 && $data['parcelas'][0]['vencimento'] > current_time('Y-m-d'))
 			)
 		){
@@ -418,7 +418,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			if ($shipping_method_id != 'frenet'){
 
 				$transp = $transportadoras[$shipping_method_id];
-			
+
 				$data['transporte']['cnpj']         = $transp['cnpj'];
 				$data['transporte']['razao_social'] = $transp['razao_social'];
 				$data['transporte']['ie']           = $transp['ie'];
@@ -428,7 +428,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$data['transporte']['cep']          = $transp['cep'];
 
 			}
-			
+
 		}
 
 		// Product Volume and Weight
@@ -440,18 +440,18 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				'peso_bruto' => '_nfe_transporte_peso_bruto',
 				'peso_liquido' => '_nfe_transporte_peso_liquido'
 			);
-	
+
 			foreach ($order_specifics as $api_key => $meta_key) {
-	
+
 				$value = $_POST[str_replace('_nfe_', '', $meta_key)];
-	
-				if (!isset($value)) 
+
+				if (!isset($value))
 					$value = get_post_meta($post_id, $meta_key, true);
-	
+
 				if ($value){
 					$data['transporte'][$api_key] = $value;
 				}
-	
+
 			}
 
 		}
@@ -468,7 +468,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Mount Produtct Data
-	 * 
+	 *
 	 * @return boolean
 	 */
 	function get_product_nfe_info($item, $order){
@@ -493,7 +493,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if (!$codigo_ncm){
 
 			$product_cat = get_the_terms($product_id, 'product_cat');
-			
+
 			if (is_array($product_cat)) {
 				foreach($product_cat as $cat){
 
@@ -509,7 +509,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		    }
 			}
 
-			if(!$codigo_ncm) 
+			if(!$codigo_ncm)
 				$codigo_ncm = get_option('wc_settings_woocommercenfe_ncm');
 
 		}
@@ -566,10 +566,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		return apply_filters('nfe_order_data_product', $info, $order->get_id(), $product);
 
   }
-	
+
 	/**
 	 * Mount Produtct Data
-	 * 
+	 *
 	 * @return boolean
 	 */
   function set_bundle_products_array( $bundles, $order){
@@ -676,7 +676,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	/**
 	 * Verify if shipping and billing
 	 * informations are different
-	 * 
+	 *
 	 * @return array
 	**/
 	public function compare_addresses($post_id, $envio_email) {
@@ -708,14 +708,14 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'telefone'    => $phone,
 			'email'       => $email
 		);
-		
+
 		if ( $shipping['endereco'] == '' ) {
 			$is_digital_order = $this->is_digital_order($post_id);
 
 			if ( $is_digital_order ) {
 				$tipo_pessoa_billing = $this->detect_persontype($post_id, '_billing');
 				$billing = array_merge( $this->get_persontype_info($post_id, $tipo_pessoa_billing, '_billing'), $billing);
-				
+
 				$return['cliente'] = $billing;
 				return $return;
 			}
@@ -749,7 +749,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Detect persontype from order
-	 * 
+	 *
 	 * @return integer
 	**/
 	public function detect_persontype($post_id, $type = '_billing') {
@@ -768,7 +768,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$tipo_pessoa = 2;
 			}
 
-			if (!$tipo_pessoa) 
+			if (!$tipo_pessoa)
 				$tipo_pessoa = 1;
 
 		}
@@ -779,7 +779,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Get informations from persontype
-	 * 
+	 *
 	 * @return array
 	**/
 	public function get_persontype_info($post_id, $persontype = 1, $type = '_billing') {
@@ -812,7 +812,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Verify if is a digital order
-	 * 
+	 *
 	 * @return boolean
 	**/
 	public function is_digital_order($order_id) {
@@ -845,7 +845,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Add order id to list of automatic invoice errors
-	 * 
+	 *
 	 * @return void
 	 **/
 	function add_id_to_invoice_errors( $message, $order_id ) {
@@ -872,7 +872,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	/**
 	 * Remove order id to list of automatic invoice errors
-	 * 
+	 *
 	 * @return void
 	 **/
 	function remove_id_to_invoice_errors( $order_id ) {
@@ -880,8 +880,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$ids_db = get_option('wmbr_auto_invoice_errors');
 
 		if ( is_array($ids_db) ) {
-			
-			if ( !array_key_exists($order_id, $ids_db) ) 
+
+			if ( !array_key_exists($order_id, $ids_db) )
 				return false;
 
 			unset($ids_db[$order_id]);

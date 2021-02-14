@@ -68,7 +68,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 	/**
 	 * Scripts
-	 * 
+	 *
 	 * @return void
 	 */
   function scripts(){
@@ -79,12 +79,12 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
     wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $version_woonfe );
     wp_enqueue_style( 'woocommercenfe_admin_style' );
 		wp_enqueue_script( 'woocommercenfe_admin_script' );
-		
+
 	}
-	
+
 	/**
 	 * Global Scripts
-	 * 
+	 *
 	 * @return void
 	 */
 	function global_admin_scripts(){
@@ -93,25 +93,25 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
     wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
     wp_enqueue_style( 'woocommercenfe_table_style' );
 		wp_enqueue_script( 'woocommercenfe_table_scripts' );
-		
+
 	}
 
 	/**
 	 * Add new settings tag
-	 * 
+	 *
 	 * @return array
 	 */
 	function add_settings_tab( $settings_tabs ){
 
 		$settings_tabs['woocommercenfe_tab'] = __( 'Nota Fiscal', $this->domain );
-		
+
 		return $settings_tabs;
-			
+
 	}
 
 	/**
 	 * Settings tab content
-	 * 
+	 *
 	 * @return html
 	 */
 	function settings_tab(){
@@ -299,7 +299,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 	/**
 	 * Update Certificate A1
-	 * 
+	 *
 	 * @return script
 	 */
 	function force_digital_certificate_update() {
@@ -335,7 +335,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Update Certificate A1
-	 * 
+	 *
 	 * @return script
 	 */
 	function update_settings(){
@@ -393,13 +393,13 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * WP-Admin plugin settings
-	 * 
+	 *
 	 * @return array
 	 */
 	function get_settings(){
-		
+
 		$auto_invoice_report_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
-		
+
 		$settings = array(
 			'title' => array(
 				'name'     => __( 'Credenciais de Acesso', $this->domain ),
@@ -589,7 +589,7 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end4'
 			)
 		);
-			
+
 		// WooCommerce Extra Checkout Fields for Brazil
 		if ( WooCommerceNFe::is_extra_checkout_fields_activated() ) {
 			unset($settings['title5']);
@@ -597,8 +597,8 @@ jQuery(document).ready(function($) {
 			unset($settings['mascara_campos']);
 			unset($settings['cep']);
 		}
-				
-		if ( 
+
+		if (
 			!NFeGatewayEbanx::is_activated() &&
 			!NFeGatewayPagarme::is_activated() &&
 			!NFeGatewayPagSeguro::is_activated() &&
@@ -608,15 +608,15 @@ jQuery(document).ready(function($) {
 			unset($settings['ebanx_title']);
 			unset($settings['ebanx_parcelas']);
 		}
-		
+
 		// Return
 		return $settings;
 
-	}	
+	}
 
 	/**
 	 * Display Carriers
-	 * 
+	 *
 	 * @return string
 	 */
 	function get_transportadoras_entries(){
@@ -650,7 +650,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display Shipping Methods selected
-	 * 
+	 *
 	 * @return string
 	 */
 	function get_shipping_methods_select($index = 0, $id = ''){
@@ -713,7 +713,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display Payment Methods selected
-	 * 
+	 *
 	 * @return string
 	 */
 	function get_payment_methods_select($method, $index = 0, $id = ''){
@@ -752,7 +752,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Register Metabox
-	 * 
+	 *
 	 * @return void
 	 */
 	function register_metabox_nfe_emitida() {
@@ -778,7 +778,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Update status
-	 * 
+	 *
 	 * @return void
 	 */
 	function atualizar_status_nota() {
@@ -819,18 +819,18 @@ jQuery(document).ready(function($) {
 
 		}
 
-	}	
+	}
 
 	/**
 	 * Metabox content
-	 * 
+	 *
 	 * @return html
 	 */
 	function metabox_content_woocommernfe_nfe_emitida( $post ) {
 
 		$nfe_data = get_post_meta($post->ID, 'nfe', true);
 		if (empty($nfe_data)):
-	
+
 	?>
 
 <p>Nenhuma nota emitida para este pedido</p>
@@ -880,12 +880,12 @@ jQuery(document).ready(function($) {
 </div>
 
 		<?php endif;
-		 
+
 	}
 
 	/**
 	 * Metabox content
-	 * 
+	 *
 	 * @return html
 	 */
 	function metabox_content_woocommernfe_informacoes_adicionais( $post ) {
@@ -909,7 +909,7 @@ jQuery(document).ready(function($) {
 			<?php if ($installments_checked && $installments_checked == 'on'){ ?>
 				$('.nfe_installments').show();
 			<?php } ?>
-			
+
 		});
 	</script>
 
@@ -1015,8 +1015,8 @@ jQuery(document).ready(function($) {
 			</div>
 		</div>
 
-		<?php 
-		if ($nfe_installments_n > 1) { 
+		<?php
+		if ($nfe_installments_n > 1) {
 			for ($i = 1; $i < $nfe_installments_n; $i++){
 		?>
 
@@ -1035,7 +1035,7 @@ jQuery(document).ready(function($) {
 			</div>
 		</div>
 
-		<?php 
+		<?php
 			} // end loop
 		} // end if ?>
 
@@ -1047,7 +1047,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Register metabox
-	 * 
+	 *
 	 * @return void
 	 */
 	function register_metabox_listar_nfe() {
@@ -1065,14 +1065,14 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Metabox content
-	 * 
+	 *
 	 * @return html
 	 */
 	function metabox_content_woocommernfe_informacoes( $post ){
 
 		// Vars
 		$others_checked = get_post_meta( $post->ID, '_nfe_product_others', true );
-        
+
 	?>
 	<script>
 		jQuery(function($){
@@ -1185,7 +1185,7 @@ jQuery(document).ready(function($) {
 				<input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
 		</div>
 	</div>
-	
+
 </div>
 
 	<?php
@@ -1194,7 +1194,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Order status column
-	 * 
+	 *
 	 * @return array
 	 */
 	function add_order_status_column_header( $columns ) {
@@ -1202,7 +1202,7 @@ jQuery(document).ready(function($) {
 		$new_columns = array();
 
 		foreach ( $columns as $column_name => $column_info ) {
-			
+
 			$new_columns[ $column_name ] = $column_info;
 
 			if ( 'order_status' == $column_name ) {
@@ -1217,7 +1217,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Order status column content
-	 * 
+	 *
 	 * @return html
 	 */
 	function add_order_status_column_content( $column ) {
@@ -1246,7 +1246,7 @@ jQuery(document).ready(function($) {
 					}
 
 				}
-            	
+
 				if ( $nfe_emitida ) {
 					echo '<div class="nfe_success">NF-e Emitida</div>';
 				} else {
@@ -1256,7 +1256,7 @@ jQuery(document).ready(function($) {
 			} else {
 
 				echo '<div class="nfe_alert">NF-e não emitida</div>';
-				
+
 			}
 
 		}
@@ -1264,7 +1264,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Metabox content
-	 * 
+	 *
 	 * @return array
 	 */
 	function add_order_meta_box_actions( $actions ) {
@@ -1277,7 +1277,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Menu bulk actions
-	 * 
+	 *
 	 * @return html
 	 */
 	function add_order_bulk_actions() {
@@ -1286,7 +1286,7 @@ jQuery(document).ready(function($) {
 
 		if ( $post_type == 'shop_order' ) {
 
-			if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending') 
+			if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending')
 				return false;
 			?>
 			<script type="text/javascript">
@@ -1303,7 +1303,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Style
-	 * 
+	 *
 	 * @return html
 	 */
 	function style(){
@@ -1324,7 +1324,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Process Bulk actions
-	 * 
+	 *
 	 * @return void
 	 */
 	function process_order_bulk_actions(){
@@ -1336,16 +1336,16 @@ jQuery(document).ready(function($) {
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) ) 
+			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) )
 				return false;
 
-			if ( isset( $_REQUEST['post'] ) ) 
+			if ( isset( $_REQUEST['post'] ) )
 				$order_ids = array_map( 'absint', $_REQUEST['post'] );
 
-			if ( empty( $order_ids ) ) 
+			if ( empty( $order_ids ) )
 				return false;
 
-			if ($action == 'wc_nfe_emitir') 
+			if ($action == 'wc_nfe_emitir')
 				$nf = new WooCommerceNFeIssue;
 				$nf->send( $order_ids, true );
 
@@ -1355,7 +1355,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Proccess metabox actions
-	 * 
+	 *
 	 * @return void
 	 */
 	function process_order_meta_box_actions( $post ){
@@ -1363,7 +1363,7 @@ jQuery(document).ready(function($) {
 		$order_id = $post->id;
 		$post_status = $post->post_status;
 
-		if ($post_status == 'trash' || $post_status == 'wc-cancelled') 
+		if ($post_status == 'trash' || $post_status == 'wc-cancelled')
 			return false;
 
 		$nf = new WooCommerceNFeIssue;
@@ -1373,11 +1373,11 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Customer meta fields
-	 * 
+	 *
 	 * @return array
 	 */
   function customer_meta_fields( $fields ) {
-    
+
 		// Billing fields
 		$new_fields['billing']['title'] = __( 'Endereço de Cobrança', $this->domain );
 		$new_fields['billing']['fields']['billing_first_name'] = $fields['billing']['fields']['billing_first_name'];
@@ -1453,7 +1453,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Billing address user column
-	 * 
+	 *
 	 * @return array
 	 */
 	function user_column_billing_address( $address, $user_id ) {
@@ -1467,7 +1467,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Shipping address user column
-	 * 
+	 *
 	 * @return array
 	 */
 	function user_column_shipping_address( $address, $user_id ) {
@@ -1481,11 +1481,11 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Billing Fields
-	 * 
+	 *
 	 * @return array
 	 */
   function shop_order_billing_fields( $data ) {
-    
+
 		$billing_data['first_name'] = array(
 			'label' => __( 'Nome', $this->domain ),
 			'show'  => false
@@ -1582,11 +1582,11 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Shipping Fields
-	 * 
+	 *
 	 * @return array
 	 */
   function shop_order_shipping_fields( $data ) {
-		
+
     $shipping_data['first_name'] = array(
 			'label' => __( 'Nome', $this->domain ),
 			'show'  => false
@@ -1638,11 +1638,11 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Extra Shipping Fields
-	 * 
+	 *
 	 * @return array
 	 */
 	function extra_shipping_fields( $data ) {
-		
+
     $shipping_data['persontype'] = array(
 			'type'    => 'select',
 			'label'   => __( 'Tipo Pessoa', $this->domain ),
@@ -1672,7 +1672,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Customer details Ajax
-	 * 
+	 *
 	 * @return array
 	 */
   function customer_details_ajax( $customer_data ) {
@@ -1697,7 +1697,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Save custom shop data
-	 * 
+	 *
 	 * @return void
 	 */
   function save_custom_shop_data( $post_id ) {
@@ -1718,7 +1718,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Save custom shop data (API)
-	 * 
+	 *
 	 * @return void
 	 */
 	function wc_api_save_custom_shop_data($order_id, $data){
@@ -1736,12 +1736,12 @@ jQuery(document).ready(function($) {
 		update_post_meta( $order_id, '_billing_birthdate', wc_clean( $billing_address['birthdate'] ) );
 		update_post_meta( $order_id, '_billing_sex', wc_clean( $billing_address['sex'] ) );
 		update_post_meta( $order_id, '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone']) ) );
-		
+
 	}
 
 	/**
 	 * Save custom shop data
-	 * 
+	 *
 	 * @return void
 	 */
     function save_informacoes_fiscais( $post_id ){
@@ -1761,7 +1761,7 @@ jQuery(document).ready(function($) {
 					);
 
 					foreach ($info as $key => $value){
-						if (isset($value)) 
+						if (isset($value))
 							update_post_meta($post_id, $key, $value);
 					}
 
@@ -1775,7 +1775,7 @@ jQuery(document).ready(function($) {
 						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
-					if (is_numeric($_POST['origem']) || $_POST['origem']) 
+					if (is_numeric($_POST['origem']) || $_POST['origem'])
 						update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
 
 			}
@@ -1807,22 +1807,22 @@ jQuery(document).ready(function($) {
 
 				foreach ($info as $key => $value){
 
-					if (isset($value)) 
+					if (isset($value))
 						update_post_meta($post_id, $key, $value);
 
 				}
-				
+
 			}
 
 	}
-	
+
 	/**
 	 * Add NCM to category
-	 * 
+	 *
 	 * @return void
 	 */
-	function add_category_ncm($taxonomy){ 
-		
+	function add_category_ncm($taxonomy){
+
 		?>
 
 		<div class="form-field term-ncm-wrap">
@@ -1837,7 +1837,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Edit NCM in category
-	 * 
+	 *
 	 * @return void
 	 */
 	function edit_category_ncm($term, $taxonomy){
@@ -1862,7 +1862,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Save NCM in category
-	 * 
+	 *
 	 * @return void
 	 */
 	function save_product_cat_ncm( $term_id, $tag_id ){
@@ -1875,7 +1875,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Save NCM in category
-	 * 
+	 *
 	 * @return void
 	 */
 	function is_categories_ncm_valid( $post_id ){
@@ -1883,7 +1883,7 @@ jQuery(document).ready(function($) {
 			$product_cat = get_the_terms($post_id, 'product_cat');
 			$product_ncm = get_post_meta($post_id, '_nfe_codigo_ncm', true);
 
-			if ($product_ncm || !is_array($product_cat)) 
+			if ($product_ncm || !is_array($product_cat))
 				return true;
 
 			$ncm_categories = array();
@@ -1896,10 +1896,10 @@ jQuery(document).ready(function($) {
 					$ncm = null;
 				}
 
-				if ($ncm) 
+				if ($ncm)
 					$ncm_categories[] = $ncm;
 			}
-			
+
 			if (count($ncm_categories) > 1){
 				return false;
 			}
@@ -1910,7 +1910,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Warning NCM in category
-	 * 
+	 *
 	 * @return void
 	 */
 	function cat_ncm_warning(){
@@ -1929,7 +1929,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * New admin menu item
-	 * 
+	 *
 	 * @return void
 	 */
 	public function add_admin_menu_item() {
@@ -1959,7 +1959,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display NFe errors
-	 * 
+	 *
 	 * @return void
 	 */
 	public function page_auto_invoice_errors() {
@@ -1989,7 +1989,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Remover warning in OrderID
-	 * 
+	 *
 	 * @return json
 	 */
 	public function wmbr_remove_order_id_auto_invoice(){
@@ -2018,7 +2018,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Callback
-	 * 
+	 *
 	 * @return void
 	 */
 	function nfe_callback(){
@@ -2080,15 +2080,15 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display Billing Address
-	 * 
+	 *
 	 * @return string
 	 */
 	function order_data_after_billing_address( $order ){
-			
+
 		$html = '<style>.address{display:none;}</style>';
 		$html .= '<script>(function( $ ){
 				$(".edit_address").on("click", function(){
-					$(this).parent().parent().find(".wcbcf-address").hide();	
+					$(this).parent().parent().find(".wcbcf-address").hide();
 				});
 		})( jQuery );</script>';
 		$html .= '<div class="clear"></div>';
@@ -2132,7 +2132,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display Shipping Address
-	 * 
+	 *
 	 * @return string
 	 */
 	public function order_data_after_shipping_address( $order ) {
@@ -2142,7 +2142,7 @@ jQuery(document).ready(function($) {
 		$html = '<div class="clear"></div>';
 		$html .= '<script>(function( $ ){
 				$(".edit_address").on("click", function(){
-					$(this).parent().parent().find(".wcbcf-address").hide();	
+					$(this).parent().parent().find(".wcbcf-address").hide();
 				});
 		})( jQuery );</script>';
 		$html .= '<div class="wcbcf-address">';
@@ -2164,7 +2164,7 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Display Messages
-	 * 
+	 *
 	 * @return void
 	 */
 	function display_messages(){
@@ -2191,17 +2191,17 @@ jQuery(document).ready(function($) {
 
 	/**
 	 * Certificate A1 validate
-	 * 
+	 *
 	 * @return void
 	 */
 	function validate_certificate( $force_update = false, $return_ajax = false ){
-		
+
 		if (get_transient('validadeCertificado') && !$force_update ) {
 
 			// Cache
 			$response = get_transient('validadeCertificado');
 			$cached = true;
-						
+
 		} else {
 
 			// Looking for credentials
@@ -2209,7 +2209,7 @@ jQuery(document).ready(function($) {
 
 			if ( !$this->settings ) {
 
-				if ($return_ajax) 
+				if ($return_ajax)
 					return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Por favor, informe as credenciais de acesso para obter a validade do Certificado Digital A1.' ), JSON_UNESCAPED_UNICODE );
 
 				return false;
@@ -2242,7 +2242,7 @@ jQuery(document).ready(function($) {
 				return json_encode( array( 'status' => 'error', 'msg' => $response->error ), JSON_UNESCAPED_UNICODE );
 
 			}
-						
+
 			return false;
 
 		} else {
@@ -2250,7 +2250,7 @@ jQuery(document).ready(function($) {
 			// Sucess
 			set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
 
-			if ($return_ajax) 
+			if ($return_ajax)
 				return json_encode( array( 'status' => 'success', 'msg' => $response ), JSON_UNESCAPED_UNICODE );
 
 			if ($response < 45 && $response >= 1){
@@ -2268,17 +2268,17 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
-	 * Return alerts to users from plugins 
+	 * Return alerts to users from plugins
 	 * that has incompatibility
-	 * 
+	 *
 	 * @return void
 	**/
 	public function wmbr_compatibility_issues() {
 
-		if ( isset($_POST['action']) ) 
+		if ( isset($_POST['action']) )
 			return;
-		
-		if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') 
+
+		if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
 			return;
 
 		$plugins_list = array(
@@ -2303,7 +2303,7 @@ jQuery(document).ready(function($) {
 	/**
 	 * Function to handle ajax requisistion
 	 * to force digital certificate update
-	 * 
+	 *
 	 * @return void
 	**/
 	public function ajax_force_certificate_update() {
@@ -2314,8 +2314,8 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
-	 * WooCommerce API :: Order 
-	 * 
+	 * WooCommerce API :: Order
+	 *
 	 * @return array
 	**/
 	function api_order_response( $order_data, $order, $fields, $server ) {
@@ -2365,8 +2365,8 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
-	 * WooCommerce API :: Customer 
-	 * 
+	 * WooCommerce API :: Customer
+	 *
 	 * @return array
 	**/
 	function api_customer_response( $customer_data, $customer, $fields, $server ) {

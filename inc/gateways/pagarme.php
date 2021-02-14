@@ -4,7 +4,7 @@ class NFeGatewayPagarme extends WooCommerceNFe {
 
   /**
    * Plugin activated
-   * 
+   *
    * @return boolean
    */
   static function is_activated(){
@@ -15,7 +15,7 @@ class NFeGatewayPagarme extends WooCommerceNFe {
 
   /**
    * Pagar.me Payment Methods
-   * 
+   *
    * @return boolean
    */
 	static function payment_methods(){
@@ -26,9 +26,9 @@ class NFeGatewayPagarme extends WooCommerceNFe {
 
   /**
    * Mount installments data
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function installments( $post_id, $data, $order, $args ){
@@ -46,18 +46,18 @@ class NFeGatewayPagarme extends WooCommerceNFe {
 			$installments = $pagarme_transaction_data['installments'];
 			$installments = ($installments) ? $installments : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
-			
+
     }
-    
+
     return $data;
 
   }
 
   /**
    * Mount data with Pagar.me payment type
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function payment_type( $post_id, $order, $data ){

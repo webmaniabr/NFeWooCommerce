@@ -244,7 +244,7 @@ jQuery( function ( $ ) {
       value = $(this).val();
       div = $('.nfe_installments.row-first');
       total = $('.nfe_installments.row').length + 1;
-      
+
       if (value > total){
 
         diff = value - total;
@@ -254,7 +254,7 @@ jQuery( function ( $ ) {
             $('.nfe_installments.row-first:last').addClass('row').removeClass('row-first');
           }
         }
-        
+
       } else if (value < total){
 
         diff = total - value;
