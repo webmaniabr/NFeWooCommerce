@@ -396,8 +396,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	  // Courier
 		$shipping_method = @array_shift($order->get_shipping_methods());
-		$shipping_data = $shipping_method->get_data();
-		$shipping_method_id = $shipping_method['method_id'];
+		$shipping_data = ($shipping_method) ? $shipping_method->get_data() : array();
+		$shipping_method_id = ($shipping_method) ? $shipping_method['method_id'] : '';
 
 		if (strpos($shipping_method_id, ':')){
 			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
