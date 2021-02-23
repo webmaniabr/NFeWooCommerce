@@ -396,39 +396,41 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 	  // Courier
 		$shipping_method = @array_shift($order->get_shipping_methods());
-		$shipping_data = $shipping_method->get_data();
-		$shipping_method_id = $shipping_method['method_id'];
+		if ($shipping_method || $data['pedido']['modalidade_frete'] != 9) {
+			$shipping_data = $shipping_method->get_data();
+			$shipping_method_id = $shipping_method['method_id'];
 
-		if (strpos($shipping_method_id, ':')){
-			$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
-		}
+			if (strpos($shipping_method_id, ':')){
+				$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
+			}
 
-		$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
+			$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
 
-		if ($include_shipping_info == 'on' && (isset($transportadoras[$shipping_method_id]) || $shipping_method_id == 'frenet')){
+			if ($include_shipping_info == 'on' && (isset($transportadoras[$shipping_method_id]) || $shipping_method_id == 'frenet')){
 
-			// Frenet
-			if ($shipping_method_id == 'frenet'){
-				if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
-					$shipping_method_id = $shipping_data['meta_data'][0]->value;
+				// Frenet
+				if ($shipping_method_id == 'frenet'){
+					if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
+						$shipping_method_id = $shipping_data['meta_data'][0]->value;
+					}
 				}
+
+				// Courier data
+				if ($shipping_method_id != 'frenet'){
+
+					$transp = $transportadoras[$shipping_method_id];
+
+					$data['transporte']['cnpj']         = $transp['cnpj'];
+					$data['transporte']['razao_social'] = $transp['razao_social'];
+					$data['transporte']['ie']           = $transp['ie'];
+					$data['transporte']['endereco']     = $transp['address'];
+					$data['transporte']['uf']           = $transp['uf'];
+					$data['transporte']['cidade']       = $transp['city'];
+					$data['transporte']['cep']          = $transp['cep'];
+
+				}
+
 			}
-
-			// Courier data
-			if ($shipping_method_id != 'frenet'){
-
-				$transp = $transportadoras[$shipping_method_id];
-
-				$data['transporte']['cnpj']         = $transp['cnpj'];
-				$data['transporte']['razao_social'] = $transp['razao_social'];
-				$data['transporte']['ie']           = $transp['ie'];
-				$data['transporte']['endereco']     = $transp['address'];
-				$data['transporte']['uf']           = $transp['uf'];
-				$data['transporte']['cidade']       = $transp['city'];
-				$data['transporte']['cep']          = $transp['cep'];
-
-			}
-
 		}
 
 		// Product Volume and Weight
@@ -486,6 +488,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$imposto     = get_post_meta($product_id, '_nfe_classe_imposto', true);
 		$ind_escala  = get_post_meta($product_id, '_nfe_ind_escala', true);
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
+		$unidade     = get_post_meta($product_id, '_nfe_unidade', true);
 		$peso        = $product->get_weight();
 		$informacoes_adicionais = '';
 		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
@@ -555,7 +558,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'ind_escala' => ($ind_escala) ? $ind_escala : '', // Indicador de escala relevante
 			'cnpj_fabricante' => ($cnpj_fabricante) ? $cnpj_fabricante : '', // CNPJ do fabricante da mercadoria
 			'quantidade' => $item['qty'], // Quantidade de itens
-			'unidade' => 'UN', // Unidade de medida da quantidade de itens
+			'unidade' => $unidade ? $unidade : 'UN', // Unidade de medida da quantidade de itens
 			'peso' => ($peso) ? $peso : '', // Peso em KG. Ex: 800 gramas = 0.800 KG
 			'origem' => (int) $origem, // Origem do produto
 			'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos

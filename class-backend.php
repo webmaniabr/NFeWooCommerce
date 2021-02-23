@@ -1119,6 +1119,85 @@ jQuery(document).ready(function($) {
 			<input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
+		<p class="label" style="margin-bottom:8px;">
+			<label style="font-size:13px;line-height:1.5em;font-weight:bold;">Unidade de Medida</label>
+		</p>
+		<?php
+		$unidade = get_post_meta( $post->ID, '_nfe_unidade', true );
+		$lista_unidades = array('UN' => 'UNIDADE',
+			'AMPOLA' => 'AMPOLA',
+			'BALDE' => 'BALDE',
+			'BANDEJ' => 'BANDEJA',
+			'BARRA' => 'BARRA',
+			'BISNAG' => 'BISNAGA',
+			'BLOCO' => 'BLOCO',
+			'BOBINA' => 'BOBINA',
+			'BOMB' => 'BOMBONA',
+			'CAPS' => 'CAPSULA',
+			'CART' => 'CARTELA',
+			'CENTO' => 'CENTO',
+			'CJ' => 'CONJUNTO',
+			'CM' => 'CENTIMETRO',
+			'CM2' => 'CENTIMETRO QUADRADO',
+			'CX' => 'CAIXA',
+			'CX2' => 'CAIXA COM 2 UNIDADES',
+			'CX3' => 'CAIXA COM 3 UNIDADES',
+			'CX5' => 'CAIXA COM 5 UNIDADES',
+			'CX10' => 'CAIXA COM 10 UNIDADES',
+			'CX15' => 'CAIXA COM 15 UNIDADES',
+			'CX20' => 'CAIXA COM 20 UNIDADES',
+			'CX25' => 'CAIXA COM 25 UNIDADES',
+			'CX50' => 'CAIXA COM 50 UNIDADES',
+			'CX100' => 'CAIXA COM 100 UNIDADES',
+			'DISP' => 'DISPLAY',
+			'DUZIA' => 'DUZIA',
+			'EMBAL' => 'EMBALAGEM',
+			'FARDO' => 'FARDO',
+			'FOLHA' => 'FOLHA',
+			'FRASCO' => 'FRASCO',
+			'GALAO' => 'GALÃO',
+			'GF' => 'GARRAFA',
+			'GRAMAS' => 'GRAMAS',
+			'JOGO' => 'JOGO',
+			'KG' => 'QUILOGRAMA',
+			'KIT' => 'KIT',
+			'LATA' => 'LATA',
+			'LITRO' => 'LITRO',
+			'M' => 'METRO',
+			'M2' => 'METRO QUADRADO',
+			'M3' => 'METRO CÚBICO',
+			'MILHEI' => 'MILHEIRO',
+			'ML' => 'MILILITRO',
+			'MWH' => 'MEGAWATT HORA',
+			'PACOTE' => 'PACOTE',
+			'PALETE' => 'PALETE',
+			'PARES' => 'PARES',
+			'PC' => 'PEÇA',
+			'POTE' => 'POTE',
+			'K' => 'QUILATE',
+			'RESMA' => 'RESMA',
+			'ROLO' => 'ROLO',
+			'SACO' => 'SACO',
+			'SACOLA' => 'SACOLA',
+			'TAMBOR' => 'TAMBOR',
+			'TANQUE' => 'TANQUE',
+			'TON' => 'TONELADA',
+			'TUBO' => 'TUBO',
+			'VASIL' => 'VASILHAME',
+			'VIDRO' => 'VIDRO'
+		);
+		?>
+		<select name="unidade">
+			<?php
+			foreach ($lista_unidades as $k => $v) {
+				?>
+				<option value="<?php echo $k;?>" <?php if ($unidade == $k) echo 'selected'; ?> ><?php echo $v; ?></option>
+				<?php
+			}
+			?>
+		</select>
+	</div>
+	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Origem</label>
 			</p>
@@ -1757,6 +1836,7 @@ jQuery(document).ready(function($) {
 					'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
 					'_nfe_ind_escala'      => $_POST['ind_escala'],
 					'_nfe_produto_informacoes_adicionais' => $_POST['produto_informacoes_adicionais'],
+					'_nfe_unidade'         => $_POST['unidade'],
 					'_nfe_product_others'  => $_POST['product_others']
 					);
 
