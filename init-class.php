@@ -20,7 +20,7 @@ class WooCommerceNFe {
   public function __get( $key ) {
     return $this->$key();
 	}
-	
+
 	function __construct(){
 
 		global $domain, $woocommerce;
@@ -43,7 +43,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Hooks
-	 * 
+	 *
 	 * @return void
 	 */
 	function hooks(){
@@ -57,7 +57,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Validate Plugin before Load
-	 * 
+	 *
 	 * @return boolean
 	 */
 	function validate_plugin(){
@@ -91,7 +91,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Validate Plugin
-	 * 
+	 *
 	 * @author boolean
 	 */
 	function validate_plugin_config(){
@@ -99,9 +99,9 @@ class WooCommerceNFe {
 		global $pagenow;
 
 		if (
-			is_admin() && 
-			$pagenow && 
-			( 
+			is_admin() &&
+			$pagenow &&
+			(
 				in_array( $pagenow, [ 'index.php', 'admin.php', 'plugins.php' ] ) ||
 				strpos($pagenow, 'options-') !== false
 			)
@@ -125,10 +125,10 @@ class WooCommerceNFe {
 				get_option('wc_settings_woocommercenfe_origem') < 0 ||
 				get_option('wc_settings_woocommercenfe_origem') == 'null'
 			) {
-	
+
 				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
 					return false;
-	
+
 			}
 
 		}
@@ -155,11 +155,11 @@ class WooCommerceNFe {
 		include_once( 'class-issue.php' );
 		include_once( 'class-backend.php' );
 		include_once( 'class-frontend.php' );
-		
+
 	}
 
 	/**
-	 * Load 
+	 * Load
 	 */
 	function load_plugin_text_domain(){
 
@@ -169,7 +169,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Get API Credentials
-	 * 
+	 *
 	 * @return array
 	 */
 	function get_credentials( $order_id = 0 ){
@@ -185,23 +185,23 @@ class WooCommerceNFe {
 
 	/**
 	 * Add error
-	 * 
+	 *
 	 * @return void
 	 */
 	function add_error( $message ){
 
 		$messages = get_option('woocommercenfe_error_messages');
 
-		if (!$messages) 
+		if (!$messages)
 			$messages = array();
 
-		if ($messages && count($messages) > 0) { 
-			foreach ($messages as $msg){ 
-				if ($msg == $message) 
-					return false; 
-			} 
+		if ($messages && count($messages) > 0) {
+			foreach ($messages as $msg){
+				if ($msg == $message)
+					return false;
+			}
 		}
-		
+
 		$messages[] = $message;
 		update_option('woocommercenfe_error_messages', $messages);
 
@@ -209,21 +209,21 @@ class WooCommerceNFe {
 
 	/**
 	 * Add Success
-	 * 
+	 *
 	 * @return void
 	 */
 	function add_success( $message ){
 
 		$messages = get_option('woocommercenfe_success_messages');
-		
-		if (!$messages) 
+
+		if (!$messages)
 			$messages = array();
 
-		if ($messages && count($messages) > 0) { 
-			foreach ($messages as $msg){ 
-				if ($msg == $message) 
-					return false; 
-			} 
+		if ($messages && count($messages) > 0) {
+			foreach ($messages as $msg){
+				if ($msg == $message)
+					return false;
+			}
 		}
 
 		$messages[] = $message;
@@ -233,11 +233,11 @@ class WooCommerceNFe {
 
 	/**
 	 * Issue automatic NFe when change statuses
-	 * 
+	 *
 	 * @return void
 	 */
 	function issue_automatic_invoice( $order_id, $from, $to, $order ) {
-		
+
 		// Validate
 		$option = apply_filters( 'nfe_issue_automatic', get_option('wc_settings_woocommercenfe_emissao_automatica') );
 		if ( !$option ){
@@ -300,7 +300,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Plugin URL
-	 * 
+	 *
 	 * @return string
 	 */
 	function default_plugin_url( $url ){
@@ -311,7 +311,7 @@ class WooCommerceNFe {
 
 	/**
 	 * Config button
-	 * 
+	 *
 	 * @return array
 	**/
 	public static function plugin_add_settings_link( $links ) {
@@ -319,15 +319,15 @@ class WooCommerceNFe {
 	    $action_links = array(
 	      'settings' => '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) . '" aria-label="Visualizar Configurações">Configurações</a>',
 			);
-			
+
 	    return array_merge( $action_links, $links );
 	}
-	
-	
+
+
 	/**
-	 * Custom function to verify 
+	 * Custom function to verify
 	 * if plugin is active
-	 * 
+	 *
 	 * @return array
 	**/
 	public static function wmbr_is_plugin_active( $plugin ) {
@@ -338,23 +338,23 @@ class WooCommerceNFe {
 
 	/**
 	 * Return person type
-	 * 
+	 *
 	 * @return string
 	**/
 	function get_person_type( $type ) {
 
-		if ($type == 1) 
+		if ($type == 1)
 			return 'F';
-		else if ($type == 2) 
+		else if ($type == 2)
 			return 'J';
-		else 
+		else
 			return '';
 
 	}
 
 	/**
 	 * Plugin Extra Checkout Fields for Brazil
-	 * 
+	 *
 	 * @return boolean
 	 */
 	function is_extra_checkout_fields_activated(){
@@ -364,4 +364,3 @@ class WooCommerceNFe {
 	}
 
 }
-

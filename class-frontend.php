@@ -19,7 +19,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_before_notices' ), -9999 );
 			remove_action( 'admin_notices', array( 'Automattic\WooCommerce\Admin\Loader', 'inject_after_notices' ), PHP_INT_MAX );
 		}
-		
+
 		/**
 		 * Plugin: Brazilian Market on WooCommerce (Customized)
 		 * @author Claudio Sanches
@@ -39,7 +39,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 			add_filter( 'woocommerce_order_formatted_billing_address', array( $this, 'order_formatted_billing_address' ), 1, 2 );
 			add_filter( 'woocommerce_order_formatted_shipping_address', array( $this, 'order_formatted_shipping_address' ), 1, 2 );
       add_filter( 'woocommerce_my_account_my_address_formatted_address', array($this, 'my_account_my_address_formatted_address' ), 1, 3 );
-      
+
 		}
 
   }
@@ -336,7 +336,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 		$replacements['{neighborhood}'] = (isset($args['neighborhood'])) ? $args['neighborhood'] : '';
 
     return $replacements;
-    
+
 	}
 
   function order_formatted_billing_address( $address, $order ) {
@@ -345,7 +345,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 		$address['neighborhood'] = get_post_meta( $order->get_id(), '_billing_neighborhood', true );
 
     return $address;
-    
+
 	}
 
   function order_formatted_shipping_address( $address, $order ) {
@@ -354,7 +354,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 		$address['neighborhood'] = get_post_meta( $order->get_id(), '_shipping_neighborhood', true );
 
     return $address;
-    
+
 	}
 
   function my_account_my_address_formatted_address( $address, $customer_id, $name ) {
@@ -363,7 +363,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 		$address['neighborhood'] = get_user_meta( $customer_id, $name . '_neighborhood', true );
 
     return $address;
-    
+
 	}
 
 }

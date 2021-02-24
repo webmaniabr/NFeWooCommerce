@@ -4,7 +4,7 @@ class NFeUtils {
 
   /**
    * Mount custom installment
-   * 
+   *
    * @param integer $post_id
    * @param array $data
    * @return array $data
@@ -48,7 +48,7 @@ class NFeUtils {
 
     }
 
-    // Billing			
+    // Billing
     $data['fatura'] =  array(
       'numero'		=> '000001',
       'valor'		 	=> number_format($value, 2, '.', ''),
@@ -63,7 +63,7 @@ class NFeUtils {
 
   /**
    * Return Frenet Carriers
-   * 
+   *
    * @return object $frenet
    */
   static function get_frenet_carriers(){
@@ -102,7 +102,7 @@ class NFeUtils {
     } else {
       $frenet = json_decode( $response['body'] );
     }
-    
+
     if ($frenet->Message)
       return false;
 

@@ -4,7 +4,7 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
 
   /**
    * Plugin activated
-   * 
+   *
    * @return boolean
    */
   static function is_activated(){
@@ -15,7 +15,7 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
 
   /**
    * Pagar.me Payment Methods
-   * 
+   *
    * @return boolean
    */
 	static function payment_methods(){
@@ -26,9 +26,9 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
 
   /**
    * Mount installments data
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function installments( $post_id, $data, $order, $args ){
@@ -48,18 +48,18 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
 			$installments = $pagseguro_transaction_data['installments'];
 			$installments = ($installments) ? $installments : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
-			
+
     }
-    
+
     return $data;
 
   }
 
   /**
    * Mount data with Pagseguro payment type
-   * 
+   *
    * @param integer $post_id
-   * @param array $data 
+   * @param array $data
    * @return array $data
    */
   static function payment_type( $post_id, $order, $data ){

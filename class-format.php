@@ -22,7 +22,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * CNPJ format
-	 * 
+	 *
 	 * @return string
 	 */
 	function cnpj( $string ){
@@ -36,7 +36,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Zipcode format
-	 * 
+	 *
 	 * @return string
 	 */
 	function cep( $string ){
@@ -50,7 +50,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Clear string
-	 * 
+	 *
 	 * @return string
 	 */
 	function clear( $string ) {
@@ -62,7 +62,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Mask string
-	 * 
+	 *
 	 * @return string
 	 */
 	function mask($val, $mask) {
@@ -78,12 +78,12 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 			}
 		}
 		return $maskared;
-		 
+
 	}
 
 	/**
 	 * Validate CPF
-	 * 
+	 *
 	 * @return string
 	 */
 	function is_cpf( $cpf ) {
@@ -113,7 +113,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Validate CNPJ
-	 * 
+	 *
 	 * @return string
 	 */
 	function is_cnpj( $cnpj ) {
@@ -142,7 +142,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Format number
-	 * 
+	 *
 	 * @return string
 	**/
 	function format_number( $string ) {
@@ -153,7 +153,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 
 	/**
 	 * Format birthdate
-	 * 
+	 *
 	 * @return string
 	**/
 	function get_formatted_birthdate( $date, $server ) {
