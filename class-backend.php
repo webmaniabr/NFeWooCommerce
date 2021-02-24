@@ -907,6 +907,8 @@ jQuery(document).ready(function($) {
 		$nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : '1';
 		$nfe_installments_due_date = get_post_meta( $post->ID, '_nfe_installments_due_date', true );
 		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
+		$additional_info_checked = get_post_meta( $post->ID, '_nfe_additional_info', true );
+		$nfe_additional_info_text = get_post_meta( $post->ID, '_nfe_additional_info_text', true );
 
 	?>
 	<script>
@@ -917,6 +919,9 @@ jQuery(document).ready(function($) {
 			<?php } ?>
 			<?php if ($installments_checked && $installments_checked == 'on'){ ?>
 				$('.nfe_installments').show();
+			<?php } ?>
+			<?php if ($additional_info_checked && $additional_info_checked == 'on'){ ?>
+				$('.nfe_additional_info_text').show();
 			<?php } ?>
 			
 		});
@@ -1049,6 +1054,16 @@ jQuery(document).ready(function($) {
 		} // end if ?>
 
 
+	</div>
+
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="nfe_additional_info" <?php if ($additional_info_checked) echo 'checked'; ?>>
+		<label class="title">Informações complementares</label>
+		</p>
+	</div>
+	<div class="field nfe_additional_info_text">
+		<textarea type="text" name="nfe_additional_info_text" rows="6" style="width:100%;padding:5px;"><?php echo $nfe_additional_info_text; ?></textarea>
 	</div>
 
 			<?php
@@ -1803,7 +1818,9 @@ jQuery(document).ready(function($) {
 					'_nfe_installments'  => $_POST['nfe_installments'],
 					'_nfe_installments_n'  => $_POST['nfe_installments_n'],
 					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
-					'_nfe_installments_value'  => $_POST['nfe_installments_value']
+					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
+					'_nfe_additional_info' => $_POST['nfe_additional_info'],
+					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text']
 				);
 
 				if (!$info['nfe_volume_weight']){
@@ -1812,6 +1829,10 @@ jQuery(document).ready(function($) {
 
 				if (!$info['nfe_installments']){
 					delete_post_meta( $post_id, '_nfe_installments' );
+				}
+
+				if (!$info['nfe_additional_info']) {
+					delete_post_meta( $post_id, '_nfe_additional_info' );
 				}
 
 				foreach ($info as $key => $value){

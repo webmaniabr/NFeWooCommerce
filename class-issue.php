@@ -67,15 +67,23 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			} else {
 
-				if ( is_object($response) && $data['previa_danfe'] ) {
+				if ( is_object($response) && ($response->status == 'processamento') ) {
 
-					$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
+					$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' em processamento. O status será atualizado assim que a NF-e for processada pela Sefaz.' );
 
 				} else {
 
-					$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
-					$this->remove_id_to_invoice_errors($order_id);
+					if ( is_object($response) && $data['previa_danfe'] ) {
 
+						$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
+
+					} else {
+
+						$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
+						$this->remove_id_to_invoice_errors($order_id);
+
+					}
+				
 				}
 
 			}
@@ -90,14 +98,20 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				// Identify NFe repeated
 				if (count($nfe) > 0){
+					$is_repeated = false;
 					foreach ($nfe as $nf){
 
 						if ($nf['chave_acesso'] == $response->chave){
 
-							return $result;
+							$is_repeated = true;
+							break;
 
 						}
 
+					}
+
+					if ($is_repeated) {
+						continue;
 					}
 				}
 
@@ -261,6 +275,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
+		}
+		if ( $additional_info = get_post_meta( $post_id, '_nfe_additional_info', true ) ) {
+			$consumidor_inf .= ' ' . get_post_meta($post_id, '_nfe_additional_info_text', true);
 		}
 
 		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){

@@ -268,4 +268,13 @@ jQuery( function ( $ ) {
 
     });
 
+    // Additional Information
+    $('input[name="nfe_additional_info"]').on('change', function(){
+      if ($(this).is(':checked')){
+        $('.nfe_additional_info_text').show();
+      } else {
+        $('.nfe_additional_info_text').hide();
+      }
+    });
+
 });
