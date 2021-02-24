@@ -8,7 +8,7 @@ class UtilsGateways {
    * @param string $payment_method
    * @return string [Gateway name]
    */
-  function get_gateway_class( $payment_method ){
+  static function get_gateway_class( $payment_method ){
 
     if (in_array( $payment_method, NFeGatewayEbanx::payment_methods() )){
 

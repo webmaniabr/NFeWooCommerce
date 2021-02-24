@@ -64,7 +64,7 @@ class NFeGatewayBacs extends WooCommerceNFe {
     // Set payment type
     if ( in_array( $order->payment_method, [ 'bacs', 'other' ] ) ){
 
-      $data['pedido']['forma_pagamento'] = ['99']; // 99 - Outros
+      $data['pedido']['forma_pagamento'] = ( $order->payment_method == 'bacs' ) ? ['18'] : ['99']; //18 - Transferência bancária, Carteira Digital (bacs) or 99 - Outros (other)
 
     }
 
