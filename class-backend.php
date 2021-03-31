@@ -1149,6 +1149,7 @@ jQuery(document).ready(function($) {
 		<?php
 		$unidade = get_post_meta( $post->ID, '_nfe_unidade', true );
 		$lista_unidades = array('UN' => 'UNIDADE',
+			'UNI' => 'UNIDADE (UNI)',
 			'AMPOLA' => 'AMPOLA',
 			'BALDE' => 'BALDE',
 			'BANDEJ' => 'BANDEJA',

@@ -276,8 +276,13 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
 		}
-		if ( $additional_info = get_post_meta( $post_id, '_nfe_additional_info', true ) ) {
-			$consumidor_inf .= ' ' . get_post_meta($post_id, '_nfe_additional_info_text', true);
+		if ($additional_info = (!empty($_POST)) ? $_POST['nfe_additional_info'] : get_post_meta($post_id, '_nfe_additional_info', true)) {
+			$value = $_POST['nfe_additional_info_text'];
+
+			if (!isset($value)) {
+				$value = get_post_meta($post_id, '_nfe_additional_info_text', true);
+			}
+			$consumidor_inf .= ' ' . $value;
 		}
 
 		if(!empty($consumidor_inf) && strlen($consumidor_inf) <= 2000){
@@ -453,7 +458,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Product Volume and Weight
-		if ($volume_weight = get_post_meta( $post_id, '_nfe_volume_weight', true )){
+		if ($volume_weight = (!empty($_POST)) ? $_POST['nfe_volume_weight'] : get_post_meta( $post_id, '_nfe_volume_weight', true )){
 
 			$order_specifics = array(
 				'volume' => '_nfe_transporte_volume',
@@ -632,7 +637,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				}
 
-			} elseif($product_type == 'yith_bundle') {
+			} elseif($product_type == 'yith_bundle' || $product_type == 'bundle') {
 
 				$total_bundle += $product_price*$item['qty'];
 
