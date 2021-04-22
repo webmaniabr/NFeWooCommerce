@@ -2307,27 +2307,43 @@ jQuery(document).ready(function($) {
 	 */
 	function validate_certificate( $force_update = false, $return_ajax = false ){
 
-		if (get_transient('validadeCertificado') && !$force_update ) {
+		// Looking for credentials
+		$this->get_credentials();
 
-			// Cache
+		// Credentials are empty
+		if ( !$this->settings ) {
+
+			if ($return_ajax)
+				return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Por favor, informe as credenciais de acesso para obter a validade do Certificado Digital A1.' ), JSON_UNESCAPED_UNICODE );
+
+			return false;
+
+		}
+		
+		// Credentials are invalid
+		if (!$this->validate_credentials($this->settings)) {
+
+			$msg = 'Credenciais de acesso inválidas. Por favor, informe credenciais de acesso válidas para obter a validade do Certificado Digital A1.';
+
+			if ($return_ajax)
+				return json_encode( array( 'status' => 'invalid_credentials', 'msg' => $msg ), JSON_UNESCAPED_UNICODE );
+
+			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> ' . $msg, $this->domain) );
+			return false;
+
+		}
+
+		//Check if credentials are in cache
+		if (get_transient('validadeCertificado') && $old_credentials = get_option('old_credentials') && !$force_update) {
+
 			$response = get_transient('validadeCertificado');
 			$cached = true;
 
-		} else {
+		} 
 
-			// Looking for credentials
-			$this->get_credentials();
+		// If credentials have been changed or are not in cache, connect to API
+		if ($old_credentials != $this->settings || !$cached) {
 
-			if ( !$this->settings ) {
-
-				if ($return_ajax)
-					return json_encode( array( 'status' => 'null_credentials', 'msg' => 'Por favor, informe as credenciais de acesso para obter a validade do Certificado Digital A1.' ), JSON_UNESCAPED_UNICODE );
-
-				return false;
-
-			}
-
-			// API connect
 			$webmaniabr = new NFe( $this->settings );
 			$response = $webmaniabr->validadeCertificado();
 
@@ -2339,6 +2355,9 @@ jQuery(document).ready(function($) {
 			if (!$cached){
 
 				set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
+				if ($old_credentials != $this->settings) {
+					update_option('old_credentials', $this->settings);
+				}
 
 			}
 
@@ -2360,6 +2379,9 @@ jQuery(document).ready(function($) {
 
 			// Sucess
 			set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
+			if ($old_credentials != $this->settings) {
+				update_option('old_credentials', $this->settings);
+			}
 
 			if ($return_ajax)
 				return json_encode( array( 'status' => 'success', 'msg' => $response ), JSON_UNESCAPED_UNICODE );

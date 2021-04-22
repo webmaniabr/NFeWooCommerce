@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.1.4.2';
+	public $version = '3.1.4.3';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -360,6 +360,16 @@ class WooCommerceNFe {
 	function is_extra_checkout_fields_activated(){
 
 		return self::wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php');
+
+	}
+
+	function validate_credentials($credentials) {
+
+		if (strlen($credentials['consumer_key']) != 32 || strlen($credentials['consumer_secret']) != 48 || strlen($credentials['oauth_access_token']) <= 48 || strlen($credentials['oauth_access_token_secret']) != 48) {
+			return false;
+		}
+
+		return true;
 
 	}
 
