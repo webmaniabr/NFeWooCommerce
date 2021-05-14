@@ -33,7 +33,7 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 		if ($result["result"] == true){
 			$this->add_success( 'Arquivo de impressão gerado com sucesso.' );
-			$link = get_site_url()."/wp-content/plugins/nota-fiscal-eletronica-woocommerce/uploads/".$result["file"].".pdf";
+			$link = content_url().get_temp_dir().$result["file"].".pdf";
 			wp_redirect($link);
 			exit();
 		} else {
@@ -50,13 +50,13 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 		foreach ($data as $value) {
 			$name = explode("/", $value);
-			file_put_contents( WP_PLUGIN_DIR . '/nota-fiscal-eletronica-woocommerce/uploads/'.$name[4].".pdf", file_get_contents($value));
-			$pdf->addPDF( WP_PLUGIN_DIR . '/nota-fiscal-eletronica-woocommerce/uploads/'.$name[4].".pdf", 'all');
+			file_put_contents( WP_CONTENT_DIR . get_temp_dir() . $name[4] .".pdf", file_get_contents($value));
+			$pdf->addPDF( WP_CONTENT_DIR . get_temp_dir() . $name[4] .".pdf", 'all');
 		}
 
 		$filename = time()."-".random_int(1, 10000000000);
 
-		$result = $pdf->merge('file', WP_PLUGIN_DIR . '/nota-fiscal-eletronica-woocommerce/uploads/'.$filename.'.pdf');
+		$result = $pdf->merge('file', WP_CONTENT_DIR . get_temp_dir() . $filename .'.pdf');
 
 		return array("result" => $result, "file" => $filename);
 
