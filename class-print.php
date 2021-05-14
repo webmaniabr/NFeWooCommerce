@@ -29,7 +29,7 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 		}
 
-		$result = $this->createPDF($data);
+		$result = ($data) ? $this->createPDF($data) : false;
 
 		if ($result["result"] == true){
 			$this->add_success( 'Arquivo de impressão gerado com sucesso.' );
