@@ -151,8 +151,10 @@ class WooCommerceNFe {
 		include_once( 'inc/gateways/pagarme.php' );
 		include_once( 'inc/gateways/pagseguro.php' );
 		include_once( 'inc/gateways/paypal.php' );
+		include_once( 'inc/pdf/PDFMerger.php' );
 		include_once( 'class-format.php' );
 		include_once( 'class-issue.php' );
+		include_once( 'class-print.php' );
 		include_once( 'class-backend.php' );
 		include_once( 'class-frontend.php' );
 

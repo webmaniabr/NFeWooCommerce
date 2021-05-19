@@ -1374,6 +1374,7 @@ jQuery(document).ready(function($) {
 	function add_order_meta_box_actions( $actions ) {
 
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
+		$actions['wc_nfe_imprimir'] = __( 'Imprimir NF-e' );
 
 		return $actions;
 
@@ -1396,7 +1397,9 @@ jQuery(document).ready(function($) {
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
 					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
+					var $imprimir_nfe = $('<option>').val('wc_nfe_imprimir').text('<?php _e( 'Imprimir NF-e' ); ?>');
 					$( 'select[name^="action"]' ).append( $emitir_nfe );
+					$( 'select[name^="action"]' ).append( $imprimir_nfe );
 				});
 			</script>
 			<?php
@@ -1440,7 +1443,7 @@ jQuery(document).ready(function($) {
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) )
+			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) && ! in_array( $action, array( 'wc_nfe_imprimir') ))
 				return false;
 
 			if ( isset( $_REQUEST['post'] ) )
@@ -1449,9 +1452,16 @@ jQuery(document).ready(function($) {
 			if ( empty( $order_ids ) )
 				return false;
 
-			if ($action == 'wc_nfe_emitir')
+			if ($action == 'wc_nfe_emitir'){
 				$nf = new WooCommerceNFeIssue;
 				$nf->send( $order_ids, true );
+			}
+
+			// Adicionado módulo de impressão
+			if ($action == 'wc_nfe_imprimir'){
+				$nf = new WooCommerceNFePrint;
+				$result = $nf->print( $order_ids, true );
+			}				
 
 		}
 
