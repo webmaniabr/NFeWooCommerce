@@ -125,6 +125,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					'n_serie' => (int) $response->serie,
 					'url_xml' => (string) $response->xml,
 					'url_danfe' => (string) $response->danfe,
+					'url_danfe_simplificada' => (string) $response->danfe_simples,
+					'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
 					'data' => date_i18n('d/m/Y'),
 				);
 

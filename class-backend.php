@@ -851,7 +851,7 @@ jQuery(document).ready(function($) {
 <div class="head">
 <h4 class="head-title">Data</h4>
 <h4 class="head-title n-column">Nº</h4>
-<h4 class="head-title danfe-column">Danfe</h4>
+<h4 class="head-title danfe-column">PDF</h4>
 <h4 class="head-title status-column">Status</h4>
 </div>
 <div class="body">
@@ -863,12 +863,18 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['url_xml']) ? $xml_nfe = $order_nfe['url_xml'] : $xml_nfe = '' );
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
+	if (!$order_nfe['url_danfe_simplificada']) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+	if (!$order_nfe['url_danfe_etiqueta']) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	?>
 	<div class="single">
 		<div>
 		<h4 class="body-info"><?php echo $data_nfe; ?></h4>
 		<h4 class="body-info n-column"><?php echo $numero_nfe; ?></h4>
-		<h4 class="body-info danfe-column"><a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Visualizar Nota</span><span class="dashicons dashicons-media-text danfe-icon"></span></a></h4>
+		<h4 class="body-info danfe-column">
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+		</h4>
 		<?php
 			$post_url = get_edit_post_link($post->ID);
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
@@ -1374,7 +1380,6 @@ jQuery(document).ready(function($) {
 	function add_order_meta_box_actions( $actions ) {
 
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
-		$actions['wc_nfe_imprimir'] = __( 'Imprimir NF-e' );
 
 		return $actions;
 
@@ -1397,9 +1402,13 @@ jQuery(document).ready(function($) {
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
 					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
-					var $imprimir_nfe = $('<option>').val('wc_nfe_imprimir').text('<?php _e( 'Imprimir NF-e' ); ?>');
+					var $imprimir_danfe = $('<option>').val('wc_nfe_imprimir_danfe').text('<?php _e( 'Imprimir Danfe' ); ?>');
+					var $imprimir_simplificada = $('<option>').val('wc_nfe_imprimir_simplificada').text('<?php _e( 'Imprimir Danfe Simples' ); ?>');
+					var $imprimir_etiqueta = $('<option>').val('wc_nfe_imprimir_etiqueta').text('<?php _e( 'Imprimir Danfe Etiqueta' ); ?>');
 					$( 'select[name^="action"]' ).append( $emitir_nfe );
-					$( 'select[name^="action"]' ).append( $imprimir_nfe );
+					$( 'select[name^="action"]' ).append( $imprimir_danfe );
+					$( 'select[name^="action"]' ).append( $imprimir_simplificada );
+					$( 'select[name^="action"]' ).append( $imprimir_etiqueta );
 				});
 			</script>
 			<?php
@@ -1443,7 +1452,7 @@ jQuery(document).ready(function($) {
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) && ! in_array( $action, array( 'wc_nfe_imprimir') ))
+			if ( ! in_array( $action, array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) )
 				return false;
 
 			if ( isset( $_REQUEST['post'] ) )
@@ -1457,11 +1466,23 @@ jQuery(document).ready(function($) {
 				$nf->send( $order_ids, true );
 			}
 
-			// Adicionado módulo de impressão
-			if ($action == 'wc_nfe_imprimir'){
+			// Adicionado módulo de impressão DANFE Normal
+			if ($action == 'wc_nfe_imprimir_danfe'){
 				$nf = new WooCommerceNFePrint;
-				$result = $nf->print( $order_ids, true );
-			}				
+				$result = $nf->print( $order_ids, 'normal' );
+			}
+			
+			// Adicionado módulo de impressão DANFE Simplificada
+			if ($action == 'wc_nfe_imprimir_simplificada'){
+				$nf = new WooCommerceNFePrint;
+				$result = $nf->print( $order_ids, 'simplificada' );
+			}
+
+			// Adicionado módulo de impressão DANFE Etiqueta
+			if ($action == 'wc_nfe_imprimir_etiqueta'){
+				$nf = new WooCommerceNFePrint;
+				$result = $nf->print( $order_ids, 'etiqueta' );
+			}
 
 		}
 
@@ -2189,6 +2210,8 @@ jQuery(document).ready(function($) {
 					'n_serie' => (int) $_POST['serie'],
 					'url_xml' => (string) $_POST['xml'],
 					'url_danfe' => (string) $_POST['danfe'],
+					'url_danfe_simplificada' => (string) $_POST['danfe_simples'],
+					'url_danfe_etiqueta' => (string) $_POST['danfe_etiqueta'],
 					'data' => date_i18n('d/m/Y'),
 				);
 			}
