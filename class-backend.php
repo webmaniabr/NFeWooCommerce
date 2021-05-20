@@ -75,10 +75,12 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 		global $version_woonfe;
 
+		wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version_woonfe, true );
     wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $version_woonfe );
     wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $version_woonfe );
     wp_enqueue_style( 'woocommercenfe_admin_style' );
 		wp_enqueue_script( 'woocommercenfe_admin_script' );
+		wp_enqueue_script( 'woocommercenfe_maskedinput' );
 
 	}
 
@@ -346,11 +348,14 @@ jQuery(document).ready(function($) {
 		$count = (int) $_POST['shipping-info-count'];
 		$transportadoras = array();
 		$payment_methods = array();
+		$patment_descs = array();
 		$cnpj_payment_methods = array();
 
 		if ($method = @$_POST['payment_method']){
+			$desc = @$_POST['payment_desc'];
 			foreach($method as $key => $value){
 				$payment_methods[$key] = sanitize_text_field($value);
+				$payment_descs[$key] = sanitize_text_field($desc[$key]);
 			}
 		}
 
@@ -381,6 +386,7 @@ jQuery(document).ready(function($) {
 		// Update
 		update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
 		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
+		update_option('wc_settings_woocommercenfe_payment_descs', $payment_descs);
 		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
 		$include = isset($_POST['wc_settings_woocommercenfe_transp_include']) ? $_POST['wc_settings_woocommercenfe_transp_include'] : false;
 		if ($include) {
@@ -520,6 +526,37 @@ jQuery(document).ready(function($) {
 			'section_end2' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end2'
+			),
+			'title_intermediador' => array(
+				'name'     => __( 'Indicativo de Intermediador', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Campos para indicar o intermediador da operação.'
+			),
+			'intermediador' => array(
+				'name' => __( 'Intermediador da operação', $this->domain ),
+				'type' => 'select',
+				'options' => array(
+						'0' => '0 - Operação sem intermediador (em site ou plataforma própria)',
+						'1' => '1 - Operação em site ou plataforma de terceiros (intermediadores/marketplace)'
+				),
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_intermediador'
+			),
+			'cnpj_intermediador' => array(
+				'name' => __( 'CNPJ do Intermediador', $this->domain ),
+				'type' => 'text',
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_cnpj_intermediador'
+			),
+			'id_intermediador' => array(
+				'name' => __( 'ID do intermediador', $this->domain ),
+				'type' => 'text',
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_id_intermediador'
+			),
+			'section_end_intermediador' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end_intermediador'
 			),
 			'title4' => array(
 			'name'     => __( 'Informações Complementares (Opcional)', $this->domain ),
@@ -760,6 +797,35 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
+	 * Display Payment Desc
+	 *
+	 * @return string
+	 */
+	function get_payment_desc_input($method, $index = 0, $id = ''){
+
+		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
+		$is_method_99 = (isset($payment_methods[$method]) && $payment_methods[$method] == 99) ? true : false;
+
+		$saved_values = get_option('wc_settings_woocommercenfe_payment_descs', array());
+
+		$html = '<input type="text" class="nfe-payment-desc" name="payment_desc['.$method.']" style="width: 400px; ';
+
+		if (!$is_method_99) {
+			$html .= 'display: none;';
+		} 
+
+		if (isset($saved_values[$method]) && $is_method_99) {
+			$html .= '" value="'.$saved_values[$method].'">';
+		}
+		else {
+			$html .= '">';
+		}
+
+		return $html;
+
+	}
+
+	/**
 	 * Register Metabox
 	 *
 	 * @return void
@@ -915,6 +981,10 @@ jQuery(document).ready(function($) {
 		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
 		$additional_info_checked = get_post_meta( $post->ID, '_nfe_additional_info', true );
 		$nfe_additional_info_text = get_post_meta( $post->ID, '_nfe_additional_info_text', true );
+		$info_intermediador_checked = get_post_meta( $post->ID, '_nfe_info_intermediador', true );
+		$info_intermediador_type = get_post_meta( $post->ID, '_nfe_info_intermediador_type', true );
+		$info_intermediador_cnpj = get_post_meta( $post->ID, '_nfe_info_intermediador_cnpj', true );
+		$info_intermediador_id = get_post_meta( $post->ID, '_nfe_info_intermediador_id', true );
 
 	?>
 	<script>
@@ -928,6 +998,9 @@ jQuery(document).ready(function($) {
 			<?php } ?>
 			<?php if ($additional_info_checked && $additional_info_checked == 'on'){ ?>
 				$('.nfe_additional_info_text').show();
+			<?php } ?>
+			<?php if ($info_intermediador_checked && $info_intermediador_checked == 'on'){ ?>
+				$('.nfe_info_intermediador').show();
 			<?php } ?>
 			
 		});
@@ -1060,6 +1133,36 @@ jQuery(document).ready(function($) {
 		} // end if ?>
 
 
+	</div>
+
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="nfe_info_intermediador" <?php if ($info_intermediador_checked) echo 'checked'; ?>>
+		<label class="title">Informar Intermediador</label>
+		</p>
+	</div>
+	<div class="field nfe_info_intermediador" style="display: none;">
+		<div class="field">
+			<p class="label">
+				<label class="title">Intermediador da operação</label>
+			</p>
+			<select name="nfe_info_intermediador_type">
+				<option value="0" <?php if ($info_intermediador_type == '0') echo 'selected'; ?>>0 - Operação sem intermediador (em site ou plataforma própria)</option>
+				<option value="1" <?php if ($info_intermediador_type == '1') echo 'selected'; ?>>1 - Operação em site ou plataforma de terceiros (intermediadores/marketplace)</option>
+			</select>
+		</div>
+		<div class="field">
+			<p class="label">
+				<label class="title">CNPJ do Intermediador</label>
+			</p>
+			<input type="text" name="nfe_info_intermediador_cnpj" style="width:100%;" value="<?php echo $info_intermediador_cnpj ?>" />
+		</div>
+		<div class="field">
+			<p class="label">
+				<label class="title">ID do Intermediador</label>
+			</p>
+			<input type="text" name="nfe_info_intermediador_id" style="width:100%;" value="<?php echo $info_intermediador_id ?>" />
+		</div>
 	</div>
 
 	<div class="field" style="margin-bottom:10px;">
@@ -1932,7 +2035,11 @@ jQuery(document).ready(function($) {
 					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
 					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
 					'_nfe_additional_info' => $_POST['nfe_additional_info'],
-					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text']
+					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
+					'_nfe_info_intermediador' => $_POST['nfe_info_intermediador'],
+					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
+					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
+					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'],
 				);
 
 				if (!$info['nfe_volume_weight']){
@@ -1945,6 +2052,18 @@ jQuery(document).ready(function($) {
 
 				if (!$info['nfe_additional_info']) {
 					delete_post_meta( $post_id, '_nfe_additional_info' );
+				}
+
+				//Intermediador fields
+				if (!$info['_nfe_info_intermediador']) {
+					unset($info['_nfe_info_intermediador_type']);
+					unset($info['_nfe_info_intermediador_cnpj']);
+					unset($info['_nfe_info_intermediador_id']);
+
+					delete_post_meta( $post_id, '_nfe_info_intermediador' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_type' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_cnpj' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_id' );
 				}
 
 				foreach ($info as $key => $value){

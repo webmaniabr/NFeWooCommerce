@@ -152,6 +152,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Vars
 		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
+		$payment_descs = get_option('wc_settings_woocommercenfe_payment_descs', array());
 		$payment_keys = array_keys($payment_methods);
 		$order = new WC_Order( $post_id );
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
@@ -246,6 +247,19 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'total'            => $order->get_total() // Total do pedido - sem descontos
 		);
 
+		//Intermediador da operação
+		$intermediador = (!empty($_POST)) ? $_POST['nfe_info_intermediador'] : get_post_meta($post_id, '_nfe_info_intermediador', true);
+		if ($intermediador) {
+			$data['pedido']['intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_type'] : get_post_meta($post_id, '_nfe_info_intermediador_type', true);
+			$data['pedido']['cnpj_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_cnpj'] : get_post_meta($post_id, '_nfe_info_intermediador_cnpj', true);
+			$data['pedido']['id_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_id'] : get_post_meta($post_id, '_nfe_info_intermediador_id', true);
+		}
+		else {
+			$data['pedido']['intermediador'] = get_option('wc_settings_woocommercenfe_intermediador');
+			$data['pedido']['cnpj_intermediador'] = get_option('wc_settings_woocommercenfe_cnpj_intermediador');
+			$data['pedido']['id_intermediador'] = get_option('wc_settings_woocommercenfe_id_intermediador');
+		}
+
 		if ( $total_fee && $total_fee > 0 ) {
 			$data['pedido']['despesas_acessorias'] = number_format($total_fee, 2, '.', '');
 		}
@@ -258,10 +272,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		} elseif ( isset($payment_methods[$order->payment_method]) && $payment_methods[$order->payment_method] ) {
 
 			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
+			$data['pedido']['desc_pagamento'] = [$payment_descs[$order->payment_method]];
 
 		} else {
 
 			$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
+			$data['pedido']['desc_pagamento'] = 'Pagamento Digital';
 
 		}
 
