@@ -351,6 +351,21 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$variation_id = $item['variation_id'];
+			if (!empty($variation_id)) {
+				$variation = new WC_Product_Variation($variation_id);
+				$attributes = $variation->get_attributes();
+
+				$variation_description = ''; 
+				foreach ($attributes as $name => $value) {
+					$label = wc_attribute_label($name, $product);
+					if ($value) {
+						if ($variation_description) {
+							$variation_description .= ', ';
+						}
+						$variation_description .= "{$label} : {$value}";
+					}
+				}
+			}
 
 			if ( $product_type == 'bundle' || $product_type == 'yith_bundle' || $product_type == 'mix-and-match' || $bundled_by ){
 				$bundles[] = $item;
@@ -391,6 +406,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$product_info['beneficio_fiscal'] = ($beneficio_fiscal) ? $beneficio_fiscal : '';
+
+			$product_info['informacoes_adicionais'] .= ($variation_description) ? $variation_description : '';
 
 			// Mount data
 			$data['produtos'][] = $product_info;
