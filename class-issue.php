@@ -125,6 +125,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					'n_serie' => (int) $response->serie,
 					'url_xml' => (string) $response->xml,
 					'url_danfe' => (string) $response->danfe,
+					'url_danfe_simplificada' => (string) $response->danfe_simples,
+					'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
 					'data' => date_i18n('d/m/Y'),
 				);
 
@@ -150,6 +152,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Vars
 		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
+		$payment_descs = get_option('wc_settings_woocommercenfe_payment_descs', array());
 		$payment_keys = array_keys($payment_methods);
 		$order = new WC_Order( $post_id );
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
@@ -244,6 +247,19 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'total'            => $order->get_total() // Total do pedido - sem descontos
 		);
 
+		//Intermediador da operação
+		$intermediador = (!empty($_POST)) ? $_POST['nfe_info_intermediador'] : get_post_meta($post_id, '_nfe_info_intermediador', true);
+		if ($intermediador) {
+			$data['pedido']['intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_type'] : get_post_meta($post_id, '_nfe_info_intermediador_type', true);
+			$data['pedido']['cnpj_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_cnpj'] : get_post_meta($post_id, '_nfe_info_intermediador_cnpj', true);
+			$data['pedido']['id_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_id'] : get_post_meta($post_id, '_nfe_info_intermediador_id', true);
+		}
+		else {
+			$data['pedido']['intermediador'] = get_option('wc_settings_woocommercenfe_intermediador');
+			$data['pedido']['cnpj_intermediador'] = get_option('wc_settings_woocommercenfe_cnpj_intermediador');
+			$data['pedido']['id_intermediador'] = get_option('wc_settings_woocommercenfe_id_intermediador');
+		}
+
 		if ( $total_fee && $total_fee > 0 ) {
 			$data['pedido']['despesas_acessorias'] = number_format($total_fee, 2, '.', '');
 		}
@@ -256,10 +272,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		} elseif ( isset($payment_methods[$order->payment_method]) && $payment_methods[$order->payment_method] ) {
 
 			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
+			$data['pedido']['desc_pagamento'] = [$payment_descs[$order->payment_method]];
 
 		} else {
 
 			$data['pedido']['forma_pagamento'] = '99'; // 99 - Outros
+			$data['pedido']['desc_pagamento'] = 'Pagamento Digital';
 
 		}
 
@@ -333,6 +351,21 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$variation_id = $item['variation_id'];
+			if (!empty($variation_id)) {
+				$variation = new WC_Product_Variation($variation_id);
+				$attributes = $variation->get_attributes();
+
+				$variation_description = ''; 
+				foreach ($attributes as $name => $value) {
+					$label = wc_attribute_label($name, $product);
+					if ($value) {
+						if ($variation_description) {
+							$variation_description .= ', ';
+						}
+						$variation_description .= "{$label} : {$value}";
+					}
+				}
+			}
 
 			if ( $product_type == 'bundle' || $product_type == 'yith_bundle' || $product_type == 'mix-and-match' || $bundled_by ){
 				$bundles[] = $item;
@@ -373,6 +406,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$product_info['beneficio_fiscal'] = ($beneficio_fiscal) ? $beneficio_fiscal : '';
+
+			$product_info['informacoes_adicionais'] .= ($variation_description) ? $variation_description : '';
 
 			// Mount data
 			$data['produtos'][] = $product_info;

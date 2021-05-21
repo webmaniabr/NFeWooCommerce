@@ -205,6 +205,21 @@ jQuery( function ( $ ) {
 
     }
 
+    update_payment_desc_label = function() {
+      
+      var descs_active = $('.nfe-payment-desc').filter(function() { 
+        return $(this).css('display') !== 'none'; 
+      }).size();
+
+      if (descs_active > 0) {
+        $('.payment-desc-title').show();
+      }
+      else {
+        $('.payment-desc-title').hide();
+      } 
+
+    }
+
     $( 'a.load_customer_billing' ).on( 'click', load_billing );
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
     $( '#customer_user' ).on( 'change', change_customer_user );
@@ -276,5 +291,36 @@ jQuery( function ( $ ) {
         $('.nfe_additional_info_text').hide();
       }
     });
+
+    // Intermediador info
+    $('input[name="nfe_info_intermediador_cnpj"], input[name="wc_settings_woocommercenfe_cnpj_intermediador"]').mask('99.999.999/9999-99');
+    $('input[name="nfe_info_intermediador"]').on('change', function(){
+      if ($(this).is(':checked')){
+        $('.nfe_info_intermediador').show();
+      } else {
+        $('.nfe_info_intermediador').hide();
+      }
+    });
+
+    //Show or hide "Descrição do pagamento" label
+    update_payment_desc_label();
+
+    // Show payment desc field if payment method is 99
+    $('.nfe-payment-methods-sel').change(function(element) {
+			
+			var payment_desc = $(event.target).parent().parent().find('.nfe-payment-desc');
+			
+			if (element.target.value == 99) {
+				$(payment_desc).show();
+        $('.payment-desc-title').show();
+			}
+			else {
+				$(payment_desc).val('');
+				$(payment_desc).hide();
+			}
+
+      update_payment_desc_label();
+			
+		});
 
 });

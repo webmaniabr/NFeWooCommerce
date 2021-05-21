@@ -4,12 +4,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <h3>Informações de Pagamento</h3>
-<p>Informe a forma de pagamento dos gateways utilizados na loja virtual.</p>
+<p>Informe a forma de pagamento dos gateways utilizados na loja virtual.<br>
+Observação: A descrição do pagamento é obrigatória para o método de pagamento "Outros".
+</p>
 
 <div class="nfe-shipping-table payment-info">
 	<div class="nfe-table-head nfe-table-head--payment">
 		<div><h4 style="padding-left:10px">Gateway</h4></div>
-		<div><h4>Forma de pagamento</h4></div>
+		<div><h4 style="padding-left:10px">Forma de pagamento</h4></div>
+		<div><h4 style="padding-left:10px" class="payment-desc-title">Descrição do pagamento</h4></div>
 	</div>
 	<?php
 
@@ -40,6 +43,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	    <div class="entry" style="margin-top:0">
 	    	<div><h4 style="display:inline-block;min-width:250px"><?php echo $gateway->method_title; ?></h4></div>
 	    	<div><?php echo $this->get_payment_methods_select($gateway->id); ?></div>
+				<div><?php echo $this->get_payment_desc_input($gateway->id); ?></div>
 	    </div>
 	  <?php endforeach; ?>
 

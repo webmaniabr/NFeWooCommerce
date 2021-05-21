@@ -75,10 +75,12 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 		global $version_woonfe;
 
+		wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version_woonfe, true );
     wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $version_woonfe );
     wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $version_woonfe );
     wp_enqueue_style( 'woocommercenfe_admin_style' );
 		wp_enqueue_script( 'woocommercenfe_admin_script' );
+		wp_enqueue_script( 'woocommercenfe_maskedinput' );
 
 	}
 
@@ -346,11 +348,14 @@ jQuery(document).ready(function($) {
 		$count = (int) $_POST['shipping-info-count'];
 		$transportadoras = array();
 		$payment_methods = array();
+		$patment_descs = array();
 		$cnpj_payment_methods = array();
 
 		if ($method = @$_POST['payment_method']){
+			$desc = @$_POST['payment_desc'];
 			foreach($method as $key => $value){
 				$payment_methods[$key] = sanitize_text_field($value);
+				$payment_descs[$key] = sanitize_text_field($desc[$key]);
 			}
 		}
 
@@ -381,6 +386,7 @@ jQuery(document).ready(function($) {
 		// Update
 		update_option('wc_settings_woocommercenfe_transportadoras', $transportadoras);
 		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
+		update_option('wc_settings_woocommercenfe_payment_descs', $payment_descs);
 		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
 		$include = isset($_POST['wc_settings_woocommercenfe_transp_include']) ? $_POST['wc_settings_woocommercenfe_transp_include'] : false;
 		if ($include) {
@@ -520,6 +526,37 @@ jQuery(document).ready(function($) {
 			'section_end2' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end2'
+			),
+			'title_intermediador' => array(
+				'name'     => __( 'Indicativo de Intermediador', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Campos para indicar o intermediador da operação.'
+			),
+			'intermediador' => array(
+				'name' => __( 'Intermediador da operação', $this->domain ),
+				'type' => 'select',
+				'options' => array(
+						'0' => '0 - Operação sem intermediador (em site ou plataforma própria)',
+						'1' => '1 - Operação em site ou plataforma de terceiros (intermediadores/marketplace)'
+				),
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_intermediador'
+			),
+			'cnpj_intermediador' => array(
+				'name' => __( 'CNPJ do Intermediador', $this->domain ),
+				'type' => 'text',
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_cnpj_intermediador'
+			),
+			'id_intermediador' => array(
+				'name' => __( 'ID do intermediador', $this->domain ),
+				'type' => 'text',
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_id_intermediador'
+			),
+			'section_end_intermediador' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end_intermediador'
 			),
 			'title4' => array(
 			'name'     => __( 'Informações Complementares (Opcional)', $this->domain ),
@@ -760,6 +797,35 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
+	 * Display Payment Desc
+	 *
+	 * @return string
+	 */
+	function get_payment_desc_input($method, $index = 0, $id = ''){
+
+		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
+		$is_method_99 = (isset($payment_methods[$method]) && $payment_methods[$method] == 99) ? true : false;
+
+		$saved_values = get_option('wc_settings_woocommercenfe_payment_descs', array());
+
+		$html = '<input type="text" class="nfe-payment-desc" name="payment_desc['.$method.']" style="width: 400px; ';
+
+		if (!$is_method_99) {
+			$html .= 'display: none;';
+		} 
+
+		if (isset($saved_values[$method]) && $is_method_99) {
+			$html .= '" value="'.$saved_values[$method].'">';
+		}
+		else {
+			$html .= '">';
+		}
+
+		return $html;
+
+	}
+
+	/**
 	 * Register Metabox
 	 *
 	 * @return void
@@ -851,7 +917,7 @@ jQuery(document).ready(function($) {
 <div class="head">
 <h4 class="head-title">Data</h4>
 <h4 class="head-title n-column">Nº</h4>
-<h4 class="head-title danfe-column">Danfe</h4>
+<h4 class="head-title danfe-column">PDF</h4>
 <h4 class="head-title status-column">Status</h4>
 </div>
 <div class="body">
@@ -863,12 +929,18 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['url_xml']) ? $xml_nfe = $order_nfe['url_xml'] : $xml_nfe = '' );
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
+	if (!$order_nfe['url_danfe_simplificada']) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+	if (!$order_nfe['url_danfe_etiqueta']) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	?>
 	<div class="single">
 		<div>
 		<h4 class="body-info"><?php echo $data_nfe; ?></h4>
 		<h4 class="body-info n-column"><?php echo $numero_nfe; ?></h4>
-		<h4 class="body-info danfe-column"><a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Visualizar Nota</span><span class="dashicons dashicons-media-text danfe-icon"></span></a></h4>
+		<h4 class="body-info danfe-column">
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+		</h4>
 		<?php
 			$post_url = get_edit_post_link($post->ID);
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
@@ -909,6 +981,10 @@ jQuery(document).ready(function($) {
 		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
 		$additional_info_checked = get_post_meta( $post->ID, '_nfe_additional_info', true );
 		$nfe_additional_info_text = get_post_meta( $post->ID, '_nfe_additional_info_text', true );
+		$info_intermediador_checked = get_post_meta( $post->ID, '_nfe_info_intermediador', true );
+		$info_intermediador_type = get_post_meta( $post->ID, '_nfe_info_intermediador_type', true );
+		$info_intermediador_cnpj = get_post_meta( $post->ID, '_nfe_info_intermediador_cnpj', true );
+		$info_intermediador_id = get_post_meta( $post->ID, '_nfe_info_intermediador_id', true );
 
 	?>
 	<script>
@@ -922,6 +998,9 @@ jQuery(document).ready(function($) {
 			<?php } ?>
 			<?php if ($additional_info_checked && $additional_info_checked == 'on'){ ?>
 				$('.nfe_additional_info_text').show();
+			<?php } ?>
+			<?php if ($info_intermediador_checked && $info_intermediador_checked == 'on'){ ?>
+				$('.nfe_info_intermediador').show();
 			<?php } ?>
 			
 		});
@@ -1054,6 +1133,36 @@ jQuery(document).ready(function($) {
 		} // end if ?>
 
 
+	</div>
+
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="nfe_info_intermediador" <?php if ($info_intermediador_checked) echo 'checked'; ?>>
+		<label class="title">Informar Intermediador</label>
+		</p>
+	</div>
+	<div class="field nfe_info_intermediador" style="display: none;">
+		<div class="field">
+			<p class="label">
+				<label class="title">Intermediador da operação</label>
+			</p>
+			<select name="nfe_info_intermediador_type">
+				<option value="0" <?php if ($info_intermediador_type == '0') echo 'selected'; ?>>0 - Operação sem intermediador (em site ou plataforma própria)</option>
+				<option value="1" <?php if ($info_intermediador_type == '1') echo 'selected'; ?>>1 - Operação em site ou plataforma de terceiros (intermediadores/marketplace)</option>
+			</select>
+		</div>
+		<div class="field">
+			<p class="label">
+				<label class="title">CNPJ do Intermediador</label>
+			</p>
+			<input type="text" name="nfe_info_intermediador_cnpj" style="width:100%;" value="<?php echo $info_intermediador_cnpj ?>" />
+		</div>
+		<div class="field">
+			<p class="label">
+				<label class="title">ID do Intermediador</label>
+			</p>
+			<input type="text" name="nfe_info_intermediador_id" style="width:100%;" value="<?php echo $info_intermediador_id ?>" />
+		</div>
 	</div>
 
 	<div class="field" style="margin-bottom:10px;">
@@ -1374,7 +1483,6 @@ jQuery(document).ready(function($) {
 	function add_order_meta_box_actions( $actions ) {
 
 		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
-		$actions['wc_nfe_imprimir'] = __( 'Imprimir NF-e' );
 
 		return $actions;
 
@@ -1397,9 +1505,13 @@ jQuery(document).ready(function($) {
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
 					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
-					var $imprimir_nfe = $('<option>').val('wc_nfe_imprimir').text('<?php _e( 'Imprimir NF-e' ); ?>');
+					var $imprimir_danfe = $('<option>').val('wc_nfe_imprimir_danfe').text('<?php _e( 'Imprimir Danfe' ); ?>');
+					var $imprimir_simplificada = $('<option>').val('wc_nfe_imprimir_simplificada').text('<?php _e( 'Imprimir Danfe Simples' ); ?>');
+					var $imprimir_etiqueta = $('<option>').val('wc_nfe_imprimir_etiqueta').text('<?php _e( 'Imprimir Danfe Etiqueta' ); ?>');
 					$( 'select[name^="action"]' ).append( $emitir_nfe );
-					$( 'select[name^="action"]' ).append( $imprimir_nfe );
+					$( 'select[name^="action"]' ).append( $imprimir_danfe );
+					$( 'select[name^="action"]' ).append( $imprimir_simplificada );
+					$( 'select[name^="action"]' ).append( $imprimir_etiqueta );
 				});
 			</script>
 			<?php
@@ -1443,7 +1555,7 @@ jQuery(document).ready(function($) {
 			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
 			$action        = $wp_list_table->current_action();
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir') ) && ! in_array( $action, array( 'wc_nfe_imprimir') ))
+			if ( ! in_array( $action, array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) )
 				return false;
 
 			if ( isset( $_REQUEST['post'] ) )
@@ -1457,11 +1569,23 @@ jQuery(document).ready(function($) {
 				$nf->send( $order_ids, true );
 			}
 
-			// Adicionado módulo de impressão
-			if ($action == 'wc_nfe_imprimir'){
+			// Adicionado módulo de impressão DANFE Normal
+			if ($action == 'wc_nfe_imprimir_danfe'){
 				$nf = new WooCommerceNFePrint;
-				$result = $nf->print( $order_ids, true );
-			}				
+				$result = $nf->print( $order_ids, 'normal' );
+			}
+			
+			// Adicionado módulo de impressão DANFE Simplificada
+			if ($action == 'wc_nfe_imprimir_simplificada'){
+				$nf = new WooCommerceNFePrint;
+				$result = $nf->print( $order_ids, 'simplificada' );
+			}
+
+			// Adicionado módulo de impressão DANFE Etiqueta
+			if ($action == 'wc_nfe_imprimir_etiqueta'){
+				$nf = new WooCommerceNFePrint;
+				$result = $nf->print( $order_ids, 'etiqueta' );
+			}
 
 		}
 
@@ -1911,7 +2035,11 @@ jQuery(document).ready(function($) {
 					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
 					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
 					'_nfe_additional_info' => $_POST['nfe_additional_info'],
-					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text']
+					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
+					'_nfe_info_intermediador' => $_POST['nfe_info_intermediador'],
+					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
+					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
+					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'],
 				);
 
 				if (!$info['nfe_volume_weight']){
@@ -1924,6 +2052,18 @@ jQuery(document).ready(function($) {
 
 				if (!$info['nfe_additional_info']) {
 					delete_post_meta( $post_id, '_nfe_additional_info' );
+				}
+
+				//Intermediador fields
+				if (!$info['_nfe_info_intermediador']) {
+					unset($info['_nfe_info_intermediador_type']);
+					unset($info['_nfe_info_intermediador_cnpj']);
+					unset($info['_nfe_info_intermediador_id']);
+
+					delete_post_meta( $post_id, '_nfe_info_intermediador' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_type' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_cnpj' );
+					delete_post_meta( $post_id, '_nfe_info_intermediador_id' );
 				}
 
 				foreach ($info as $key => $value){
@@ -2189,6 +2329,8 @@ jQuery(document).ready(function($) {
 					'n_serie' => (int) $_POST['serie'],
 					'url_xml' => (string) $_POST['xml'],
 					'url_danfe' => (string) $_POST['danfe'],
+					'url_danfe_simplificada' => (string) $_POST['danfe_simples'],
+					'url_danfe_etiqueta' => (string) $_POST['danfe_etiqueta'],
 					'data' => date_i18n('d/m/Y'),
 				);
 			}
