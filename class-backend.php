@@ -1586,9 +1586,29 @@ jQuery(document).ready(function($) {
 				$nf = new WooCommerceNFePrint;
 				$result = $nf->print( $order_ids, 'etiqueta' );
 			}
+			
+			add_action('admin_footer', 'openNfs');
+			
+			if(isset($nfs)){
+				return $redirect_to = add_query_arg( array(
+							'nfs' => urlencode($result)
+						    ), $redirect_to );
+			}
 
 		}
 
+	}
+	
+	/**
+	 * Open nfs in new window
+	 *
+	 * @return void
+	 */
+	function openNfs(){
+		if(isset($nfs)){
+			$nfs = urldecode($_REQUEST['nfs']);
+			echo "<script>window.open('$nfs', '_blank')</script>";
+		}
 	}
 
 	/**

@@ -86,8 +86,10 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 			//echo "<script> window.open('{$link_pdf}', '_blank') </script>";
 			//echo "<script> window.location.href = '{$redirect}'; </script>";
-			wp_redirect($link_pdf);
-			die();
+			//wp_redirect($link_pdf);
+			//die();
+			
+			return $link_pdf;
 
 		} else {
 
