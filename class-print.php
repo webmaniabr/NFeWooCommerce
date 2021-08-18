@@ -78,16 +78,10 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 		if ($result["result"] == true){
 
-			$this->add_success( 'Arquivo de impressão gerado com sucesso.' );
-
 			$temp_dir = str_replace(ABSPATH, '', $this->files_folder);
 			$link_pdf = get_site_url().'/'.$temp_dir.'/'.$result["file"].".pdf";
-			//$redirect = get_site_url().'/wp-admin/edit.php?post_type=shop_order';
-
-			//echo "<script> window.open('{$link_pdf}', '_blank') </script>";
-			//echo "<script> window.location.href = '{$redirect}'; </script>";
-			wp_redirect($link_pdf);
-			die();
+			
+			$this->add_success( "Arquivo de impressão gerado com sucesso. <a href='$link_pdf' target='_blank'>Clique aqui</a> para acessá-lo." );
 
 		} else {
 

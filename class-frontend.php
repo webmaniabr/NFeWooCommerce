@@ -39,8 +39,27 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 			add_filter( 'woocommerce_order_formatted_billing_address', array( $this, 'order_formatted_billing_address' ), 1, 2 );
 			add_filter( 'woocommerce_order_formatted_shipping_address', array( $this, 'order_formatted_shipping_address' ), 1, 2 );
       add_filter( 'woocommerce_my_account_my_address_formatted_address', array($this, 'my_account_my_address_formatted_address' ), 1, 3 );
+      add_filter( 'woocommerce_form_field', array($this, 'remove_checkout_optional_fields_label'), 10, 4 );
 
 		}
+
+  }
+  
+  /**
+   * Remove optional label of required fields in checkout
+   */
+  function remove_checkout_optional_fields_label( $field, $key, $args, $value ) {
+    
+    // Only on checkout page
+    if( is_checkout() && !is_wc_endpoint_url() ) {
+      if (preg_match('/billing_persontype|billing_cpf|billing_cnpj|billing_company/i', $field)) {
+        $optional = '&nbsp;<span class="optional">(' . esc_html__( 'optional', 'woocommerce' ) . ')</span>';
+        $required = '&nbsp;<abbr class="required" title="' . esc_html__( 'required', 'woocommerce' ) . '">*</abbr>';
+        $field = str_replace( $optional, $required, $field );
+      }
+    }
+
+    return $field;
 
   }
 

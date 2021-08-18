@@ -161,7 +161,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$default_origem = get_option('wc_settings_woocommercenfe_origem');
 		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
 		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
-		$coupons = $order->get_coupon_codes();
+		$coupons = method_exists($order, 'get_coupon_codes') ? $order->get_coupon_codes() : false;
 		$coupons_percentage = array();
 		$total_discount = $total_fee = 0;
 		$fee_aditional_informations = '';
@@ -294,7 +294,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
 		}
-		if ($additional_info = (!empty($_POST)) ? $_POST['nfe_additional_info'] : get_post_meta($post_id, '_nfe_additional_info', true)) {
+		if ($additional_info = (!empty($_POST) && isset($_POST['nfe_additional_info'])) ? $_POST['nfe_additional_info'] : get_post_meta($post_id, '_nfe_additional_info', true)) {
 			$value = $_POST['nfe_additional_info_text'];
 
 			if (!isset($value)) {
@@ -436,7 +436,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		// Payment
     if (
-			$data['parcelas'] &&
+			isset($data['parcelas']) &&
 			(
 				(count($data['parcelas']) > 1) ||
 				(count($data['parcelas']) == 1 && $data['parcelas'][0]['vencimento'] > current_time('Y-m-d'))
@@ -493,7 +493,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Product Volume and Weight
-		if ($volume_weight = (!empty($_POST)) ? $_POST['nfe_volume_weight'] : get_post_meta( $post_id, '_nfe_volume_weight', true )){
+		if ($volume_weight = (!empty($_POST) && isset($_POST['nfe_volume_weight'])) ? $_POST['nfe_volume_weight'] : get_post_meta( $post_id, '_nfe_volume_weight', true )){
 
 			$order_specifics = array(
 				'volume' => '_nfe_transporte_volume',
@@ -551,6 +551,14 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$peso        = $product->get_weight();
 		$informacoes_adicionais = '';
 		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
+
+		//Get NCM from product variation
+		$variation_id = $item['variation_id'];
+		if ($variation_id) {
+		
+			$codigo_ncm = ($ncm = get_post_meta($variation_id, 'variable_ncm', true)) ? $ncm : $codigo_ncm;
+		
+		}
 
 		if (!$codigo_ncm){
 

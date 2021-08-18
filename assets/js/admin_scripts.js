@@ -220,6 +220,16 @@ jQuery( function ( $ ) {
 
     }
 
+    format_field_tax_class = function(element) {
+
+      var new_value;
+
+      new_value = 'REF' + element.target.value.replace(/\D|[REF]/g, '');
+    
+      $(element.target).val(new_value);
+
+    }
+
     $( 'a.load_customer_billing' ).on( 'click', load_billing );
     $( 'a.load_customer_shipping' ).on( 'click', load_shipping );
     $( '#customer_user' ).on( 'change', change_customer_user );
@@ -322,5 +332,8 @@ jQuery( function ( $ ) {
       update_payment_desc_label();
 			
 		});
+
+    //Format field tax class to avoid wrong values
+    $('#wc_settings_woocommercenfe_imposto').on('input', format_field_tax_class);
 
 });

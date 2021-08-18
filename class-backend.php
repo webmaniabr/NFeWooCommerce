@@ -38,6 +38,10 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_filter( 'woocommerce_admin_shipping_fields', array($this, 'extra_shipping_fields') );
 		add_action( 'admin_enqueue_scripts', array($this, 'scripts') );
 		add_action( 'wp_ajax_force_digital_certificate_update', array($this, 'ajax_force_certificate_update') );
+		
+		//NCM in product variation
+		add_action( 'woocommerce_variation_options_dimensions', array($this, 'add_ncm_field_product_variation'), 10, 3);
+		add_action( 'woocommerce_save_product_variation', array($this, 'save_ncm_field_product_variation'), 10, 2 );
 
 		/**
 		 * Plugin: Brazilian Market on WooCommerce (Customized)
@@ -2025,32 +2029,32 @@ jQuery(document).ready(function($) {
 					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
 					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
 					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
-					'_nfe_volume_weight' => $_POST['nfe_volume_weight'],
+					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? $_POST['nfe_volume_weight'] : false,
 					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
 					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
 					'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
 					'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
-					'_nfe_installments'  => $_POST['nfe_installments'],
+					'_nfe_installments'  => isset($_POST['nfe_installments']) ? $_POST['nfe_installments'] : false,
 					'_nfe_installments_n'  => $_POST['nfe_installments_n'],
 					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
 					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
-					'_nfe_additional_info' => $_POST['nfe_additional_info'],
+					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? $_POST['nfe_additional_info'] : false,
 					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
-					'_nfe_info_intermediador' => $_POST['nfe_info_intermediador'],
+					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? $_POST['nfe_info_intermediador'] : false,
 					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
 					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
 					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'],
 				);
 
-				if (!$info['nfe_volume_weight']){
+				if (!$info['_nfe_volume_weight']){
 					delete_post_meta( $post_id, '_nfe_volume_weight' );
 				}
 
-				if (!$info['nfe_installments']){
+				if (!$info['_nfe_installments']){
 					delete_post_meta( $post_id, '_nfe_installments' );
 				}
 
-				if (!$info['nfe_additional_info']) {
+				if (!$info['_nfe_additional_info']) {
 					delete_post_meta( $post_id, '_nfe_additional_info' );
 				}
 
@@ -2676,6 +2680,41 @@ jQuery(document).ready(function($) {
 		}
 
 		return $customer_data;
+
+	}
+
+	/**
+	 * Add NCM field to product variation
+	 * 
+	 * @return void
+	 */
+	function add_ncm_field_product_variation( $loop, $variation_data, $variation ) {
+
+		$value = get_post_meta( $variation->ID, 'variable_ncm', true );
+
+		woocommerce_wp_text_input(
+			array(
+				'id'            => "variable_ncm{$loop}",
+				'name'          => "variable_ncm[{$loop}]",
+				'class'					=> "short",
+				'value'         => $value,
+				'type'     			=> "number",
+				'label'         => "NCM",
+				'wrapper_class' => "form-row form-row-full"
+			)
+		);
+		
+	}
+
+	/**
+	 * Save NCM value of product variation
+	 * 
+	 * @return void
+	 */
+	function save_ncm_field_product_variation( $variation_id, $i ) {
+		
+		$ncm = $_POST['variable_ncm'][$i];
+		update_post_meta( $variation_id, 'variable_ncm', $ncm );
 
 	}
 
