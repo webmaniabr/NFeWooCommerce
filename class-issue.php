@@ -362,7 +362,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						if ($variation_description) {
 							$variation_description .= ', ';
 						}
-						$variation_description .= "{$label} : {$value}";
+						$variation_description .= mb_strtoupper("{$label} : {$value}");
 					}
 				}
 			}
@@ -596,26 +596,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$imposto = get_option('wc_settings_woocommercenfe_imposto');
 		}
 
-		$variacoes = ''; //Used to append variation name to product name
-
-		foreach (array_keys($item['item_meta']) as $meta){
-
-			if (strpos($meta,'pa_') !== false) {
-
-				$atributo = $item[$meta];
-				$nome_atributo = str_replace( 'pa_', '', $meta );
-				$nome_atributo = $wpdb->get_var( "SELECT attribute_label FROM {$wpdb->prefix}woocommerce_attribute_taxonomies WHERE attribute_name = '$nome_atributo'" );
-				$valor = strtoupper($item[$meta]);
-				$variacoes .= ' - '.strtoupper($nome_atributo).': '.$valor;
-
-			}
-
-		}
-
 		$product_active_price = $order->get_item_subtotal( $item, false, false );
 
 		$info = array(
-			'nome' => $item['name'].$variacoes, // Nome do produto
+			'nome' => $item['name'], // Nome do produto
 			'informacoes_adicionais' => ($informacoes_adicionais) ? $informacoes_adicionais : '', // Variações do produto
 			'codigo' => ($product->get_sku()) ? $product->get_sku() : '', // Código do produto
 			'gtin' => ($codigo_gtin) ? $codigo_gtin : '', // Código GTIN
