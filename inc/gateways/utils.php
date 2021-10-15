@@ -62,7 +62,7 @@ class UtilsGateways {
     $data['parcelas'] = array();
     $installment = round($order_total / $installments, 2);
     $total_installments = 0;
-    $order_date = get_the_time('Y-m-d', $post_id);
+    $order_date = current_time('Y-m-d');
 
     for ( $i = 1; $i <= $installments; $i++ ) {
 
