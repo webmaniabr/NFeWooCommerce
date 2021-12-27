@@ -976,6 +976,7 @@ jQuery(document).ready(function($) {
 	function metabox_content_woocommernfe_informacoes_adicionais( $post ) {
 
 		// Vars
+		$contribuinte = get_post_meta($post->ID, '_nfe_contribuinte', true);
 		$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
 		$volume_checked = get_post_meta($post->ID, '_nfe_volume_weight', true);
 		$installments_checked = get_post_meta($post->ID, '_nfe_installments', true);
@@ -1039,6 +1040,17 @@ jQuery(document).ready(function($) {
 		<input type="hidden" name="wp_admin_nfe" value="1" />
 	</div>
 	<div class="inside" style="padding:0!important;">
+		<div class="field contribuinte">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Contribuinte ICMS</label>
+			</p>
+			<select name="nfe_contribuinte" id="nfe_contribuinte">
+				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
+				<option value="1" <?php if (is_numeric($contribuinte) && $contribuinte == '1') echo 'selected'; ?> ><?php _e( 'Contribuinte ICMS', $this->domain ); ?></option>
+				<option value="2" <?php if (is_numeric($contribuintee) && $contribuinte == '2') echo 'selected'; ?> ><?php _e( 'Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
+				<option value="9" <?php if (is_numeric($contribuinte) && $contribuinte == '9') echo 'selected'; ?> ><?php _e( 'Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
+			</select>
+		</div>
 		<div class="field">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Modalidade do frete</label>
@@ -2028,6 +2040,7 @@ jQuery(document).ready(function($) {
 				$info = array(
 					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
 					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
+					'_nfe_contribuinte' => $_POST['nfe_contribuinte'],
 					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
 					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? $_POST['nfe_volume_weight'] : false,
 					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],

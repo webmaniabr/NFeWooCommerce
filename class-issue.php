@@ -333,6 +333,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		}
 
+		// Contribuinte ICMS
+		$contribuinte = (!empty($_POST) && isset($_POST['nfe_contribuinte'])) ? $_POST['nfe_contribuinte'] : get_post_meta($post_id, '_nfe_contribuinte', true);
+		if (in_array($contribuinte, [1, 2, 9])) {
+			$data['cliente']['contribuinte'] = $contribuinte;
+		}
+
 		// Products
 		$bundles = array();
 
