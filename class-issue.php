@@ -346,11 +346,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$data['produtos'] = array();
 
 		foreach ($order->get_items() as $key => $item){
-
+			
 			$product      = wc_get_product($item['product_id']);
 			$product_type = $product->get_type();
 			$product_id   = $item['product_id'];
-			$bundled_by = isset($item['bundled_by']);
+			$bundled_by   = isset($item['bundled_by']);
+			$variation_description = $beneficio_fiscal = ''; 
 
 			if(!$bundled_by && is_a($item, 'WC_Order_Item_Product')){
 				$bundled_by = $item->meta_exists('_bundled_by');
@@ -361,7 +362,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$variation = new WC_Product_Variation($variation_id);
 				$attributes = $variation->get_attributes();
 
-				$variation_description = ''; 
 				foreach ($attributes as $name => $value) {
 					$label = wc_attribute_label($name, $product);
 					if ($value) {
@@ -411,9 +411,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$beneficio_fiscal = $_POST['beneficio_fiscal_pedido'];
 			}
 
-			$product_info['beneficio_fiscal'] = ($beneficio_fiscal) ? $beneficio_fiscal : '';
-
-			$product_info['informacoes_adicionais'] .= ($variation_description) ? $variation_description : '';
+			if ($beneficio_fiscal){
+				$product_info['beneficio_fiscal'] = ($beneficio_fiscal) ? $beneficio_fiscal : '';
+			}
+			if ($variation_description){
+				$product_info['informacoes_adicionais'] .= ($variation_description) ? $variation_description : '';
+			}
 
 			// Mount data
 			$data['produtos'][] = $product_info;
@@ -469,22 +472,16 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
 			}
 
-			$include_shipping_info = get_option('wc_settings_woocommercenfe_transp_include');
+			// Frenet
+			if ($shipping_method_id == 'frenet'){
 
-			if ($include_shipping_info == 'on' && (isset($transportadoras[$shipping_method_id]) || $shipping_method_id == 'frenet')){
-
-				// Frenet
-				if ($shipping_method_id == 'frenet'){
-					if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
-						$shipping_method_id = $shipping_data['meta_data'][0]->value;
-					}
+				if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
+					$shipping_method_id = $shipping_data['meta_data'][0]->value;
 				}
 
-				// Courier data
-				if ($shipping_method_id != 'frenet'){
+				if ($shipping_method_id != 'frenet' && $transportadoras[$shipping_method_id]){
 
 					$transp = $transportadoras[$shipping_method_id];
-
 					$data['transporte']['cnpj']         = $transp['cnpj'];
 					$data['transporte']['razao_social'] = $transp['razao_social'];
 					$data['transporte']['ie']           = $transp['ie'];
@@ -496,6 +493,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				}
 
 			}
+			
 		}
 
 		// Product Volume and Weight

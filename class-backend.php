@@ -257,18 +257,6 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 <h3>Informações de Transportadoras</h3>
 <p>Cadastre as transportadoras particulares utilizadas em sua loja virtual para identificação na Nota Fiscal Eletrônica. <br>Observação: Para o transporte dos Correios não há necessidade de preenchimento dos dados.</p>
-<table class="form-table">
-	<tr valign="top">
-		<th scope="row" class="title-desc">Ativar informações da Transportadora</th>
-		<td class="forminp forminp-checkbox">
-			<fieldset>
-				<label for="wc_settings_woocommercenfe_transp_include">
-					<?php $include = get_option('wc_settings_woocommercenfe_transp_include'); ?>
-				<input name="wc_settings_woocommercenfe_transp_include" id="wc_settings_woocommercenfe_transp_include" type="checkbox" class="" value="1" <?php if($include == 'on') echo 'checked="checked"'; ?>> Assinele caso deseje inserir dados da transportadora na Nota Fiscal.</label>
-			</fieldset>
-		</td>
-	</tr>
-</table>
 
 <div class="nfe-shipping-table">
 	<div class="nfe-table-head">
@@ -392,12 +380,6 @@ jQuery(document).ready(function($) {
 		update_option('wc_settings_woocommercenfe_payment_methods', $payment_methods);
 		update_option('wc_settings_woocommercenfe_payment_descs', $payment_descs);
 		update_option('wc_settings_woocommercenfe_cnpj_payments', $cnpj_payment_methods);
-		$include = isset($_POST['wc_settings_woocommercenfe_transp_include']) ? $_POST['wc_settings_woocommercenfe_transp_include'] : false;
-		if ($include) {
-			update_option('wc_settings_woocommercenfe_transp_include', 'on');
-		} else {
-			update_option('wc_settings_woocommercenfe_transp_include', 'off');
-		}
 
 	}
 
@@ -724,7 +706,11 @@ jQuery(document).ready(function($) {
 
 				foreach ($frenet->ShippingSeviceAvailableArray as $var){
 
-					(isset($carriers['FRENET_'.$var->ServiceCode]) ? $selected = 'selected' : $selected = '');
+					$selected = '';
+
+					if ($id){
+						((isset($carriers['FRENET_'.$var->ServiceCode]) && $id == 'FRENET_'.$var->ServiceCode) ? $selected = 'selected' : $selected = '');
+					}
 					$html .= '<option value="FRENET_'.$var->ServiceCode.'" '.$selected.'>Frenet - '.$var->Carrier.' ('.$var->ServiceDescription.')</option>';
 
 				}
@@ -952,10 +938,11 @@ jQuery(document).ready(function($) {
 		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
 		<div class="extra">
 			<ul>
-				<li><strong>RPS:</strong> <?php echo $recibo_nfe; ?></li>
+			  <?php if ($chave_acesso_nfe) { ?><li><strong>Chave:</strong> <?php echo $chave_acesso_nfe; ?></li><?php } ?>
+				<?php if ($recibo_nfe) { ?><li><strong>Recibo:</strong> <?php echo $recibo_nfe; ?></li><?php } ?>
 				<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
-				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe; ?>">Download XML</a></li>
-				<li><strong>Código Verificação:</strong> <?php echo $chave_acesso_nfe; ?></li>
+				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe.'?download=1'; ?>">Download XML</a></li>
+				
 			</ul>
 		</div>
 		<span class="dashicons dashicons-arrow-down-alt2 expand-nfe"></span>
@@ -2479,6 +2466,10 @@ jQuery(document).ready(function($) {
 		// Looking for credentials
 		$this->get_credentials();
 
+		if (!$this->settings['consumer_key'] && !$this->settings['consumer_secret'] && !$this->settings['oauth_access_token'] && !$this->settings['oauth_access_token_secret']){
+			return;
+		}
+
 		// Credentials are empty
 		if ( !$this->settings ) {
 
@@ -2584,21 +2575,24 @@ jQuery(document).ready(function($) {
 			return;
 
 		$plugins_list = array(
-			'redis-cache/redis-cache.php' => 'Redis Object Cache'
+			//'plugin-name/plugin.php' => 'Plugin name'
 		);
 
-		foreach ( $plugins_list as $plugin_path => $plugin_name ) {
+		if ($plugins_list && count($plugins_list) > 0){
+			foreach ( $plugins_list as $plugin_path => $plugin_name ) {
 
-			if ( self::wmbr_is_plugin_active($plugin_path) ) {
-
-				echo '<div class="error">
-						<p>O plugin <b>'.$plugin_name.'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>
-						<p>Por favor, desative-o para prosseguir com as emissões de Nota Fiscal.</p>
-					</div>';
-
+				if ( self::wmbr_is_plugin_active($plugin_path) ) {
+	
+					echo '<div class="error">
+							<p>O plugin <b>'.$plugin_name.'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>
+							<p>Por favor, desative-o para prosseguir com as emissões de Nota Fiscal.</p>
+						</div>';
+	
+				}
+	
 			}
-
 		}
+		
 
 	}
 
