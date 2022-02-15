@@ -553,6 +553,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$cnpj_fabricante = get_post_meta($product_id, '_nfe_cnpj_fabricante', true);
 		$unidade     = get_post_meta($product_id, '_nfe_unidade', true);
 		$peso        = $product->get_weight();
+		$weightUnit = get_option('woocommerce_weight_unit');
+		if ($peso && $weightUnit == 'g') $peso = $peso/1000;
 		$informacoes_adicionais = '';
 		$informacoes_adicionais = get_post_meta($product_id, '_nfe_produto_informacoes_adicionais', true);
 
