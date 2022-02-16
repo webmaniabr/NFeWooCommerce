@@ -468,29 +468,27 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
       $shipping_data = ($shipping_method) ? $shipping_method->get_data() : array();
 		  $shipping_method_id = ($shipping_method) ? $shipping_method['method_id'] : '';
       
+			// Common Shipping
 			if (strpos($shipping_method_id, ':')){
 				$shipping_method_id = substr($shipping_method['method_id'], 0, strpos($shipping_method['method_id'], ":"));
 			}
 
-			// Frenet
-			if ($shipping_method_id == 'frenet'){
+			// Frenet shipping
+			if ($shipping_method_id == 'frenet' && isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
+				$shipping_method_id = $shipping_data['meta_data'][0]->value;
+			}
 
-				if (isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
-					$shipping_method_id = $shipping_data['meta_data'][0]->value;
-				}
+			// Carrier
+			if ($transportadoras[$shipping_method_id]){
 
-				if ($shipping_method_id != 'frenet' && $transportadoras[$shipping_method_id]){
-
-					$transp = $transportadoras[$shipping_method_id];
-					$data['transporte']['cnpj']         = $transp['cnpj'];
-					$data['transporte']['razao_social'] = $transp['razao_social'];
-					$data['transporte']['ie']           = $transp['ie'];
-					$data['transporte']['endereco']     = $transp['address'];
-					$data['transporte']['uf']           = $transp['uf'];
-					$data['transporte']['cidade']       = $transp['city'];
-					$data['transporte']['cep']          = $transp['cep'];
-
-				}
+				$transp = $transportadoras[$shipping_method_id];
+				$data['transporte']['cnpj']         = $transp['cnpj'];
+				$data['transporte']['razao_social'] = $transp['razao_social'];
+				$data['transporte']['ie']           = $transp['ie'];
+				$data['transporte']['endereco']     = $transp['address'];
+				$data['transporte']['uf']           = $transp['uf'];
+				$data['transporte']['cidade']       = $transp['city'];
+				$data['transporte']['cep']          = $transp['cep'];
 
 			}
 			
