@@ -1034,7 +1034,7 @@ jQuery(document).ready(function($) {
 			<select name="nfe_contribuinte" id="nfe_contribuinte">
 				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
 				<option value="1" <?php if (is_numeric($contribuinte) && $contribuinte == '1') echo 'selected'; ?> ><?php _e( 'Contribuinte ICMS', $this->domain ); ?></option>
-				<option value="2" <?php if (is_numeric($contribuintee) && $contribuinte == '2') echo 'selected'; ?> ><?php _e( 'Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
+				<option value="2" <?php if (is_numeric($contribuinte) && $contribuinte == '2') echo 'selected'; ?> ><?php _e( 'Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
 				<option value="9" <?php if (is_numeric($contribuinte) && $contribuinte == '9') echo 'selected'; ?> ><?php _e( 'Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
 			</select>
 		</div>
