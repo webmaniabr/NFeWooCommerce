@@ -11,7 +11,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * 
 	 * @return string
 	 */
-	function cpf( $string ){
+	public static function cpf( $string ){
 
 		if (!$string) return;
 		$string = self::clear( $string );
@@ -25,7 +25,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function cnpj( $string ){
+	public static function cnpj( $string ){
 
 		if (!$string) return;
 		$string = self::clear( $string );
@@ -39,7 +39,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function cep( $string ){
+	public static function cep( $string ){
 
 		if (!$string) return;
 		$string = self::clear( $string );
@@ -53,7 +53,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function clear( $string ) {
+	public static function clear( $string ) {
 
 		$string = str_replace( array(',', '-', '!', '.', '/', '?', '(', ')', ' ', '$', 'R$', '€'), '', $string );
 		return $string;
@@ -65,7 +65,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function mask($val, $mask) {
+	public static function mask($val, $mask) {
 
 		$maskared = '';
 		$k = 0;
@@ -86,7 +86,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function is_cpf( $cpf ) {
+	public static function is_cpf( $cpf ) {
 
 		$cpf = preg_replace( '/[^0-9]/', '', $cpf );
 
@@ -116,7 +116,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	 */
-	function is_cnpj( $cnpj ) {
+	public static function is_cnpj( $cnpj ) {
 
 		$cnpj = sprintf( '%014s', preg_replace( '{\D}', '', $cnpj ) );
 
@@ -145,7 +145,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	**/
-	function format_number( $string ) {
+	public static function format_number( $string ) {
 
 		return str_replace( array( '.', '-', '/' ), '', $string );
 
@@ -156,7 +156,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 *
 	 * @return string
 	**/
-	function get_formatted_birthdate( $date, $server ) {
+	public static function get_formatted_birthdate( $date, $server ) {
 
 		$birthdate = explode( '/', $date );
 

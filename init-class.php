@@ -359,7 +359,7 @@ class WooCommerceNFe {
 	 *
 	 * @return boolean
 	 */
-	function is_extra_checkout_fields_activated(){
+	public static function is_extra_checkout_fields_activated(){
 
 		return self::wmbr_is_plugin_active('woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php');
 
