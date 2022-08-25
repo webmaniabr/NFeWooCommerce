@@ -56,11 +56,12 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 			//Use the last nfe issued
 			$nf = end($order_nfe_data);
+			if ($nf['modelo'] == 'lote_rps' || ($nf['modelo'] == 'nfse' && ($type != 'normal' || empty($nf['pdf_rps'])))) continue;
 
 			//Set Danfe's url 
 			$item = array('chave' => $nf['chave_acesso']);
 			if ($type == 'normal') {
-				$item['url'] = $nf['url_danfe'];
+				$item['url'] = ($nf['modelo'] == 'nfse') ? $nf['pdf_rps'] : $nf['url_danfe'];
 			}
 			else if ($type == 'simplificada') {
 				$item['url'] = ($nf['url_danfe_simplificada']) ? $nf['url_danfe_simplificada'] : str_replace('/danfe/', '/danfe/simples/', $nf['url_danfe']);

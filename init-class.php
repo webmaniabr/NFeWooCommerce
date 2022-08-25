@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.2.3';
+	public $version = '3.2.5';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -144,6 +144,7 @@ class WooCommerceNFe {
 	function includes(){
 
 		include_once( 'inc/sdk/NFe.php' );
+		include_once( 'inc/sdk/NFSe.php' );
 		include_once( 'inc/utils.php' );
 		include_once( 'inc/gateways/utils.php' );
 		include_once( 'inc/gateways/bacs.php' );
@@ -181,6 +182,7 @@ class WooCommerceNFe {
 			'oauth_access_token_secret' => get_option('wc_settings_woocommercenfe_access_token_secret'),
 			'consumer_key' => get_option('wc_settings_woocommercenfe_consumer_key'),
 			'consumer_secret' => get_option('wc_settings_woocommercenfe_consumer_secret'),
+			'bearer_access_token' => get_option('wc_settings_woocommercenfe_bearer_access_token'),
 		), $order_id );
 
 	}

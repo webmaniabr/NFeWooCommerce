@@ -15,6 +15,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_action( 'add_meta_boxes', array($this, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($this, 'atualizar_status_nota'), 100 );
 		add_action( 'woocommerce_api_nfe_callback', array($this, 'nfe_callback') );
+		add_action( 'woocommerce_api_nfse_callback', array($this, 'nfse_callback') );
 		add_action( 'save_post', array($this, 'save_informacoes_fiscais'), 10, 2);
 		add_action( 'admin_head', array($this, 'style') );
 		add_filter( 'manage_edit-shop_order_columns', array( $this, 'add_order_status_column_header' ), 20 );
@@ -394,9 +395,9 @@ jQuery(document).ready(function($) {
 
 		$settings = array(
 			'title' => array(
-				'name'     => __( 'Credenciais de Acesso', $this->domain ),
+				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Produto)', $this->domain ),
 				'type'     => 'title',
-				'desc'     => 'Informe os acessos da sua aplicação.'
+				'desc'     => 'Informe os acessos da sua aplicação - API 1.0'
 			),
 			'consumer_key' => array(
 				'name' => __( 'Consumer Key', $this->domain ),
@@ -422,8 +423,32 @@ jQuery(document).ready(function($) {
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_access_token_secret'
 			),
+			'section_end_nfe' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end'
+			),
+			'title_nfse_credentials' => array(
+				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Serviço)', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Informe os acessos da sua aplicação - API 2.0'
+			),
+			'bearer_access_token' => array(
+				'name' => __( 'Bearer Access Token', $this->domain ),
+				'type' => 'text',
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_bearer_access_token'
+			),
+			'section_end_nfse' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end'
+			),
+			'title_environment' => array(
+				'name'     => __( 'Ambiente de emissão', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Informe o ambiente de emissão. Para validade fiscal (produção) ou para testes (desenvolvimento).'
+			),
 			'ambiente' => array(
-				'name' => __( 'Ambiente Sefaz', $this->domain ),
+				'name' => __( 'Ambiente', $this->domain ),
 				'type' => 'radio',
 				'options' => array('1' => 'Produção', '2' => 'Desenvolvimento (Testes)'),
 				'default' => '2',
@@ -463,6 +488,36 @@ jQuery(document).ready(function($) {
 				'default' => 'no',
 				'id'   => 'wc_settings_woocommercenfe_data_emissao'
 			),
+			'email_notification' => array(
+				'name' => __( 'Notificação de erros', $this->domain ),
+				'type' => 'email',
+				'desc' => __( 'Informe um e-mail para notificações de erros na emissão ou <a target="_blank" href="'.$auto_invoice_report_url.'">visualize as notificações</a>.'),
+				'css' => 'width:300px;',
+				'id'   => 'wc_settings_woocommercenfe_email_notification'
+			),
+			'section_end_3' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end2'
+			),
+			'title_nfse' => array(
+				'name'     => __( 'Configurações (Nota Fiscal de Serviço)', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Configuração de campos específicos para a emissão de NFS-e.'
+			),
+			'imposto_nfse' => array(
+				'name' => __( 'Classe de Imposto (NFS-e)', $this->domain ),
+				'type' => 'text',
+				'id'   => 'wc_settings_woocommercenfe_imposto_nfse'
+			),
+			'section_end_nfse2' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end_nfse'
+			),
+			'title_nfe' => array(
+				'name'     => __( 'Configurações (Nota Fiscal de Produto)', $this->domain ),
+				'type'     => 'title',
+				'desc'     => 'Configuração de campos específicos para a emissão de NF-e.'
+			),
 			'natureza_operacao' => array(
 				'name' => __( 'Natureza da Operação', $this->domain ),
 				'type' => 'text',
@@ -470,7 +525,7 @@ jQuery(document).ready(function($) {
 				'id'   => 'wc_settings_woocommercenfe_natureza_operacao'
 			),
 			'imposto' => array(
-				'name' => __( 'Classe de Imposto', $this->domain ),
+				'name' => __( 'Classe de Imposto (NF-e)', $this->domain ),
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_imposto'
 			),
@@ -502,16 +557,9 @@ jQuery(document).ready(function($) {
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_origem'
 			),
-			'email_notification' => array(
-				'name' => __( 'Notificação de erros', $this->domain ),
-				'type' => 'email',
-				'desc' => __( 'Informe um e-mail para notificações de erros na emissão ou <a target="_blank" href="'.$auto_invoice_report_url.'">visualize as notificações</a>.'),
-				'css' => 'width:300px;',
-				'id'   => 'wc_settings_woocommercenfe_email_notification'
-			),
-			'section_end2' => array(
+			'section_end_nfe2' => array(
 				'type' => 'sectionend',
-				'id' => 'wc_settings_woocommercenfe_end2'
+				'id' => 'wc_settings_woocommercenfe_end_nfe'
 			),
 			'title_intermediador' => array(
 				'name'     => __( 'Indicativo de Intermediador', $this->domain ),
@@ -581,7 +629,7 @@ jQuery(document).ready(function($) {
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end3'
 			),
-			'title5' => array(
+			'title6' => array(
 				'name'     => __( 'Campos Personalizados no Checkout', $this->domain ),
 				'type'     => 'title',
 				'desc'     => 'Informe se deseja mostrar os campos na página de Finalizar Compra.'
@@ -906,6 +954,7 @@ jQuery(document).ready(function($) {
 <div class="all-nfe-info">
 <div class="head">
 <h4 class="head-title">Data</h4>
+<h4 class="head-title modelo-column">Modelo</h4>
 <h4 class="head-title n-column">Nº</h4>
 <h4 class="head-title danfe-column">PDF</h4>
 <h4 class="head-title status-column">Status</h4>
@@ -913,36 +962,65 @@ jQuery(document).ready(function($) {
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
 	(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
-	(isset($order_nfe['n_nfe']) ? $numero_nfe = $order_nfe['n_nfe'] : $numero_nfe = '' );
+	if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'nfse') {
+		$modelo_nfe = 'NFS-e';
+	}
+	else if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'lote_rps') {
+		$modelo_nfe = 'Lote RPS';
+	}
+	else {
+		$modelo_nfe = 'NF-e';
+	}
+	(isset($order_nfe['n_nfe']) ? $numero_nfe = $order_nfe['n_nfe'] : $numero_nfe = '---' );
 	(isset($order_nfe['chave_acesso']) ? $chave_acesso_nfe = $order_nfe['chave_acesso'] : $chave_acesso_nfe = '' );
 	(isset($order_nfe['status']) ? $status_nfe = $order_nfe['status'] : $status_nfe = '' );
 	(isset($order_nfe['url_xml']) ? $xml_nfe = $order_nfe['url_xml'] : $xml_nfe = '' );
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
+	if ($status_nfe == 'processando') $status_nfe = 'processamento';
 	if (!$order_nfe['url_danfe_simplificada']) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
 	if (!$order_nfe['url_danfe_etiqueta']) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
 		<div>
 		<h4 class="body-info"><?php echo $data_nfe; ?></h4>
+		<h4 class="body-info modelo-column"><?php echo $modelo_nfe; ?></h4>
 		<h4 class="body-info n-column"><?php echo $numero_nfe; ?></h4>
 		<h4 class="body-info danfe-column">
+			<?php if ($modelo_nfe == 'Lote RPS') { ?>
+			<span>---</span>
+			<?php } else if ($modelo_nfe == 'NFS-e') {
+				if (isset($order_nfe['url_pdf']) && !empty($order_nfe['url_pdf'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'] ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<?php }
+				if (isset($order_nfe['pdf_rps']) && !empty($order_nfe['pdf_rps'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'] ?>"><span class="wrt"> Darps </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+			<?php }
+			} else { ?>
 			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
 			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
 			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+			<?php } ?>
 		</h4>
 		<?php
 			$post_url = get_edit_post_link($post->ID);
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
 		?>
-		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a></h4></div>
+		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span>
+		<?php if (!in_array($modelo_nfe, ['NFS-e', 'Lote RPS'])) { ?><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a><?php } ?>
+		</h4></div>
 		<div class="extra">
 			<ul>
 			  <?php if ($chave_acesso_nfe) { ?><li><strong>Chave:</strong> <?php echo $chave_acesso_nfe; ?></li><?php } ?>
 				<?php if ($recibo_nfe) { ?><li><strong>Recibo:</strong> <?php echo $recibo_nfe; ?></li><?php } ?>
-				<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
+				<?php if ($modelo_nfe != 'Lote RPS') { ?>
+					<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
+				<?php } ?>
 				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe.'?download=1'; ?>">Download XML</a></li>
-				
+				<?php if ($status_nfe == 'reprovado' && isset($order_nfe['motivo'])) { ?>
+					<li><strong>Motivo:</strong> <?php echo $order_nfe['motivo']; ?></li>
+				<?php } ?>
 			</ul>
 		</div>
 		<span class="dashicons dashicons-arrow-down-alt2 expand-nfe"></span>
@@ -1207,16 +1285,23 @@ jQuery(document).ready(function($) {
 	function metabox_content_woocommernfe_informacoes( $post ){
 
 		// Vars
+		$product_type = get_post_meta( $post->ID, '_nfe_tipo_produto', true );
 		$others_checked = get_post_meta( $post->ID, '_nfe_product_others', true );
 
 	?>
 	<script>
 		jQuery(function($){
 
+			<?php if ($product_type == 2){ ?>
+				$('.nfe_fields').hide();
+			<?php } ?>
 			<?php if ($others_checked && $others_checked == 'on'){ ?>
 				$('.product_others').show();
 			<?php } ?>
 
+			$('select[name="tipo_produto"]').on('change', function(){
+				(this.value == 2) ? $('.nfe_fields').hide() : $('.nfe_fields').show();
+			});
 			$('input[name="product_others"]').on('change', function(){
 				if ($(this).is(':checked')){
 					$('.product_others').show();
@@ -1238,10 +1323,20 @@ jQuery(document).ready(function($) {
 	<hr>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
+					<label class="title">Tipo de produto</label>
+			</p>
+			<select name="tipo_produto" value="<?php echo get_post_meta( $post->ID, '_nfe_tipo_produto', true ); ?>" style="width:100%;padding:5px;">
+				<option value="1" <?php if (get_post_meta( $post->ID, '_nfe_tipo_produto', true ) == 1) echo 'selected'; ?>>Produto físico</option>
+				<option value="2" <?php if (get_post_meta( $post->ID, '_nfe_tipo_produto', true ) == 2) echo 'selected'; ?>>Prestação de serviço</option>
+			</select>
+	</div>
+	<div class="field">
+			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Classe de Imposto</label>
 			</p>
 			<input type="text" name="classe_imposto" value="<?php echo get_post_meta( $post->ID, '_nfe_classe_imposto', true ); ?>" style="width:100%;padding:5px;">
 	</div>
+	<div class="nfe_fields">
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Código NCM</label>
@@ -1401,6 +1496,7 @@ jQuery(document).ready(function($) {
 				<input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
 		</div>
 	</div>
+	</div>
 
 </div>
 
@@ -1422,7 +1518,7 @@ jQuery(document).ready(function($) {
 			$new_columns[ $column_name ] = $column_info;
 
 			if ( 'order_status' == $column_name ) {
-				$new_columns['nfe'] = __( 'Status NF-e' );
+				$new_columns['nfe'] = __( 'Status Fiscal' );
 			}
 
 		}
@@ -1464,14 +1560,14 @@ jQuery(document).ready(function($) {
 				}
 
 				if ( $nfe_emitida ) {
-					echo '<div class="nfe_success">NF-e Emitida</div>';
+					echo '<div class="nfe_success">Emitida</div>';
 				} else {
-					echo '<div class="nfe_alert">NF-e não emitida</div>';
+					echo '<div class="nfe_alert">Não emitida</div>';
 				}
 
 			} else {
 
-				echo '<div class="nfe_alert">NF-e não emitida</div>';
+				echo '<div class="nfe_alert">Não emitida</div>';
 
 			}
 
@@ -1485,7 +1581,7 @@ jQuery(document).ready(function($) {
 	 */
 	function add_order_meta_box_actions( $actions ) {
 
-		$actions['wc_nfe_emitir'] = __( 'Emitir NF-e' );
+		$actions['wc_nfe_emitir'] = __( 'Emitir Nota Fiscal' );
 
 		return $actions;
 
@@ -1507,7 +1603,7 @@ jQuery(document).ready(function($) {
 			?>
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
-					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir NF-e' ); ?>');
+					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir Nota Fiscal' ); ?>');
 					var $imprimir_danfe = $('<option>').val('wc_nfe_imprimir_danfe').text('<?php _e( 'Imprimir Danfe' ); ?>');
 					var $imprimir_simplificada = $('<option>').val('wc_nfe_imprimir_simplificada').text('<?php _e( 'Imprimir Danfe Simples' ); ?>');
 					var $imprimir_etiqueta = $('<option>').val('wc_nfe_imprimir_etiqueta').text('<?php _e( 'Imprimir Danfe Etiqueta' ); ?>');
@@ -1990,6 +2086,7 @@ jQuery(document).ready(function($) {
 			if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
 
 					$info = array(
+					'_nfe_tipo_produto'    => $_POST['tipo_produto'],
 					'_nfe_classe_imposto'  => $_POST['classe_imposto'],
 					'_nfe_codigo_ean'      => $_POST['codigo_ean'],
 					'_nfe_gtin_tributavel' => $_POST['gtin_tributavel'],
@@ -2337,6 +2434,92 @@ jQuery(document).ready(function($) {
 					'url_danfe_etiqueta' => (string) $_POST['danfe_etiqueta'],
 					'data' => date_i18n('d/m/Y'),
 				);
+			}
+
+			update_post_meta($order_id, 'nfe', $order_nfe_data);
+
+		}
+
+	}
+
+	/**
+	 * Callback NFS-e
+	 *
+	 * @return void
+	 */
+	function nfse_callback(){
+
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
+
+			$order_key = esc_attr($_GET['order_key']);
+			$order_id = (int) $_GET['order_id'];
+			$order = wc_get_order($order_id);
+			$response = json_decode(file_get_contents("php://input"));
+
+			if (!$order || $order->get_order_key() != $order_key || !$response) {
+				header( 'HTTP/1.1 401 Unauthorized' );
+				exit;
+			}
+
+			$order_nfe_data = get_post_meta($order_id, 'nfe', true);
+			$is_new = true;
+			$is_lote_update = false;
+
+			if ( is_array($order_nfe_data) ) {
+
+				foreach($order_nfe_data as $key => $order_nfe){
+					$current_status = $order_nfe['status'];
+					$received_status = $response->status;
+					if($order_nfe['uuid'] == $response->uuid && $current_status != $received_status) {
+						$order_nfe_data[$key]['status'] = $received_status;
+						if ($response->modelo == 'lote_rps' && $response->status == 'processado') $is_lote_update = true;
+					}
+					if ( $order_nfe['uuid'] == $response->uuid ) {
+						$is_new = false;
+					}
+				}
+
+			} else {
+
+				$order_nfe_data = array();
+
+			}
+
+			if ( $is_new ) {
+				$order_nfe_data[] = array(
+					'uuid'   => (string) $response->uuid,
+					'status' => (string) $response->status,
+					'modelo' => (string) $response->modelo,
+					'n_nfe' => (int) $response->numero ?: $response->numero_lote,
+					'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
+					'url_xml' => (string) $response->xml,
+					'url_pdf' => (string) $response->url_pdf ?? '', 
+					'pdf_rps' => (string) $response->pdf_rps ?? '',
+					'data' => date_i18n('d/m/Y'),
+					'motivo' => is_array($response->motivo) ? implode(' | ', $response->motivo) : $response->motivo
+				);
+				if ($response->modelo == 'lote_rps' && $response->status == 'processado') $is_lote_update = true;
+			}
+
+			if ($is_lote_update) {
+				$this->get_credentials();
+				$webmaniabr_nfse = new NFSe($this->settings['bearer_access_token']);
+				foreach ($response->info_nfse as $nfse) {
+					$result = $webmaniabr_nfse->consultaNotaFiscal($nfse->uuid);
+					if ($result->status == 'aprovado') {
+						$order_nfe_data[] = array(
+							'uuid'   => (string) $result->uuid,
+							'status' => (string) $result->status,
+							'modelo' => (string) $result->modelo,
+							'n_nfe' => (int) $result->numero,
+							'n_serie' => "{$result->serie_rps}:{$result->numero_rps}",
+							'url_xml' => (string) $result->xml,
+							'url_pdf' => (string) $result->url_pdf ?? '', 
+							'pdf_rps' => (string) $result->pdf_rps ?? '',
+							'data' => date_i18n('d/m/Y')
+						);
+					} 
+				}
 			}
 
 			update_post_meta($order_id, 'nfe', $order_nfe_data);

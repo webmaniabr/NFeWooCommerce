@@ -23,116 +23,210 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$data = $this->order_data( $order_id );
 
 			// Async
-			if ($is_massa) {
-				$data['assincrono'] = 1;
+			if ($is_massa && isset($data['nfe'])) {
+				$data['nfe']['assincrono'] = 1;
 			}
 
 			do_action('nfe_before_response', $data, $order_id);
 
 			$this->get_credentials( $order_id );
 			$webmaniabr = new NFe($this->settings);
-			$response = $webmaniabr->emissaoNotaFiscal( $data );
-			$result[] = $response;
+			$webmaniabr_nfse = new NFSe($this->settings['bearer_access_token']);
 
-			do_action('nfe_after_response', $response, $order_id);
+			if (isset($data['nfe'])) {
+				$response = $webmaniabr->emissaoNotaFiscal( $data['nfe'] );
+				$result[] = $response;
+	
+				do_action('nfe_after_response', $response, $order_id);
 
-			if (isset($response->error) || $response->status == 'reprovado') {
+				if (isset($response->error) || $response->status == 'reprovado') {
 
-				$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
-				$mensagem .= '<ul style="padding-left:20px;">';
-				$mensagem .= '<li>'.$response->error.'</li>';
-
-				if (isset($response->log)){
-					if ($response->log->xMotivo){
-						if(isset($response->log->aProt[0]->xMotivo)){
-							$error = $response->log->aProt[0]->xMotivo;
-						}else{
-							$error = $response->log->xMotivo;
-						}
-						$mensagem .= '<li>'.$error.'</li>';
-					} else {
-						foreach ($response->log as $erros){
-							foreach ($erros as $erro) {
-								$mensagem .= '<li>'.$erro.'</li>';
+					$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
+					$mensagem .= '<ul style="padding-left:20px;">';
+					$mensagem .= '<li>'.$response->error.'</li>';
+	
+					if (isset($response->log)){
+						if ($response->log->xMotivo){
+							if(isset($response->log->aProt[0]->xMotivo)){
+								$error = $response->log->aProt[0]->xMotivo;
+							}else{
+								$error = $response->log->xMotivo;
+							}
+							$mensagem .= '<li>'.$error.'</li>';
+						} else {
+							foreach ($response->log as $erros){
+								foreach ($erros as $erro) {
+									$mensagem .= '<li>'.$erro.'</li>';
+								}
 							}
 						}
 					}
-				}
-				$mensagem .= '</ul>';
-
-				$invoice_error = isset($response->error) ? $response->error : $error;
-				$this->send_error_email( $mensagem, $order_id );
-				$this->add_id_to_invoice_errors( $invoice_error, $order_id );
-				$this->add_error( $mensagem );
-
-			} else {
-
-				if ( is_object($response) && ($response->status == 'processamento') ) {
-
-					$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' em processamento. O status será atualizado assim que a NF-e for processada pela Sefaz.' );
-
+					$mensagem .= '</ul>';
+	
+					$invoice_error = isset($response->error) ? $response->error : $error;
+					$this->send_error_email( $mensagem, $order_id );
+					$this->add_id_to_invoice_errors( $invoice_error, $order_id );
+					$this->add_error( $mensagem );
+	
 				} else {
-
-					if ( is_object($response) && $data['previa_danfe'] ) {
-
-						$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
-
+	
+					if ( is_object($response) && ($response->status == 'processamento') ) {
+	
+						$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' em processamento. O status será atualizado assim que a NF-e for processada pela Sefaz.' );
+	
 					} else {
-
-						$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
-						$this->remove_id_to_invoice_errors($order_id);
-
-					}
-				
-				}
-
-			}
-
-			// If API respond with status, register 'NF-e'
-			if ( is_object($response) && $response->status ) {
-
-				$nfe = get_post_meta( $order_id, 'nfe', true );
-
-				if (!$nfe)
-					$nfe = array();
-
-				// Identify NFe repeated
-				if (count($nfe) > 0){
-					$is_repeated = false;
-					foreach ($nfe as $nf){
-
-						if ($nf['chave_acesso'] == $response->chave){
-
-							$is_repeated = true;
-							break;
-
+	
+						if ( is_object($response) && $data['previa_danfe'] ) {
+	
+							$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
+	
+						} else {
+	
+							$this->add_success( 'Nota Fiscal do pedido nº '.$order_id.' gerada com sucesso.' );
+							$this->remove_id_to_invoice_errors($order_id);
+	
 						}
-
+					
 					}
-
-					if ($is_repeated) {
-						continue;
-					}
+	
 				}
-
-				// Register new NFe
-				$nfe[] = array(
-					'uuid'   => (string) $response->uuid,
-					'status' => (string) $response->status,
-					'chave_acesso' => $response->chave,
-					'n_recibo' => (int) $response->recibo,
-					'n_nfe' => (int) $response->nfe,
-					'n_serie' => (int) $response->serie,
-					'url_xml' => (string) $response->xml,
-					'url_danfe' => (string) $response->danfe,
-					'url_danfe_simplificada' => (string) $response->danfe_simples,
-					'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
-					'data' => date_i18n('d/m/Y'),
-				);
-
-				update_post_meta( $order_id, 'nfe', $nfe );
-
+	
+				// If API respond with status, register 'NF-e'
+				if ( is_object($response) && $response->status ) {
+	
+					$nfe = get_post_meta( $order_id, 'nfe', true );
+	
+					if (!$nfe)
+						$nfe = array();
+	
+					// Identify NFe repeated
+					if (count($nfe) > 0){
+						$is_repeated = false;
+						foreach ($nfe as $nf){
+	
+							if ($nf['chave_acesso'] == $response->chave){
+	
+								$is_repeated = true;
+								break;
+	
+							}
+	
+						}
+	
+						if ($is_repeated) {
+							continue;
+						}
+					}
+	
+					// Register new NFe
+					$nfe[] = array(
+						'uuid'   => (string) $response->uuid,
+						'status' => (string) $response->status,
+						'modelo' => 'nfe',
+						'chave_acesso' => $response->chave,
+						'n_recibo' => (int) $response->recibo,
+						'n_nfe' => (int) $response->nfe,
+						'n_serie' => (int) $response->serie,
+						'url_xml' => (string) $response->xml,
+						'url_danfe' => (string) $response->danfe,
+						'url_danfe_simplificada' => (string) $response->danfe_simples,
+						'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
+						'data' => date_i18n('d/m/Y'),
+					);
+	
+					update_post_meta( $order_id, 'nfe', $nfe );
+	
+				}
 			}
+
+			if (isset($data['nfse'])) {
+				$response = $webmaniabr_nfse->emissaoNFSe($data['nfse']);
+				$result[] = $response;
+
+				if (isset($response->error) || isset($response->errors) || $response->status == 'reprovado') {
+
+					$error_message = $response->error;
+					if (!$error_message) {
+						$error_message = (array) $response->errors;
+						if (!empty($error_message)) $error_message = reset($error_message);
+					}
+					if (!$error_message) $error_message = $response->motivo;
+					$mensagem = 'Erro ao emitir a NFS-e do Pedido #'.$order_id.':';
+					$mensagem .= '<ul style="padding-left:20px;">';
+					if (is_array($error_message)) {
+						foreach ($error_message as $error_message_item) $mensagem .= '<li>'.$error_message_item.'</li>';
+					}
+					else {
+						$mensagem .= '<li>'.$error_message.'</li>';
+					}
+					$mensagem .= '</ul>';
+	
+					$this->send_error_email( $mensagem, $order_id );
+					$this->add_id_to_invoice_errors( (is_array($error_message) ? implode(' | ', $error_message) : $error_message), $order_id );
+					$this->add_error( $mensagem );
+	
+				} else {
+	
+					if ( (is_object($response) && ($response->status == 'processando')) || $response->modelo == 'lote_rps' ) {
+	
+						$this->add_success( 'Nota Fiscal de Serviço do pedido nº '.$order_id.' em processamento. O status será atualizado assim que a NFS-e for processada pela Prefeitura.' );
+	
+					} else if ($response->status == 'aprovado') {
+	
+						$this->add_success( 'Nota Fiscal de Serviço do pedido nº '.$order_id.' gerada com sucesso.' );
+						$this->remove_id_to_invoice_errors($order_id);
+					
+					}
+	
+				}
+	
+				// If API respond with status, register 'NFS-e'
+				if ( is_object($response) && $response->status ) {
+	
+					$nfe = get_post_meta( $order_id, 'nfe', true );
+	
+					if (!$nfe)
+						$nfe = array();
+	
+					// Identify NFSe repeated
+					if (count($nfe) > 0){
+						$is_repeated = false;
+						foreach ($nfe as $nf){
+	
+							if ($nf['uuid'] == $response->uuid){
+	
+								$is_repeated = true;
+								break;
+	
+							}
+	
+						}
+	
+						if ($is_repeated) {
+							continue;
+						}
+					}
+	
+					// Register new NFe
+					$nfe[] = array(
+						'uuid'   => (string) $response->uuid,
+						'status' => (string) $response->status,
+						'modelo' => (string) $response->modelo,
+						'n_nfe' => (int) $response->numero ?: $response->numero_lote,
+						'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
+						'url_xml' => (string) $response->xml,
+						'url_pdf' => (string) $response->url_pdf ?? '', 
+						'pdf_rps' => (string) $response->pdf_rps ?? '',
+						'data' => date_i18n('d/m/Y'),
+					);
+	
+					update_post_meta( $order_id, 'nfe', $nfe );
+	
+				}
+			}
+			
+
+			
 
 		}
 
@@ -147,6 +241,36 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 * @return boolean
 	 */
 	function order_data( $post_id ){
+	
+		$order = new WC_Order( $post_id );
+		$products = [];
+		$services = [];
+
+		foreach ($order->get_items() as $item) {
+			$product_id = $item['product_id'];
+			if (get_post_meta($product_id, '_nfe_tipo_produto', true) == 2) $services[] = $item;
+			else $products[] = $item;
+		}
+
+		$data = [];
+		if (count($products) > 0) $data['nfe'] = $this->mount_nfe_data($post_id, $products);
+		if (count($services) > 0) $data['nfse'] = $this->mount_nfse_data($post_id, $services);
+
+		if (isset($data['nfe']) && isset($data['nfse'])) {
+			foreach ($data['nfse']['rps'] as $rps) 
+				$data['nfe']['pedido']['total'] -= $rps['servico']['valor_servicos'];
+		}
+
+		return $data;
+
+	}
+
+	/**
+	 * Mount NF-e Data
+	 *
+	 * @return boolean
+	 */
+	function mount_nfe_data( $post_id, $products ){
 
 		global $wpdb;
 
@@ -345,7 +469,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if (!isset($data['produtos']))
 			$data['produtos'] = array();
 
-		foreach ($order->get_items() as $key => $item){
+		foreach ($products as $key => $item){
 			
 			$product      = wc_get_product($item['product_id']);
 			$product_type = $product->get_type();
@@ -527,6 +651,64 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		// Return
 		return apply_filters('nfe_order_data', $data, $post_id);
 
+	}
+
+	/**
+	 * Mount NFS-e Data
+	 * 
+	 * @return array
+	 */
+	function mount_nfse_data($post_id, $services) {
+
+		$order = new WC_Order( $post_id );
+
+		// Init data
+		$data = array(
+			'ID' => $post_id,
+			'origem' => 'woocommerce',
+			'url_notificacao' => get_bloginfo('url').'/wc-api/nfse_callback?order_key='.$order->get_order_key().'&order_id='.$post_id,
+			'ambiente' => apply_filters( 'nfe_environment', ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente') ), $post_id ),
+			'rps' => []
+		);
+
+		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
+		$compare_addresses = $this->compare_addresses($order->get_id(), $envio_email);
+		$tomador = $compare_addresses['cliente'];
+		$tomador = array_filter($tomador, function($var) { return !empty($var); });
+
+		$services_info = [];
+		foreach ($services as $item) {
+			$product_id  = $item['product_id'];
+			$product = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
+			$classe_imposto = get_post_meta($product_id, '_nfe_classe_imposto', true) ?: get_option('wc_settings_woocommercenfe_imposto_nfse');
+			$service_info = [
+				'descricao' => $item['name'],
+				'quantidade' => $item['qty'],
+				'total' => number_format($order->get_item_subtotal( $item, false, false )*$item['qty'], 2, '.', '' ),
+			];
+			if (array_key_exists($classe_imposto, $services_info)) $services_info[$classe_imposto][] = $service_info;
+			else $services_info[$classe_imposto] = [$service_info];
+		}
+
+		foreach ($services_info as $key => $item) {
+			$valor_servicos = 0;
+			$discriminacao = '';
+			foreach ($item as $key2 => $service) {
+				$valor_servicos += $service['total'];
+				if ($key2 != 0) $discriminacao .= ' | ';
+				$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service['total'];
+			}
+			$data['rps'][] = [
+				'servico' => [
+					'valor_servicos' => $valor_servicos,
+					'discriminacao' => $discriminacao,
+					'classe_imposto' => $key
+				],
+				'tomador' => $tomador
+			];
+		}
+
+		return $data;
 	}
 
 	/**
