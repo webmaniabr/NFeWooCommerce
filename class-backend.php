@@ -2647,6 +2647,7 @@ jQuery(document).ready(function($) {
 	function validate_certificate( $force_update = false, $return_ajax = false ){
 
 		// Looking for credentials
+		$old_credentials = '';
 		$this->get_credentials();
 
 		if (!$this->settings['consumer_key'] && !$this->settings['consumer_secret'] && !$this->settings['oauth_access_token'] && !$this->settings['oauth_access_token_secret']){
