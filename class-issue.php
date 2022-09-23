@@ -340,7 +340,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if ($item['line_total'] < 0){
 
 					$discount = abs($item['line_total']);
-					$total_discount = $discount + $total_discount;
+					$total_discount += $discount;
 
 				} else {
 
@@ -349,7 +349,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 					$fee_aditional_informations .= $item['name'] . ': R$' . number_format($item['line_total'], 2, ',', '');
 					$fee = $item['line_total'];
-					$total_fee = $fee + $total_fee;
+					$total_fee += $fee;
 
 				}
 			}
@@ -660,7 +660,15 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 */
 	function mount_nfse_data($post_id, $services) {
 
+		// Vars
 		$order = new WC_Order( $post_id );
+		$coupons = method_exists($order, 'get_coupon_codes') ? $order->get_coupon_codes() : false;
+		$coupons_percentage = array();
+		$total_discount = $total_fee = $total_value = 0;
+		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
+		$compare_addresses = $this->compare_addresses($order->get_id(), $envio_email);
+		$tomador = $compare_addresses['cliente'];
+		$tomador = array_filter($tomador, function($var) { return !empty($var); });
 
 		// Init data
 		$data = array(
@@ -671,44 +679,87 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'rps' => []
 		);
 
-		$envio_email = get_option('wc_settings_woocommercenfe_envio_email');
-		$compare_addresses = $this->compare_addresses($order->get_id(), $envio_email);
-		$tomador = $compare_addresses['cliente'];
-		$tomador = array_filter($tomador, function($var) { return !empty($var); });
+		// Coupons
+		if ($coupons){
+			foreach($coupons as $coupon_code){
+				$coupon_obj = new WC_Coupon($coupon_code);
+				if($coupon_obj->discount_type == 'percent'){
+					$coupons_percentage[] = $coupon_obj->coupon_amount;
+				}
+			}
+		}
 
+		// Fees
+		if ($order->get_fees()){
+
+			foreach ($order->get_fees() as $key => $item){
+
+				if ($item['line_total'] < 0){
+
+					$discount = abs($item['line_total']);
+					$total_discount += $discount;
+
+				}
+
+			}
+
+		}
+
+		$total_discount = $order->get_total_discount() + $total_discount;
+
+		// Mount Services
 		$services_info = [];
 		foreach ($services as $item) {
+
 			$product_id  = $item['product_id'];
-			$product = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
-			$classe_imposto = get_post_meta($product_id, '_nfe_classe_imposto', true) ?: get_option('wc_settings_woocommercenfe_imposto_nfse');
-			$service_info = [
-				'descricao' => $item['name'],
-				'quantidade' => $item['qty'],
-				'total' => number_format($order->get_item_subtotal( $item, false, false )*$item['qty'], 2, '.', '' ),
-			];
-			if (array_key_exists($classe_imposto, $services_info)) $services_info[$classe_imposto][] = $service_info;
-			else $services_info[$classe_imposto] = [$service_info];
-		}
+			$ignore_product = apply_filters( 'nfe_order_product_ignore', get_post_meta($product_id, '_nfe_ignorar_nfe', true), $product_id, $post_id);
 
-		foreach ($services_info as $key => $item) {
-			$valor_servicos = 0;
-			$discriminacao = '';
-			foreach ($item as $key2 => $service) {
-				$valor_servicos += $service['total'];
-				if ($key2 != 0) $discriminacao .= ' | ';
-				$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service['total'];
+			if (!$ignore_product){
+
+				$product = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
+				$classe_imposto = get_post_meta($product_id, '_nfe_classe_imposto', true) ?: get_option('wc_settings_woocommercenfe_imposto_nfse');
+				$service_info = [
+					'descricao' => $item['name'],
+					'quantidade' => $item['qty'],
+					'total' => number_format($order->get_item_subtotal( $item, false, false )*$item['qty'], 2, '.', '' ),
+				];
+				if (array_key_exists($classe_imposto, $services_info)) $services_info[$classe_imposto][] = $service_info;
+				else $services_info[$classe_imposto] = [$service_info];
+
 			}
-			$data['rps'][] = [
-				'servico' => [
-					'valor_servicos' => $valor_servicos,
-					'discriminacao' => $discriminacao,
-					'classe_imposto' => $key
-				],
-				'tomador' => $tomador
-			];
+			
 		}
 
+		// Mount RPS
+		if (count($services_info) > 0){
+			foreach ($services_info as $key => $item) {
+
+				$valor_servicos = 0;
+				$discriminacao = '';
+	
+				foreach ($item as $key2 => $service) {
+
+					$valor_servicos += $service['total'];
+					if ($key2 != 0) $discriminacao .= ' | ';
+					$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service['total'];
+
+				}
+	
+				$data['rps'][] = [
+					'servico' => [
+						'valor_servicos' => ( number_format($valor_servicos, 2, '.', '' ) - number_format(($total_discount/count($services_info)), 2, '.', '' ) ),
+						'discriminacao' => $discriminacao,
+						'classe_imposto' => $key
+					],
+					'tomador' => $tomador
+				];
+	
+			}
+		}
+
+		// Return
 		return $data;
+
 	}
 
 	/**
