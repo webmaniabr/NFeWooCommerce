@@ -1016,10 +1016,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $billing === $shipping ) {
 
 			// Detect persontype and merge informations
-			$tipo_pessoa_shipping = $this->detect_persontype($post_id, '_shipping');
-			$shipping = array_merge( $this->get_persontype_info($post_id, $tipo_pessoa_shipping, '_shipping'), $shipping);
+			$tipo_pessoa_billing = $this->detect_persontype($post_id, '_billing');
+			$billing = array_merge( $this->get_persontype_info($post_id, $tipo_pessoa_billing, '_billing'), $billing);
 
-			$return['cliente'] = $shipping;
+			$return['cliente'] = $billing;
 
 		} else {
 
