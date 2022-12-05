@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.2.5.3';
+	public $version = '3.2.6';
 	protected static $_instance = NULL;
 
 	public static function instance() {
