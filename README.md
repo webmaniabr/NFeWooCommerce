@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="https://wmbr.s3.amazonaws.com/img/logo_webmaniabr_github.png">
+  <img src="https://wmbr.s3.amazonaws.com/img/logo_webmaniabr_github2.png">
 </p>
 
 # Nota Fiscal Eletrônica para WooCommerce
 
-Através do emissor de Nota Fiscal da WebmaniaBR®, você conta com a emissão e arquivamento das suas notas fiscais, cálculo automático de impostos, geração do Danfe para impressão e envio automático de e-mails para os clientes.
+Através do emissor de Nota Fiscal da Webmania®, você conta com a emissão e arquivamento das suas notas fiscais, cálculo automático de impostos, geração do Danfe para impressão e envio automático de e-mails para os clientes.
 
 - **Plugin Oficial no Wordpress: [Instalar plugin](https://wordpress.org/plugins/nota-fiscal-eletronica-woocommerce/)**
-- Emissor de Nota Fiscal WebmaniaBR®: [Saiba mais](https://webmaniabr.com/nota-fiscal-eletronica/)
+- Emissor de Nota Fiscal Webmania®: [Saiba mais](https://webmaniabr.com/nota-fiscal-eletronica/)
 - Documentação REST API: [Visualizar](https://webmaniabr.com/docs/rest-api-nfe/)
 
 ## Requisitos
 
-- Contrate um dos planos de Nota Fiscal Eletrônica da WebmaniaBR® a partir de R$32,90/mês: [Assine agora mesmo](https://webmaniabr.com/nota-fiscal-eletronica/).
-- Instale o módulo grátis do WooCommerce da WebmaniaBR® e configure conforme instruções.
+- Contrate um dos planos de Nota Fiscal da Webmania® (Teste 30 dias grátis): [Assine agora mesmo](https://webmaniabr.com/nota-fiscal-eletronica/).
+- Instale o módulo grátis do WooCommerce da Webmania® e configure conforme instruções.
 
 ## Instalação do Módulo
 
@@ -37,7 +37,7 @@ Hooks do Wordpress são recursos que permitem que você manipule processos sem m
 
 ## Controle das Notas Fiscais
 
-Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no painel da WebmaniaBR®. Simples e fácil.
+Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no painel da Webmania®. Simples e fácil.
 
 <p align="center">
 <img src="https://wmbr.s3.amazonaws.com/img/dashboard_webmaniabr_01.jpg">
@@ -45,7 +45,7 @@ Você pode gerenciar todas as Notas Fiscais e realizar a impressão do Danfe no 
 
 ## Suporte
 
-Qualquer dúvida acesse o [Painel WebmaniaBR®](https://webmaniabr.com/painel/) para *abrir um chamado* ou conversar em tempo real no *chat*.
+Qualquer dúvida acesse o [Painel Webmania®](https://webmaniabr.com/painel/) para *abrir um chamado* ou conversar em tempo real no *chat*.
 
 ## Contribuições
 
