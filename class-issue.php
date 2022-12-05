@@ -745,6 +745,18 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				}
 	
+				// Service additional information
+				$servico_inf = get_option('wc_settings_woocommercenfe_servico_inf');
+				if ($service_info = (!empty($_POST) && isset($_POST['nfe_service_info'])) ? $_POST['nfe_service_info'] : get_post_meta($post_id, '_nfe_service_info', true)) {
+					$value = $_POST['nfe_service_info_text'];
+
+					if (!isset($value)) {
+						$value = get_post_meta($post_id, '_nfe_service_info_text', true);
+					}
+					$servico_inf .= ' ' . $value;
+				}
+				if (!empty($servico_inf)) $discriminacao .= ' - ' . $servico_inf;
+	
 				$data['rps'][] = [
 					'servico' => [
 						'valor_servicos' => ( number_format($valor_servicos, 2, '.', '' ) - number_format(($total_discount/count($services_info)), 2, '.', '' ) ),

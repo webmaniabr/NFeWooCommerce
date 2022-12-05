@@ -609,6 +609,12 @@ jQuery(document).ready(function($) {
 				'id'   => 'wc_settings_woocommercenfe_cons_inf',
 			'class' => 'nfe_textarea',
 			),
+			'servico_inf' => array(
+				'name' => __( 'Descrição Complementar do Serviço', $this->domain ),
+				'type' => 'textarea',
+				'id'   => 'wc_settings_woocommercenfe_servico_inf',
+			'class' => 'nfe_textarea',
+			),
 			'section_ebanx' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_ebanx'
@@ -1051,6 +1057,8 @@ jQuery(document).ready(function($) {
 		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
 		$additional_info_checked = get_post_meta( $post->ID, '_nfe_additional_info', true );
 		$nfe_additional_info_text = get_post_meta( $post->ID, '_nfe_additional_info_text', true );
+		$service_info_checked = get_post_meta( $post->ID, '_nfe_service_info', true );
+		$nfe_service_info_text = get_post_meta( $post->ID, '_nfe_service_info_text', true );
 		$info_intermediador_checked = get_post_meta( $post->ID, '_nfe_info_intermediador', true );
 		$info_intermediador_type = get_post_meta( $post->ID, '_nfe_info_intermediador_type', true );
 		$info_intermediador_cnpj = get_post_meta( $post->ID, '_nfe_info_intermediador_cnpj', true );
@@ -1068,6 +1076,9 @@ jQuery(document).ready(function($) {
 			<?php } ?>
 			<?php if ($additional_info_checked && $additional_info_checked == 'on'){ ?>
 				$('.nfe_additional_info_text').show();
+			<?php } ?>
+			<?php if ($service_info_checked && $service_info_checked == 'on'){ ?>
+				$('.nfe_service_info_text').show();
 			<?php } ?>
 			<?php if ($info_intermediador_checked && $info_intermediador_checked == 'on'){ ?>
 				$('.nfe_info_intermediador').show();
@@ -1254,6 +1265,16 @@ jQuery(document).ready(function($) {
 	</div>
 	<div class="field nfe_additional_info_text">
 		<textarea type="text" name="nfe_additional_info_text" rows="6" style="width:100%;padding:5px;"><?php echo $nfe_additional_info_text; ?></textarea>
+	</div>
+
+	<div class="field" style="margin-bottom:10px;">
+		<p class="label" style="margin-bottom:8px;">
+		<input type="checkbox" name="nfe_service_info" <?php if ($service_info_checked) echo 'checked'; ?>>
+		<label class="title">Descrição complementar do serviço</label>
+		</p>
+	</div>
+	<div class="field nfe_service_info_text">
+		<textarea type="text" name="nfe_service_info_text" rows="6" style="width:100%;padding:5px;"><?php echo $nfe_service_info_text; ?></textarea>
 	</div>
 
 			<?php
@@ -2137,6 +2158,8 @@ jQuery(document).ready(function($) {
 					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
 					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? $_POST['nfe_additional_info'] : false,
 					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
+					'_nfe_service_info' => isset($_POST['nfe_service_info']) ? $_POST['nfe_service_info'] : false,
+					'_nfe_service_info_text' => $_POST['nfe_service_info_text'],
 					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? $_POST['nfe_info_intermediador'] : false,
 					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
 					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
@@ -2153,6 +2176,10 @@ jQuery(document).ready(function($) {
 
 				if (!$info['_nfe_additional_info']) {
 					delete_post_meta( $post_id, '_nfe_additional_info' );
+				}
+
+				if (!$info['_nfe_service_info']) {
+					delete_post_meta( $post_id, '_nfe_service_info' );
 				}
 
 				//Intermediador fields

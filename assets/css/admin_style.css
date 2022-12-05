@@ -40,7 +40,7 @@ p.form-field._shipping_ie_field{
 input#_shipping_person_info {
     width: auto!important;
 }
-.transporte, .nfe_installments, .nfe_additional_info_text, .product_others {
+.transporte, .nfe_installments, .nfe_additional_info_text, .nfe_service_info_text, .product_others {
     display: none;
 }
 #woocommernfe_informacoes_adicionais .title, #woocommernfe_informacoes .title {
