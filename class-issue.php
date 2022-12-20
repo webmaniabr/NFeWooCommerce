@@ -761,6 +761,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					'servico' => [
 						'valor_servicos' => ( number_format($valor_servicos, 2, '.', '' ) - number_format(($total_discount/count($services_info)), 2, '.', '' ) ),
 						'discriminacao' => $discriminacao,
+						'desconto_incondicionado' => number_format(($total_discount/count($services_info)), 2, '.', '' ),
 						'classe_imposto' => $key
 					],
 					'tomador' => $tomador
