@@ -999,7 +999,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'uf'          => get_post_meta($post_id, '_billing_state', true),
 			'cep'         => $WooCommerceNFeFormat->cep(get_post_meta($post_id, '_billing_postcode', true)),
 			'telefone'    => $phone,
-			'email'       => $email
+			'email'       => $email,
+			'pais'        => get_post_meta($post_id, '_billing_country', true)
 		);
 		$shipping = array(
 			'endereco'    => get_post_meta($post_id, '_shipping_address_1', true),
@@ -1010,7 +1011,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'uf'          => get_post_meta($post_id, '_shipping_state', true),
 			'cep'         => $WooCommerceNFeFormat->cep(get_post_meta($post_id, '_shipping_postcode', true)),
 			'telefone'    => $phone,
-			'email'       => $email
+			'email'       => $email,
+			'pais'        => get_post_meta($post_id, '_shipping_country', true)
 		);
 
 		if ( $shipping['endereco'] == '' ) {
@@ -1045,6 +1047,34 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			$return['cliente'] = $billing;
 			$return['transporte']['entrega'] = $shipping;
+		}
+
+		//Foreign customer NFS-e
+		if (!empty($return['cliente']['pais'])) {
+			$pais = $return['cliente']['pais'];
+			if ($pais != 'BR') {
+				//Remove address fields
+				unset($return['cliente']['endereco']);
+				unset($return['cliente']['complemento']);
+				unset($return['cliente']['numero']);
+				unset($return['cliente']['bairro']);
+				unset($return['cliente']['cidade']);
+				unset($return['cliente']['uf']);
+				unset($return['cliente']['cep']);
+
+				$return['cliente']['sigla_pais'] = $pais;
+				if (isset($return['cliente']['nome_completo'])) {
+					$return['cliente']['nome_estrangeiro'] = $return['cliente']['nome_completo'];
+					unset($return['cliente']['cpf']);
+					unset($return['cliente']['nome_completo']);
+				}
+				else if (isset($return['cliente']['razao_social'])) {
+					$return['cliente']['nome_estrangeiro'] = $return['cliente']['razao_social'];
+					unset($return['cliente']['cnpj']);
+					unset($return['cliente']['razao_social']);
+				}
+			}
+			unset($return['cliente']['pais']);
 		}
 
 		return $return;
