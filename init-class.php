@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.2.7';
+	public $version = '3.2.8';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -107,28 +107,46 @@ class WooCommerceNFe {
 			)
 		){
 
+			$hasAPI1Credentials = false;
+			$hasAPI2Credentials = false;
+
 			// Validate Credentials
 			if (
-				!get_option('wc_settings_woocommercenfe_access_token') ||
-				!get_option('wc_settings_woocommercenfe_access_token_secret') ||
-				!get_option('wc_settings_woocommercenfe_consumer_key') ||
-				!get_option('wc_settings_woocommercenfe_consumer_secret')
+				get_option('wc_settings_woocommercenfe_access_token') &&
+				get_option('wc_settings_woocommercenfe_access_token_secret') &&
+				get_option('wc_settings_woocommercenfe_consumer_key') &&
+				get_option('wc_settings_woocommercenfe_consumer_secret')
 			) {
-
+				$hasAPI1Credentials = true;
+			}
+			if (get_option('wc_settings_woocommercenfe_bearer_access_token')) {
+				$hasAPI2Credentials = true;
+			}
+			if (!$hasAPI1Credentials && !$hasAPI2Credentials) {
 				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
 				return false;
+			}
 
-			} elseif (
+			//Validate API 1.0 configs
+			if ($hasAPI1Credentials && (
 				!get_option('wc_settings_woocommercenfe_natureza_operacao') ||
 				!get_option('wc_settings_woocommercenfe_imposto') ||
 				!get_option('wc_settings_woocommercenfe_ncm') ||
 				get_option('wc_settings_woocommercenfe_origem') < 0 ||
 				get_option('wc_settings_woocommercenfe_origem') == 'null'
-			) {
+			)) {
 
 				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
 					return false;
 
+			}
+
+			//Validate API 2.0 configs
+			if ($hasAPI2Credentials && (
+				!get_option('wc_settings_woocommercenfe_imposto_nfse')
+			)) {
+				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Classe de Imposto do serviço em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
+				return false;
 			}
 
 		}
