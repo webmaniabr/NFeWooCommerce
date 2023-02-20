@@ -249,7 +249,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		} elseif ( isset($certificate->status) && $certificate->status == 'null_credentials' ) {
 			echo '<h4 class="cert_ajax_error">'.$certificate->msg.'</h4>';
 		} else {
-			echo '<h4 class="cert_ajax_error">Não foi possível atualizar seu Certificado Digital A1. Por favor, solicite suporte para <a target="_blank" href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a>.</h4>';
+			echo '<h4 class="cert_ajax_error">Informe as credenciais da API 1.0 para verificar o Certificado Digital A1.</h4>';
 		}
 	echo '</span>';
 ?>
