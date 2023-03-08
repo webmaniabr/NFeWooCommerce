@@ -756,12 +756,26 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					$servico_inf .= ' ' . $value;
 				}
 				if (!empty($servico_inf)) $discriminacao .= ' - ' . $servico_inf;
+
+				// Discount
+				$tipo_desconto = $_POST['tipo_desconto'];
+				if (empty($tipo_desconto)) $tipo_desconto = get_post_meta($post_id, '_nfse_tipo_desconto', true);
+				if (empty($tipo_desconto)) $tipo_desconto = get_option('wc_settings_woocommercenfe_tipo_desconto_nfse');
+				if (empty($tipo_desconto)) $tipo_desconto = 1;
+
+				// Calculate discount and total value
+				$valor_servicos = number_format($valor_servicos, 2, '.', '' );
+				$discount = number_format(($total_discount/count($services_info)), 2, '.', '' );
+				if ($discount && $discount > 0) {
+					$valor_servicos = ($tipo_desconto == 1) ? number_format($valor_servicos-$discount, 2, '.', '') : $valor_servicos;
+				}
 	
 				$data['rps'][] = [
 					'servico' => [
-						'valor_servicos' => ( number_format($valor_servicos, 2, '.', '' ) - number_format(($total_discount/count($services_info)), 2, '.', '' ) ),
+						'valor_servicos' => $valor_servicos,
 						'discriminacao' => $discriminacao,
-						'desconto_incondicionado' => number_format(($total_discount/count($services_info)), 2, '.', '' ),
+						'desconto_incondicionado' => ($tipo_desconto == 1) ? $discount : 0,
+						'desconto_condicionado' => ($tipo_desconto == 2) ? $discount : 0,
 						'classe_imposto' => $key
 					],
 					'tomador' => $tomador

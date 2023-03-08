@@ -509,6 +509,16 @@ jQuery(document).ready(function($) {
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_imposto_nfse'
 			),
+			'tipo_desconto_nfse' => array(
+				'name' => __( 'Tipo de desconto', $this->domain ),
+				'type' => 'select',
+				'id'   => 'wc_settings_woocommercenfe_tipo_desconto_nfse',
+				'options' => array(
+					'0' => 'Selecionar',
+					'1' => 'Desconto incondicional',
+					'2' => 'Desconto condicional'
+				),
+			),
 			'section_end_nfse2' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end_nfse'
@@ -1049,6 +1059,7 @@ jQuery(document).ready(function($) {
 		// Vars
 		$contribuinte = get_post_meta($post->ID, '_nfe_contribuinte', true);
 		$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
+		$tipo_desconto = get_post_meta($post->ID, '_nfse_tipo_desconto', true);
 		$volume_checked = get_post_meta($post->ID, '_nfe_volume_weight', true);
 		$installments_checked = get_post_meta($post->ID, '_nfe_installments', true);
 		$nfe_installments_n = get_post_meta($post->ID, '_nfe_installments_n', true);
@@ -1138,6 +1149,16 @@ jQuery(document).ready(function($) {
 				<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Remetente', $this->domain ); ?></option>
 				<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Destinatário', $this->domain ); ?></option>
 				<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem Ocorrência de Transporte', $this->domain ); ?></option>
+			</select>
+		</div>
+		<div class="field">
+			<p class="label" style="margin-bottom:8px;">
+				<label class="title">Tipo de desconto (NFS-e)</label>
+			</p>
+			<select name="tipo_desconto" id="tipo_desconto">
+				<option value="0" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '0') echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
+				<option value="1" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '1') echo 'selected'; ?> ><?php _e( 'Desconto incondicional', $this->domain ); ?></option>
+				<option value="2" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '2') echo 'selected'; ?> ><?php _e( 'Desconto condicional', $this->domain ); ?></option>
 			</select>
 		</div>
 		<div class="field nfe_volume_weight" style="margin-bottom:10px;">
@@ -2147,6 +2168,7 @@ jQuery(document).ready(function($) {
 					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
 					'_nfe_contribuinte' => $_POST['nfe_contribuinte'],
 					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
+					'_nfse_tipo_desconto' 		=> $_POST['tipo_desconto'],
 					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? $_POST['nfe_volume_weight'] : false,
 					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
 					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
