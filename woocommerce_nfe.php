@@ -3,11 +3,11 @@
 /**
 * Plugin Name: Nota Fiscal Eletrônica WooCommerce
 * Plugin URI: webmaniabr.com
-* Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da WebmaniaBR®.
+* Description: Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da Webmania®.
 * Author: WebmaniaBR
 * Author URI: https://webmaniabr.com
-* Version: 3.2.9
-* Copyright: © 2009-2022 WebmaniaBR.
+* Version: 3.2.10
+* Copyright: © 2009-2023 Webmania.
 * License: GNU General Public License v3.0
 * License URI: http://www.gnu.org/licenses/gpl-3.0.html
 */
