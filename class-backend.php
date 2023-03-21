@@ -994,8 +994,8 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
-	if (!$order_nfe['url_danfe_simplificada']) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
-	if (!$order_nfe['url_danfe_etiqueta']) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	if (!isset($order_nfe['url_danfe_simplificada']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+	if (!isset($order_nfe['url_danfe_etiqueta']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
@@ -1014,10 +1014,14 @@ jQuery(document).ready(function($) {
 				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'] ?>"><span class="wrt"> Darps </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php }
 			} else { ?>
-			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
-			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
-			<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
-			<?php } ?>
+			<?php if (isset($order_nfe['url_danfe'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<?php } if (isset($order_nfe['url_danfe_simplificada'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+			<?php } if (isset($order_nfe['url_danfe_etiqueta'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+			<?php }
+			} ?>
 		</h4>
 		<?php
 			$post_url = get_edit_post_link($post->ID);
