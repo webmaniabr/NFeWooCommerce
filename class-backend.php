@@ -515,6 +515,7 @@ jQuery(document).ready(function($) {
 				'id'   => 'wc_settings_woocommercenfe_tipo_desconto_nfse',
 				'options' => array(
 					'0' => 'Selecionar',
+					'3' => 'Nenhum',
 					'1' => 'Desconto incondicional',
 					'2' => 'Desconto condicional'
 				),
@@ -1161,6 +1162,7 @@ jQuery(document).ready(function($) {
 			</p>
 			<select name="tipo_desconto" id="tipo_desconto">
 				<option value="0" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '0') echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
+				<option value="3" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '3') echo 'selected'; ?> ><?php _e( 'Nenhum', $this->domain ); ?></option>
 				<option value="1" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '1') echo 'selected'; ?> ><?php _e( 'Desconto incondicional', $this->domain ); ?></option>
 				<option value="2" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '2') echo 'selected'; ?> ><?php _e( 'Desconto condicional', $this->domain ); ?></option>
 			</select>

@@ -766,8 +766,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// Calculate discount and total value
 				$valor_servicos = number_format($valor_servicos, 2, '.', '' );
 				$discount = number_format(($total_discount/count($services_info)), 2, '.', '' );
-				if ($discount && $discount > 0) {
-					$valor_servicos = ($tipo_desconto == 1) ? number_format($valor_servicos-$discount, 2, '.', '') : $valor_servicos;
+				if ($discount && $discount > 0 && $tipo_desconto == 3) {
+					$valor_servicos = number_format($valor_servicos-$discount, 2, '.', '');
 				}
 	
 				$data['rps'][] = [
