@@ -107,8 +107,15 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 		foreach ($data as $item) {
 
-			file_put_contents("{$this->files_folder}/{$item['chave']}.pdf", file_get_contents($item['url']));
-			$pdf->addPDF("{$this->files_folder}/{$item['chave']}.pdf", 'all');
+			try {
+				$content = ini_get('allow_url_fopen') ? file_get_contents($item['url']) : $this->curl_get_file_contents($item['url']);
+				if ($content) {
+					file_put_contents("{$this->files_folder}/{$item['chave']}.pdf", $content);
+					$pdf->addPDF("{$this->files_folder}/{$item['chave']}.pdf", 'all');
+				}
+			} catch (Exception $e) {
+					continue;
+			}
 
 		}
 
@@ -120,4 +127,19 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 	}
 
+	/**
+	 * Get file content from URL using curl
+	 * 
+	 * @param string $url
+	 * @return mixed
+	 */
+	private function curl_get_file_contents($url) {
+		$c = curl_init();
+		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($c, CURLOPT_URL, $url);
+		$contents = curl_exec($c);
+		curl_close($c);
+
+		return $contents ?? false;
+	}
 }
