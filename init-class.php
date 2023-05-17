@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.0';
+	public $version = '3.3.1';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -49,7 +49,7 @@ class WooCommerceNFe {
 	function hooks(){
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-		add_action( 'woocommerce_order_status_changed', array($this, 'issue_automatic_invoice'), 10, 4 );
+		add_action( 'transition_post_status', array($this, 'issue_automatic_invoice'), 10, 4 );
 		add_filter( "plugin_action_links_".plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
 		do_action( 'woocommercenfe_loaded' );
 
@@ -258,18 +258,24 @@ class WooCommerceNFe {
 	 *
 	 * @return void
 	 */
-	function issue_automatic_invoice( $order_id, $from, $to, $order ) {
+	function issue_automatic_invoice( $to, $from, $post ) {
+		
+		// Validations
+		if (get_post_type($post) != 'shop_order')
+			return;
 
-		// Validate
 		$option = apply_filters( 'nfe_issue_automatic', get_option('wc_settings_woocommercenfe_emissao_automatica') );
 		if ( !$option ){
 			return;
 		}
 
+		// Vars
+		$order_id = $post->ID;
+
 		// Process
 		if (
-			$to == 'processing' && ($option == 1 || $option == 'yes') ||
-			$to == 'completed' && $option == 2
+			$to == 'wc-processing' && ($option == 1 || $option == 'yes') ||
+			$to == 'wc-completed' && $option == 2
 		){
 
 			$nfes = get_post_meta( $order_id, 'nfe', true );
