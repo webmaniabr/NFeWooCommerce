@@ -33,7 +33,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 			add_action( 'wp_enqueue_scripts', array($this, 'scripts') );
 			add_filter( 'woocommerce_billing_fields', array($this, 'billing_fields') );
 			add_filter( 'woocommerce_shipping_fields', array($this, 'shipping_fields') );
-			add_action( 'woocommerce_checkout_process', array($this, 'valide_checkout_fields') );
+			add_action( 'woocommerce_checkout_process', array($this, 'validate_checkout_fields') );
 			add_filter( 'woocommerce_localisation_address_formats', array( $this, 'localisation_address_formats' ) );
 			add_filter( 'woocommerce_formatted_address_replacements', array( $this, 'formatted_address_replacements' ), 1, 2 );
 			add_filter( 'woocommerce_order_formatted_billing_address', array( $this, 'order_formatted_billing_address' ), 1, 2 );
@@ -41,7 +41,11 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
       add_filter( 'woocommerce_my_account_my_address_formatted_address', array($this, 'my_account_my_address_formatted_address' ), 1, 3 );
       add_filter( 'woocommerce_form_field', array($this, 'remove_checkout_optional_fields_label'), 10, 4 );
 
-		}
+		} elseif (WooCommerceNFe::is_extra_checkout_fields_activated()){
+
+      add_action( 'woocommerce_checkout_process', array($this, 'validate_checkout_fields_with_plugin') );
+
+    }
 
   }
   
@@ -68,11 +72,16 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
       global $version_woonfe;
 
       $version = $version_woonfe;
+      $cep = $tipo_pessoa = $mascara_campos = 'no';
       $array = array();
 
-      $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
-      $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');
-      $cep = get_option('wc_settings_woocommercenfe_cep');
+      if (!WooCommerceNFe::is_extra_checkout_fields_activated()){
+        $tipo_pessoa = get_option('wc_settings_woocommercenfe_tipo_pessoa');
+        $mascara_campos = get_option('wc_settings_woocommercenfe_mascara_campos');
+        $cep = get_option('wc_settings_woocommercenfe_cep');
+      } else {
+        $cep = get_option('wc_settings_woocommercenfe_cep');
+      }
 
       wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version, true );
       wp_register_script( 'woocommercenfe_correios', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/correios.min.js', __FILE__ ) ), array('jquery'), $version, true );
@@ -296,7 +305,7 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   }
 
-  function valide_checkout_fields(){
+  function validate_checkout_fields(){
 
     $billing_persontype = isset( $_POST['billing_persontype'] ) ? $_POST['billing_persontype'] : 0;
 
@@ -335,6 +344,19 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
           wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
 
       }
+
+    }
+
+  }
+
+  function validate_checkout_fields_with_plugin(){
+
+    $domain = '';
+    $bairro = get_option('wc_settings_woocommercenfe_bairro');
+
+    if ($bairro == 'yes' && empty( $_POST['billing_neighborhood'] )){
+
+      wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Bairro', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
 
     }
 

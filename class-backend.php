@@ -666,11 +666,18 @@ jQuery(document).ready(function($) {
 				'default' => 'yes',
 			),
 			'cep' => array(
-				'name' => __( 'Preenchimento automático do Endereço', $this->domain ),
+				'name' => __( 'Preenchimento automático do endereço', $this->domain ),
 				'type' => 'checkbox',
-				'desc' => __( 'Caso esteja marcado o endereço será automaticamente preenchido quando o usuário informar o CEP.', $this->domain ),
+				'desc' => __( 'Caso esteja marcado, o endereço será automaticamente preenchido quando o usuário informar o CEP.', $this->domain ),
 				'id'   => 'wc_settings_woocommercenfe_cep',
 				'default' => 'yes',
+			),
+			'bairro' => array(
+				'name' => __( 'Bairro obrigatório', $this->domain ),
+				'type' => 'checkbox',
+				'desc' => __( 'Caso esteja marcado, o campo do endereço Bairro será obrigatório o preenchimento.', $this->domain ),
+				'id'   => 'wc_settings_woocommercenfe_bairro',
+				'default' => 'no',
 			),
 			'section_end4' => array(
 				'type' => 'sectionend',
@@ -680,10 +687,10 @@ jQuery(document).ready(function($) {
 
 		// WooCommerce Extra Checkout Fields for Brazil
 		if ( WooCommerceNFe::is_extra_checkout_fields_activated() ) {
-			unset($settings['title5']);
 			unset($settings['tipo_pessoa']);
 			unset($settings['mascara_campos']);
-			unset($settings['cep']);
+		} else {
+			unset($settings['bairro']);
 		}
 
 		if (
@@ -1009,10 +1016,9 @@ jQuery(document).ready(function($) {
 			<span>---</span>
 			<?php } else if ($modelo_nfe == 'NFS-e') {
 				if (isset($order_nfe['url_pdf']) && !empty($order_nfe['url_pdf'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'] ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
-			<?php }
-				if (isset($order_nfe['pdf_rps']) && !empty($order_nfe['pdf_rps'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'] ?>"><span class="wrt"> Darps </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'] ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+			<?php } elseif (isset($order_nfe['pdf_rps']) && !empty($order_nfe['pdf_rps'])) { ?>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'] ?>"><span class="wrt">DARPS </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php }
 			} else { ?>
 			<?php if (isset($order_nfe['url_danfe'])) { ?>
@@ -2442,7 +2448,7 @@ jQuery(document).ready(function($) {
 
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
 
-			$nfe_data = $_POST['data'];
+			$nfe_data = json_decode(stripslashes($_POST['data']), true);
 			$nfe_order_id = (int) $nfe_data['ID'];
 			$order_key = esc_attr($_GET['order_key']);
 			$order_id = (int) $_GET['order_id'];
@@ -2548,7 +2554,7 @@ jQuery(document).ready(function($) {
 					'n_nfe' => (int) $response->numero ?: $response->numero_lote,
 					'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
 					'url_xml' => (string) $response->xml,
-					'url_pdf' => (string) $response->url_pdf ?? '', 
+					'url_pdf' => (string) $response->pdf_nfse ?? '', 
 					'pdf_rps' => (string) $response->pdf_rps ?? '',
 					'data' => date_i18n('d/m/Y'),
 					'motivo' => is_array($response->motivo) ? implode(' | ', $response->motivo) : $response->motivo
@@ -2569,7 +2575,7 @@ jQuery(document).ready(function($) {
 							'n_nfe' => (int) $result->numero,
 							'n_serie' => "{$result->serie_rps}:{$result->numero_rps}",
 							'url_xml' => (string) $result->xml,
-							'url_pdf' => (string) $result->url_pdf ?? '', 
+							'url_pdf' => (string) $result->pdf_nfse ?? '', 
 							'pdf_rps' => (string) $result->pdf_rps ?? '',
 							'data' => date_i18n('d/m/Y')
 						);

@@ -215,7 +215,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'n_nfe' => (int) $response->numero ?: $response->numero_lote,
 						'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
 						'url_xml' => (string) $response->xml,
-						'url_pdf' => (string) $response->url_pdf ?? '', 
+						'url_pdf' => (string) $response->pdf_nfse ?? '', 
 						'pdf_rps' => (string) $response->pdf_rps ?? '',
 						'data' => date_i18n('d/m/Y'),
 					);
