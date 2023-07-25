@@ -769,6 +769,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if ($discount && $discount > 0 && $tipo_desconto == 3) {
 					$valor_servicos = number_format($valor_servicos-$discount, 2, '.', '');
 				}
+
+				if (get_option('wc_settings_woocommercenfe_incluir_taxas_nfse') && $order->get_total_tax() > 0) {
+					$valor_servicos += $order->get_total_tax();
+				}
 	
 				$data['rps'][] = [
 					'servico' => [

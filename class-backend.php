@@ -520,6 +520,13 @@ jQuery(document).ready(function($) {
 					'2' => 'Desconto condicional'
 				),
 			),
+			'inclui_taxas_nfse' => array(
+				'name' => __( 'Incluir taxas no valor do serviço', $this->domain ),
+				'id'   => 'wc_settings_woocommercenfe_incluir_taxas_nfse',
+				'type' => 'checkbox',
+				'desc' => __( 'Incluir o valor das taxas do pedido no valor do serviço da NFS-e', $this->domain ),
+				'default' => 'no',
+			),
 			'section_end_nfse2' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end_nfse'
