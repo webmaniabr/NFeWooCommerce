@@ -60,6 +60,9 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 			//Set Danfe's url 
 			$item = array('chave' => $nf['chave_acesso']);
+			if (isset($nf['url_danfe']) && trim($nf['url_danfe']) == '' && $nf['chave_acesso']) {
+				$nf['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$nf['chave_acesso'].'/';
+			}
 			if ($type == 'normal') {
 				$item['url'] = ($nf['modelo'] == 'nfse') ? $nf['pdf_rps'] : $nf['url_danfe'];
 			}
@@ -109,22 +112,24 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 			try {
 				$content = ini_get('allow_url_fopen') ? file_get_contents($item['url']) : $this->curl_get_file_contents($item['url']);
-				if ($content) {
+				if ($content && (strpos($content, '%PDF-') !== false && strpos($content, '%%EOF') !== false)) {
 					file_put_contents("{$this->files_folder}/{$item['chave']}.pdf", $content);
 					$pdf->addPDF("{$this->files_folder}/{$item['chave']}.pdf", 'all');
 				}
 			} catch (Exception $e) {
-					continue;
+				continue;
 			}
 
 		}
 
 		$filename = time()."-".random_int(1, 10000000000);
 
-		$result = $pdf->merge('file', "{$this->files_folder}/{$filename}.pdf");
-
-		return array("result" => $result, "file" => $filename);
-
+		try {
+			$result = $pdf->merge('file', "{$this->files_folder}/{$filename}.pdf");
+			return array("result" => $result, "file" => $filename);
+		} catch (Exception $e) {
+			return array("result" => false, "file" => $filename);
+		}
 	}
 
 	/**

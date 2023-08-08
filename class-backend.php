@@ -952,6 +952,14 @@ jQuery(document).ready(function($) {
 
 					if ($order_nfe['chave_acesso'] == $chave) {
 						$order_nfe['status'] = $new_status;
+						isset($response->nfe) && $order_nfe['n_nfe'] = $response->nfe;
+						isset($response->uuid) && $order_nfe['uuid'] = $response->uuid;
+						isset($response->recibo) && $order_nfe['n_recibo'] = $response->recibo;
+						isset($response->serie) && $order_nfe['n_serie'] = $response->serie;
+						isset($response->xml) && $order_nfe['url_xml'] = $response->xml;
+						isset($response->danfe) && $order_nfe['url_danfe'] = $response->danfe;
+						isset($response->danfe_simples) && $order_nfe['url_danfe_simplificada'] = $response->danfe_simples;
+						isset($response->danfe_etiqueta) && $order_nfe['url_danfe_etiqueta'] = $response->danfe_etiqueta;
 					}
 
 				}
@@ -1009,8 +1017,14 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
-	if (!isset($order_nfe['url_danfe_simplificada']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
-	if (!isset($order_nfe['url_danfe_etiqueta']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	if (isset($order_nfe['url_danfe']) && trim($order_nfe['url_danfe']) == '' && $chave_acesso_nfe) {
+		$order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'/';
+	}
+	if (isset($order_nfe['url_xml']) && trim($order_nfe['url_xml']) == '' && $chave_acesso_nfe) {
+		$xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'/';
+	}
+	if ((!isset($order_nfe['url_danfe_simplificada']) || trim($order_nfe['url_danfe_simplificada']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+	if ((!isset($order_nfe['url_danfe_etiqueta']) || trim($order_nfe['url_danfe_etiqueta']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
