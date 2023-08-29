@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.3';
+	public $version = '3.3.4';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -289,7 +289,11 @@ class WooCommerceNFe {
 			}
 
 			$nf = new WooCommerceNFeIssue;
-			$response = $nf->send( array( $order_id ) );
+
+            // Prevent orders for only ignored products from auto issuing NFe
+            if ($nf->is_only_ignored_items( $order_id )) return;
+
+            $response = $nf->send( array( $order_id ) );
 
 		}
 
