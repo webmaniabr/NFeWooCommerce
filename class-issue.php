@@ -744,6 +744,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service['total'];
 
 				}
+				
+				if (get_option('wc_settings_woocommercenfe_incluir_taxas_nfse') && $order->get_total_fees() > 0) {
+					$valor_servicos += $order->get_total_fees();
+					$discriminacao .= ' - Taxas: R$'. number_format($order->get_total_fees());
+				}
 	
 				// Service additional information
 				$servico_inf = get_option('wc_settings_woocommercenfe_servico_inf');
@@ -770,10 +775,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					$valor_servicos = number_format($valor_servicos-$discount, 2, '.', '');
 				}
 
-				if (get_option('wc_settings_woocommercenfe_incluir_taxas_nfse') && $order->get_total_tax() > 0) {
-					$valor_servicos += $order->get_total_tax();
-				}
-	
 				$data['rps'][] = [
 					'servico' => [
 						'valor_servicos' => $valor_servicos,
@@ -987,6 +988,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		} else {
 
 			$discount = abs($total_bundle - $total_products);
+            $discount = ($total_bundle == 0 && $total_products > 0) ? 0 : $discount;
 
 		}
 
@@ -1242,5 +1244,26 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 	}
+
+    /**
+     * Prevent orders for only ignored products from issuing NFE
+     *
+     * @return boolean
+     **/
+    function is_only_ignored_items( $post_id ) {
+
+        $order = new WC_Order( $post_id );
+        $items = $order->get_items();
+
+        // If automatic issue, ignore orders with only ignored items
+		foreach($items as $item){
+			$ignore_item = apply_filters( 'nfe_order_product_ignore', get_post_meta($item['product_id'], '_nfe_ignorar_nfe', true), $item['product_id'], $post_id);
+			if ($ignore_item != 1){
+				return false;
+			}
+		}
+
+        return true;
+    }
 
 }
