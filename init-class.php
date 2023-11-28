@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.5';
+	public $version = '3.3.6';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -279,7 +279,7 @@ class WooCommerceNFe {
 			$to == 'wc-completed' && $option == 2
 		){
 			
-			$nfes = $order->get_meta( 'nfe' );
+			$nfes = get_post_meta( $order->id,  'nfe', true );
 
 			if ( !empty($nfes) && is_array($nfes) ) {
 				foreach ( $nfes as $nfe ) {
@@ -396,7 +396,12 @@ class WooCommerceNFe {
 
 	}
 
-	function validate_credentials($credentials) {
+	/**
+	 * Validate credentials
+	 *
+	 * @return boolean
+	 */
+	public function validate_credentials($credentials) {
 
 		if (strlen($credentials['consumer_key']) != 32 || strlen($credentials['consumer_secret']) != 48 || strlen($credentials['oauth_access_token']) <= 48 || strlen($credentials['oauth_access_token_secret']) != 48) {
 			return false;

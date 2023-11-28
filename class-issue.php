@@ -35,6 +35,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$webmaniabr_nfse = new NFSe($this->settings['bearer_access_token']);
 
 			if (isset($data['nfe'])) {
+
 				$response = $webmaniabr->emissaoNotaFiscal( $data['nfe'] );
 				$result[] = $response;
 	
@@ -94,8 +95,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				// If API respond with status, register 'NF-e'
 				if ( is_object($response) && $response->status ) {
-	
-					$nfe = $order->get_meta( 'nfe' );
+
+					$nfe = get_post_meta( $order->id, 'nfe', true );
 	
 					if (!$nfe)
 						$nfe = array();
@@ -135,7 +136,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 
-					update_post_meta( $order_id, 'nfe', $nfe );
+					update_post_meta( $order->id, 'nfe', $nfe );
 	
 				}
 			}
@@ -184,7 +185,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// If API respond with status, register 'NFS-e'
 				if ( is_object($response) && $response->status ) {
 	
-					$nfe = $order->get_meta( 'nfe' );
+					$nfe = get_post_meta( $order->id, 'nfe', true );
 	
 					if (!$nfe)
 						$nfe = array();
@@ -221,7 +222,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 	
-					update_post_meta( $order_id, 'nfe', $nfe );
+					update_post_meta( $order->id, 'nfe', $nfe );
 	
 				}
 			}
@@ -1210,7 +1211,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
 		$order = wc_get_order( $order_id );
-		$nfes = $order->get_meta( 'nfe'  );
+		$nfes = get_post_meta( $order->id,  'nfe', true );
 
 		if ( !empty($nfes) && is_array($nfes) ) {
 			foreach ( $nfes as $nfe ) {

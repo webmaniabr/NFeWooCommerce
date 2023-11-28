@@ -39,7 +39,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_action( 'wp_ajax_force_digital_certificate_update', array($this, 'ajax_force_certificate_update') );
 
 		// HPOS version
-		if (class_exists('OrderUtil') && OrderUtil::custom_orders_table_usage_is_enabled()){
+		if (class_exists( \Automattic\WooCommerce\Utilities\OrderUtil::class ) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()){
 			add_filter( 'manage_woocommerce_page_wc-orders_columns', array( $this, 'add_order_status_column_header' ), 20 );
 			add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( $this, 'add_order_status_column_content' ), 10, 2 ); 
 		}
@@ -958,7 +958,7 @@ jQuery(document).ready(function($) {
 			} else {
 
 				$new_status = $response->status;
-				$nfe_data = $order->get_meta( 'nfe' );
+				$nfe_data = get_post_meta( $order->id, 'nfe', true );
 
 				foreach ($nfe_data as &$order_nfe) {
 
@@ -976,7 +976,7 @@ jQuery(document).ready(function($) {
 
 				}
 
-				$order->update_meta_data( 'nfe', $nfe_data );
+				update_post_meta( $order->id, 'nfe', $nfe_data );
 				$this->add_success( 'NF-e atualizada com sucesso' );
 
 			}
@@ -995,7 +995,7 @@ jQuery(document).ready(function($) {
 		if (isset($order->ID)){
 			$order = wc_get_order( $order->ID );
 		}
-		$nfe_data = $order->get_meta( 'nfe' );
+		$nfe_data = get_post_meta( $order->id, 'nfe', true );
 		if (empty($nfe_data)):
 
 	?>
@@ -1634,7 +1634,7 @@ jQuery(document).ready(function($) {
 			if ($post){
 				$order = wc_get_order( $post->ID );
 			}
-			$nfe = $order->get_meta( 'nfe' );
+			$nfe = get_post_meta( $order->id, 'nfe', true );
 
 			// If order has the status pending or cancelled, don't print 'NF-e' status
 			if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
@@ -2506,7 +2506,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = $order->get_meta( 'nfe' );
+			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
 			$is_new = true;
 
 			if ( is_array($order_nfe_data) ) {
@@ -2544,7 +2544,7 @@ jQuery(document).ready(function($) {
 				);
 			}
 
-			$order->update_meta_data( 'nfe', $order_nfe_data );
+			update_post_meta( $order->id, 'nfe', $order_nfe_data );
 
 		}
 
@@ -2569,7 +2569,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = $order->get_meta( 'nfe' );
+			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
 			$is_new = true;
 			$is_lote_update = false;
 
@@ -2630,7 +2630,7 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			$order->update_meta_data( 'nfe', $order_nfe_data );
+			update_post_meta( $order->id, 'nfe', $order_nfe_data );
 
 		}
 
