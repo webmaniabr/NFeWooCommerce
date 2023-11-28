@@ -34,7 +34,8 @@ class NFeGatewayPagarme extends WooCommerceNFe {
   static function installments( $post_id, $data, $order, $args ){
 
     // Vars
-    $pagarme_transaction_data = get_post_meta( $post_id, '_wc_pagarme_transaction_data', true);
+    $order = wc_get_order( $post_id );
+    $pagarme_transaction_data = $order->get_meta( '_wc_pagarme_transaction_data' );
 
     // Mount data
     if (
@@ -42,7 +43,7 @@ class NFeGatewayPagarme extends WooCommerceNFe {
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
       $order->payment_method == 'pagarme-credit-card'
 		) {
-
+      
 			$installments = $pagarme_transaction_data['installments'];
 			$installments = ($installments) ? $installments : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
@@ -63,7 +64,8 @@ class NFeGatewayPagarme extends WooCommerceNFe {
   static function payment_type( $post_id, $order, $data ){
 
     // Vars
-    $pagarme_transaction_data = get_post_meta( $post_id, '_wc_pagarme_transaction_data', true);
+    $order = wc_get_order( $post_id );
+    $pagarme_transaction_data = $order->get_meta( '_wc_pagarme_transaction_data' );
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 
     // Set payment type

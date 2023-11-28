@@ -382,8 +382,8 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   function order_formatted_billing_address( $address, $order ) {
 
-    $address['number']       = get_post_meta( $order->get_id(), '_billing_number', true );
-		$address['neighborhood'] = get_post_meta( $order->get_id(), '_billing_neighborhood', true );
+    $address['number']       = $order->get_meta( '_billing_number' );
+		$address['neighborhood'] = $order->get_meta( '_billing_neighborhood' );
 
     return $address;
 
@@ -391,8 +391,8 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   function order_formatted_shipping_address( $address, $order ) {
 
-    $address['number']       = get_post_meta( $order->get_id(), '_shipping_number', true );
-		$address['neighborhood'] = get_post_meta( $order->get_id(), '_shipping_neighborhood', true );
+    $address['number']       = $order->get_meta( '_shipping_number' );
+		$address['neighborhood'] = $order->get_meta( '_shipping_neighborhood' );
 
     return $address;
 

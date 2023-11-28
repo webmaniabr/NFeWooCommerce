@@ -20,6 +20,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		foreach ($order_ids as $order_id) {
 
 			// Data
+			$order = wc_get_order( $order_id );
 			$data = $this->order_data( $order_id );
 
 			// Async
@@ -94,7 +95,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// If API respond with status, register 'NF-e'
 				if ( is_object($response) && $response->status ) {
 	
-					$nfe = get_post_meta( $order_id, 'nfe', true );
+					$nfe = $order->get_meta( 'nfe' );
 	
 					if (!$nfe)
 						$nfe = array();
@@ -133,7 +134,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
 						'data' => date_i18n('d/m/Y'),
 					);
-	
+
 					update_post_meta( $order_id, 'nfe', $nfe );
 	
 				}
@@ -183,7 +184,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// If API respond with status, register 'NFS-e'
 				if ( is_object($response) && $response->status ) {
 	
-					$nfe = get_post_meta( $order_id, 'nfe', true );
+					$nfe = $order->get_meta( 'nfe' );
 	
 					if (!$nfe)
 						$nfe = array();
@@ -242,7 +243,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 */
 	function order_data( $post_id ){
 	
-		$order = new WC_Order( $post_id );
+		$order = wc_get_order( $post_id );
 		$products = [];
 		$services = [];
 
@@ -278,7 +279,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$payment_methods = get_option('wc_settings_woocommercenfe_payment_methods', array());
 		$payment_descs = get_option('wc_settings_woocommercenfe_payment_descs', array());
 		$payment_keys = array_keys($payment_methods);
-		$order = new WC_Order( $post_id );
+		$order = wc_get_order( $post_id );
 		$default_imposto = get_option('wc_settings_woocommercenfe_imposto');
 		$default_ncm = get_option('wc_settings_woocommercenfe_ncm');
 		$default_cest = get_option('wc_settings_woocommercenfe_cest');
@@ -306,7 +307,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$modalidade_frete = $_POST['modalidade_frete'];
 
 		if (!isset($modalidade_frete))
-			$modalidade_frete = get_post_meta($post_id, '_nfe_modalidade_frete', true);
+			$modalidade_frete = $order->get_meta( '_nfe_modalidade_frete' );
 
 		if (!$modalidade_frete || $modalidade_frete == 'null')
 			 $modalidade_frete = 0;
@@ -314,7 +315,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$order_key = $order->get_order_key();
 
 		// Order Operation
-		$natureza_operacao = (get_post_meta($order->get_id(), '_nfe_natureza_operacao_pedido', true)) ? get_post_meta($order->get_id(), '_nfe_natureza_operacao_pedido', true) : get_option('wc_settings_woocommercenfe_natureza_operacao');
+		$natureza_operacao = ($order->get_meta( '_nfe_natureza_operacao_pedido' )) ? $order->get_meta( '_nfe_natureza_operacao_pedido' ) : get_option('wc_settings_woocommercenfe_natureza_operacao');
 
 		if ( isset($_POST['natureza_operacao_pedido']) && $_POST['natureza_operacao_pedido'] != '' && $_POST['natureza_operacao_pedido'] != $natureza_operacao ) {
 			$natureza_operacao = $_POST['natureza_operacao_pedido'];
@@ -366,17 +367,17 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data['pedido'] = array(
 			'presenca'         => apply_filters( 'nfe_order_presence', 2, $post_id ), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => apply_filters( 'nfe_order_freight', (int) $modalidade_frete, $post_id ), // Modalidade do frete
-			'frete'            => number_format(get_post_meta( $order->get_id(), '_order_shipping', true ), 2, '.', '' ), // Total do frete
+			'frete'            => number_format(floatval($order->get_meta( '_order_shipping' )), 2, '.', '' ), // Total do frete
 			'desconto'         => number_format($total_discount, 2, '.', '' ), // Total do desconto
 			'total'            => $order->get_total() // Total do pedido - sem descontos
 		);
 
 		//Intermediador da operação
-		$intermediador = (!empty($_POST)) ? $_POST['nfe_info_intermediador'] : get_post_meta($post_id, '_nfe_info_intermediador', true);
+		$intermediador = (!empty($_POST)) ? $_POST['nfe_info_intermediador'] : $order->get_meta( '_nfe_info_intermediador' );
 		if ($intermediador) {
-			$data['pedido']['intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_type'] : get_post_meta($post_id, '_nfe_info_intermediador_type', true);
-			$data['pedido']['cnpj_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_cnpj'] : get_post_meta($post_id, '_nfe_info_intermediador_cnpj', true);
-			$data['pedido']['id_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_id'] : get_post_meta($post_id, '_nfe_info_intermediador_id', true);
+			$data['pedido']['intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_type'] : $order->get_meta( '_nfe_info_intermediador_type' );
+			$data['pedido']['cnpj_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_cnpj'] : $order->get_meta( '_nfe_info_intermediador_cnpj' );
+			$data['pedido']['id_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_id'] : $order->get_meta( '_nfe_info_intermediador_id' );
 		}
 		else {
 			$data['pedido']['intermediador'] = get_option('wc_settings_woocommercenfe_intermediador');
@@ -418,11 +419,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
 		}
-		if ($additional_info = (!empty($_POST) && isset($_POST['nfe_additional_info'])) ? $_POST['nfe_additional_info'] : get_post_meta($post_id, '_nfe_additional_info', true)) {
+		if ($additional_info = (!empty($_POST) && isset($_POST['nfe_additional_info'])) ? $_POST['nfe_additional_info'] : $order->get_meta( '_nfe_additional_info' )) {
 			$value = $_POST['nfe_additional_info_text'];
 
 			if (!isset($value)) {
-				$value = get_post_meta($post_id, '_nfe_additional_info_text', true);
+				$value = $order->get_meta( '_nfe_additional_info_text' );
 			}
 			$consumidor_inf .= ' ' . $value;
 		}
@@ -434,8 +435,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		// Customer
 		if ($data['modelo'] == 2){
 
-			$customer_cpf = get_post_meta($post_id, 'billing_cpf', true);
-			$customer_cnpj = get_post_meta($post_id, 'billing_cnpj', true);
+			$customer_cpf = $order->get_meta( 'billing_cpf' );
+			$customer_cnpj = $order->get_meta( 'billing_cnpj' );
 
 			if ($customer_cpf || $customer_cnpj){
 
@@ -458,7 +459,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Contribuinte ICMS
-		$contribuinte = (!empty($_POST) && isset($_POST['nfe_contribuinte'])) ? $_POST['nfe_contribuinte'] : get_post_meta($post_id, '_nfe_contribuinte', true);
+		$contribuinte = (!empty($_POST) && isset($_POST['nfe_contribuinte'])) ? $_POST['nfe_contribuinte'] : $order->get_meta( '_nfe_contribuinte' );
 		if (in_array($contribuinte, [1, 2, 9])) {
 			$data['cliente']['contribuinte'] = $contribuinte;
 		}
@@ -503,7 +504,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$product_info = $this->get_product_nfe_info($item, $order);
-			$ignore_product = apply_filters( 'nfe_order_product_ignore', get_post_meta($product_id, '_nfe_ignorar_nfe', true), $product_id, $post_id);
+			$ignore_product = apply_filters( 'nfe_order_product_ignore', $order->get_meta( '_nfe_ignorar_nfe' ), $product_id, $post_id);
 
 			// Ignore product or NOT
 			if ($ignore_product == 1){
@@ -529,7 +530,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			// Tax Benefit
-			$beneficio_fiscal = get_post_meta($order->get_id(), '_nfe_beneficio_fiscal_pedido', true);
+			$beneficio_fiscal = $order->get_meta( '_nfe_beneficio_fiscal_pedido' );
 
 			if ( isset($_POST['beneficio_fiscal_pedido']) && $_POST['beneficio_fiscal_pedido'] != '' && $_POST['beneficio_fiscal_pedido'] != $beneficio_fiscal ) {
 				$beneficio_fiscal = $_POST['beneficio_fiscal_pedido'];
@@ -561,7 +562,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Custom Installments
-		if ($custom_installments = get_post_meta( $post_id, '_nfe_installments', true )){
+		if ($custom_installments = $order->get_meta( '_nfe_installments' )){
 
 			$data = NFeUtils::custom_installments( $post_id, $data, $order, $args = [ 'total_discount' => $data['pedido']['desconto'] ] );
 
@@ -619,7 +620,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Product Volume and Weight
-		if ($volume_weight = (!empty($_POST) && isset($_POST['nfe_volume_weight'])) ? $_POST['nfe_volume_weight'] : get_post_meta( $post_id, '_nfe_volume_weight', true )){
+		if ($volume_weight = (!empty($_POST) && isset($_POST['nfe_volume_weight'])) ? $_POST['nfe_volume_weight'] : $order->get_meta( '_nfe_volume_weight' )){
 
 			$order_specifics = array(
 				'volume' => '_nfe_transporte_volume',
@@ -633,7 +634,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$value = $_POST[str_replace('_nfe_', '', $meta_key)];
 
 				if (!isset($value))
-					$value = get_post_meta($post_id, $meta_key, true);
+					$value = $order->get_meta( $meta_key );
 
 				if ($value){
 					$data['transporte'][$api_key] = $value;
@@ -661,7 +662,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	function mount_nfse_data($post_id, $services) {
 
 		// Vars
-		$order = new WC_Order( $post_id );
+		$order = wc_get_order( $post_id );
 		$coupons = method_exists($order, 'get_coupon_codes') ? $order->get_coupon_codes() : false;
 		$coupons_percentage = array();
 		$total_discount = $total_fee = $total_value = 0;
@@ -752,11 +753,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				// Service additional information
 				$servico_inf = get_option('wc_settings_woocommercenfe_servico_inf');
-				if ($service_info = (!empty($_POST) && isset($_POST['nfe_service_info'])) ? $_POST['nfe_service_info'] : get_post_meta($post_id, '_nfe_service_info', true)) {
+				if ($service_info = (!empty($_POST) && isset($_POST['nfe_service_info'])) ? $_POST['nfe_service_info'] : $order->get_meta( '_nfe_service_info' )) {
 					$value = $_POST['nfe_service_info_text'];
 
 					if (!isset($value)) {
-						$value = get_post_meta($post_id, '_nfe_service_info_text', true);
+						$value = $order->get_meta( '_nfe_service_info_text' );
 					}
 					$servico_inf .= ' ' . $value;
 				}
@@ -764,7 +765,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 				// Discount
 				$tipo_desconto = $_POST['tipo_desconto'];
-				if (empty($tipo_desconto)) $tipo_desconto = get_post_meta($post_id, '_nfse_tipo_desconto', true);
+				if (empty($tipo_desconto)) $tipo_desconto = $order->get_meta( '_nfse_tipo_desconto' );
 				if (empty($tipo_desconto)) $tipo_desconto = get_option('wc_settings_woocommercenfe_tipo_desconto_nfse');
 				if (empty($tipo_desconto)) $tipo_desconto = 1;
 
@@ -1007,32 +1008,33 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$WooCommerceNFeFormat = new WooCommerceNFeFormat;
 
-		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : get_post_meta($post_id, '_billing_phone', true));
-		$email = ($envio_email && $envio_email == 'yes' ? get_post_meta($post_id, '_billing_email', true) : '');
+		$order = wc_get_order( $post_id );
+		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : $order->get_meta( '_billing_phone' ));
+		$email = ($envio_email && $envio_email == 'yes' ? $order->get_meta( '_billing_email' ) : '');
 
 		$billing = array(
-			'endereco'    => get_post_meta($post_id, '_billing_address_1', true),
-			'complemento' => get_post_meta($post_id, '_billing_address_2', true),
-			'numero'      => get_post_meta($post_id, '_billing_number', true),
-			'bairro'      => get_post_meta($post_id, '_billing_neighborhood', true),
-			'cidade'      => get_post_meta($post_id, '_billing_city', true),
-			'uf'          => get_post_meta($post_id, '_billing_state', true),
-			'cep'         => $WooCommerceNFeFormat->cep(get_post_meta($post_id, '_billing_postcode', true)),
+			'endereco'    => $order->get_meta( '_billing_address_1' ),
+			'complemento' => $order->get_meta( '_billing_address_2' ),
+			'numero'      => $order->get_meta( '_billing_number' ),
+			'bairro'      => $order->get_meta( '_billing_neighborhood' ),
+			'cidade'      => $order->get_meta( '_billing_city' ),
+			'uf'          => $order->get_meta( '_billing_state' ),
+			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_billing_postcode' )),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => get_post_meta($post_id, '_billing_country', true)
+			'pais'        => $order->get_meta( '_billing_country' )
 		);
 		$shipping = array(
-			'endereco'    => get_post_meta($post_id, '_shipping_address_1', true),
-			'complemento' => get_post_meta($post_id, '_shipping_address_2', true),
-			'numero'      => get_post_meta($post_id, '_shipping_number', true),
-			'bairro'      => get_post_meta($post_id, '_shipping_neighborhood', true),
-			'cidade'      => get_post_meta($post_id, '_shipping_city', true),
-			'uf'          => get_post_meta($post_id, '_shipping_state', true),
-			'cep'         => $WooCommerceNFeFormat->cep(get_post_meta($post_id, '_shipping_postcode', true)),
+			'endereco'    => $order->get_meta( '_shipping_address_1' ),
+			'complemento' => $order->get_meta( '_shipping_address_2' ),
+			'numero'      => $order->get_meta( '_shipping_number' ),
+			'bairro'      => $order->get_meta( '_shipping_neighborhood' ),
+			'cidade'      => $order->get_meta( '_shipping_city' ),
+			'uf'          => $order->get_meta( '_shipping_state' ),
+			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_shipping_postcode' )),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => get_post_meta($post_id, '_shipping_country', true)
+			'pais'        => $order->get_meta( '_shipping_country' )
 		);
 
 		if ( $shipping['endereco'] == '' ) {
@@ -1108,7 +1110,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	**/
 	public function detect_persontype($post_id, $type = '_billing') {
 
-		$tipo_pessoa = get_post_meta($post_id, $type.'_persontype', true);
+		$order = wc_get_order( $post_id );
+		$tipo_pessoa = $order->get_meta( $type.'_persontype' );
 
 		if ( !$tipo_pessoa && $type == '_shipping' ) {
 
@@ -1116,9 +1119,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		} elseif ( !$tipo_pessoa ) {
 
-			if ( !empty(get_post_meta($post_id, $type.'_cpf', true)) ) {
+			if ( !empty($order->get_meta( $type.'_cpf' )) ) {
 				$tipo_pessoa = 1;
-			} elseif ( !empty(get_post_meta($post_id, $type.'_cnpj', true)) ) {
+			} elseif ( !empty($order->get_meta( $type.'_cnpj' )) ) {
 				$tipo_pessoa = 2;
 			}
 
@@ -1138,6 +1141,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	**/
 	public function get_persontype_info($post_id, $persontype = 1, $type = '_billing') {
 
+		$order = wc_get_order( $post_id );
 		$WooCommerceNFeFormat = new WooCommerceNFeFormat;
 
 		if ( $persontype == 3 && $type == '_shipping' ) {
@@ -1148,15 +1152,15 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $persontype == 1 ) {
 
 			// Full name and CPF
-			$person_info['nome_completo'] = get_post_meta($post_id, $type.'_first_name', true).' '.get_post_meta($post_id, $type.'_last_name', true);
-			$person_info['cpf'] = $WooCommerceNFeFormat->cpf(get_post_meta($post_id, $type.'_cpf', true));
+			$person_info['nome_completo'] = $order->get_meta( $type.'_first_name' ).' '.$order->get_meta( $type.'_last_name' );
+			$person_info['cpf'] = $WooCommerceNFeFormat->cpf($order->get_meta( $type.'_cpf' ));
 
 		} elseif ( $persontype == 2 ) {
 
 			// Razao Social, CNPJ and IE
-			$person_info['razao_social'] = get_post_meta($post_id, $type.'_company', true);
-			$person_info['cnpj'] = $WooCommerceNFeFormat->cnpj(get_post_meta($post_id, $type.'_cnpj', true));
-			$person_info['ie'] = str_replace(array('-','.',','), '', get_post_meta($post_id, $type.'_ie', true));
+			$person_info['razao_social'] = $order->get_meta( $type.'_company', true);
+			$person_info['cnpj'] = $WooCommerceNFeFormat->cnpj($order->get_meta( $type.'_cnpj' ));
+			$person_info['ie'] = str_replace(array('-','.',','), '', $order->get_meta( $type.'_ie' ));
 
 		}
 
@@ -1205,7 +1209,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	function add_id_to_invoice_errors( $message, $order_id ) {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
-		$nfes = get_post_meta( $order_id, 'nfe', true );
+		$order = wc_get_order( $order_id );
+		$nfes = $order->get_meta( 'nfe'  );
 
 		if ( !empty($nfes) && is_array($nfes) ) {
 			foreach ( $nfes as $nfe ) {
@@ -1252,7 +1257,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
      **/
     function is_only_ignored_items( $post_id ) {
 
-        $order = new WC_Order( $post_id );
+        $order = wc_get_order( $post_id );
         $items = $order->get_items();
 
         // If automatic issue, ignore orders with only ignored items

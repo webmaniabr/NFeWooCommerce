@@ -12,11 +12,12 @@ class NFeUtils {
   static function custom_installments( $post_id, $data, $order, $args ){
 
     // Vars
+    $order = wc_get_order( $post_id );
     $data['parcelas'] = array();
-    $nfe_installments_n = ($_POST['nfe_installments_n']) ? $_POST['nfe_installments_n'] : get_post_meta($post_id, '_nfe_installments_n', true);
+    $nfe_installments_n = ($_POST['nfe_installments_n']) ? $_POST['nfe_installments_n'] : $order->get_meta( '_nfe_installments_n' );
     $nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : 0;
-    $nfe_installments_due_date = ($_POST['nfe_installments_due_date']) ? $_POST['nfe_installments_due_date'] : get_post_meta( $post_id, '_nfe_installments_due_date', true );
-    $nfe_installments_value = ($_POST['nfe_installments_value']) ? $_POST['nfe_installments_value'] : get_post_meta( $post_id, '_nfe_installments_value', true );
+    $nfe_installments_due_date = ($_POST['nfe_installments_due_date']) ? $_POST['nfe_installments_due_date'] : $order->get_meta( '_nfe_installments_due_date' );
+    $nfe_installments_value = ($_POST['nfe_installments_value']) ? $_POST['nfe_installments_value'] : $order->get_meta( '_nfe_installments_value' );
     $order_total = 0;
 
     // Installments

@@ -39,7 +39,8 @@ class NFeGatewayBacs extends WooCommerceNFe {
 			in_array($order->payment_method, [ 'bacs' ])
 		) {
 
-			$installments = get_post_meta( $post_id, '_instalments', true);
+      $order = wc_get_order( $post_id );
+			$installments = $order->get_meta( '_instalments' );
 			$installments = ($installments) ? $installments : 1;
       $data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
 

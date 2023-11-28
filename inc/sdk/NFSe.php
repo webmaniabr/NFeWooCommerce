@@ -49,7 +49,10 @@ class NFSe {
 			@set_time_limit( 300 );
 			ini_set('max_execution_time', 300);
 			ini_set('max_input_time', 300);
-			ini_set('memory_limit', '256M');
+			$memory_limit = ini_get('memory_limit');
+			$memory_limit = ($memory_limit) ? preg_replace("/[^0-9]/", '', $memory_limit) : 0;
+			self::setMemoryLimit();
+			
 			if (
 					strpos($endpoint, '/sefaz/') !== false ||
 					strpos($endpoint, '/certificado/') !== false
@@ -119,6 +122,26 @@ class NFSe {
 			} else {
 					return json_decode($response);
 			}
+
+	}
+
+	function setMemoryLimit(){
+
+			$currentMemoryLimit = ini_get('memory_limit');
+			$currentMemoryLimitBytes = self::convertMemoryToBytes($currentMemoryLimit);
+			$desiredMemoryLimitBytes = self::convertMemoryToBytes('256M');
+			
+			if ($currentMemoryLimitBytes < $desiredMemoryLimitBytes) {
+					ini_set('memory_limit', '256M');
+			}
+
+	}
+
+	function convertMemoryToBytes($value) {
+
+			$multipliers = ['k' => 1024, 'm' => 1024**2, 'g' => 1024**3];
+			$unit = strtolower(substr(trim($value), -1));
+			return $multipliers[$unit] ?? 1 * (int)$value;
 
 	}
 

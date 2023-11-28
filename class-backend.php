@@ -10,16 +10,14 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 		add_action( 'admin_notices', array($this, 'display_messages') );
 		add_action( 'admin_notices', array($this, 'validate_certificate') );
+		add_action( 'add_meta_boxes', array($this, 'register_metabox_nfe_emitida') );
 		add_action( 'admin_init', array($this, 'wmbr_compatibility_issues') );
 		add_action( 'add_meta_boxes', array($this, 'register_metabox_listar_nfe') );
-		add_action( 'add_meta_boxes', array($this, 'register_metabox_nfe_emitida') );
 		add_action( 'init', array($this, 'atualizar_status_nota'), 100 );
 		add_action( 'woocommerce_api_nfe_callback', array($this, 'nfe_callback') );
 		add_action( 'woocommerce_api_nfse_callback', array($this, 'nfse_callback') );
 		add_action( 'save_post', array($this, 'save_informacoes_fiscais'), 10, 2);
 		add_action( 'admin_head', array($this, 'style') );
-		add_filter( 'manage_edit-shop_order_columns', array( $this, 'add_order_status_column_header' ), 20 );
-		add_action( 'manage_shop_order_posts_custom_column', array( $this, 'add_order_status_column_content' ) );
 		add_action( 'woocommerce_order_actions', array( $this, 'add_order_meta_box_actions' ) );
 		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( $this, 'process_order_meta_box_actions' ) );
 		add_action( 'admin_footer-edit.php', array( $this, 'add_order_bulk_actions' ) );
@@ -39,8 +37,18 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_filter( 'woocommerce_admin_shipping_fields', array($this, 'extra_shipping_fields') );
 		add_action( 'admin_enqueue_scripts', array($this, 'scripts') );
 		add_action( 'wp_ajax_force_digital_certificate_update', array($this, 'ajax_force_certificate_update') );
+
+		// HPOS version
+		if (class_exists('OrderUtil') && OrderUtil::custom_orders_table_usage_is_enabled()){
+			add_filter( 'manage_woocommerce_page_wc-orders_columns', array( $this, 'add_order_status_column_header' ), 20 );
+			add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( $this, 'add_order_status_column_content' ), 10, 2 ); 
+		}
+
+		// Legacy version
+		add_filter( 'manage_edit-shop_order_columns', array( $this, 'add_order_status_column_header' ), 20 );
+		add_action( 'manage_shop_order_posts_custom_column', array( $this, 'add_order_status_column_content' ), 10, 2 );
 		
-		//NCM in product variation
+		// NCM in product variation
 		add_action( 'woocommerce_variation_options_dimensions', array($this, 'add_ncm_field_product_variation'), 10, 3);
 		add_action( 'woocommerce_save_product_variation', array($this, 'save_ncm_field_product_variation'), 10, 2 );
 
@@ -239,7 +247,8 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 <?php
 
 	add_action( 'admin_footer', array($this, 'force_digital_certificate_update') );
-	$certificate = json_decode($this->validate_certificate(false, true));
+	$validate_certificate = $this->validate_certificate(false, true);
+	$certificate = ($validate_certificate) ? json_decode($validate_certificate) : '';
 
 	echo '<span id="update-digital-certificate-response">';
 		if ( isset($certificate->status) && $certificate->status == 'success' ) {
@@ -901,11 +910,13 @@ jQuery(document).ready(function($) {
 	 */
 	function register_metabox_nfe_emitida() {
 
+		$screen = function_exists( 'wc_get_page_screen_id' ) ? wc_get_page_screen_id( 'shop-order' ) : 'shop_order';
+
 		add_meta_box(
 			'woocommernfe_nfe_emitida',
 			'Nota Fiscal do Pedido',
 			array($this, 'metabox_content_woocommernfe_nfe_emitida'),
-			'shop_order',
+			$screen,
 			'normal',
 			'high'
 		);
@@ -913,7 +924,7 @@ jQuery(document).ready(function($) {
 			'woocommernfe_informacoes_adicionais',
 			'Informações Fiscais',
 			array($this, 'metabox_content_woocommernfe_informacoes_adicionais'),
-			'shop_order',
+			$screen,
 			'side',
 			'high'
 		);
@@ -935,6 +946,7 @@ jQuery(document).ready(function($) {
 
 			$this->get_credentials();
 			$post_id = (int) sanitize_text_field($_GET['post']);
+			$order = wc_get_order( $post_id );
 			$chave = sanitize_text_field($_GET['chave']);
 			$webmaniabr = new NFe($this->settings);
 			$response = $webmaniabr->consultaNotaFiscal($chave);
@@ -946,7 +958,7 @@ jQuery(document).ready(function($) {
 			} else {
 
 				$new_status = $response->status;
-				$nfe_data = get_post_meta($post_id, 'nfe', true);
+				$nfe_data = $order->get_meta( 'nfe' );
 
 				foreach ($nfe_data as &$order_nfe) {
 
@@ -964,7 +976,7 @@ jQuery(document).ready(function($) {
 
 				}
 
-				update_post_meta($post_id, 'nfe', $nfe_data);
+				$order->update_meta_data( 'nfe', $nfe_data );
 				$this->add_success( 'NF-e atualizada com sucesso' );
 
 			}
@@ -978,9 +990,12 @@ jQuery(document).ready(function($) {
 	 *
 	 * @return html
 	 */
-	function metabox_content_woocommernfe_nfe_emitida( $post ) {
+	function metabox_content_woocommernfe_nfe_emitida( $order ) {
 
-		$nfe_data = get_post_meta($post->ID, 'nfe', true);
+		if (isset($order->ID)){
+			$order = wc_get_order( $order->ID );
+		}
+		$nfe_data = $order->get_meta( 'nfe' );
 		if (empty($nfe_data)):
 
 	?>
@@ -1086,26 +1101,29 @@ jQuery(document).ready(function($) {
 	 *
 	 * @return html
 	 */
-	function metabox_content_woocommernfe_informacoes_adicionais( $post ) {
+	function metabox_content_woocommernfe_informacoes_adicionais( $order ) {
 
 		// Vars
-		$contribuinte = get_post_meta($post->ID, '_nfe_contribuinte', true);
-		$modalidade_frete = get_post_meta($post->ID, '_nfe_modalidade_frete', true);
-		$tipo_desconto = get_post_meta($post->ID, '_nfse_tipo_desconto', true);
-		$volume_checked = get_post_meta($post->ID, '_nfe_volume_weight', true);
-		$installments_checked = get_post_meta($post->ID, '_nfe_installments', true);
-		$nfe_installments_n = get_post_meta($post->ID, '_nfe_installments_n', true);
+		if (isset($order->ID)){
+			$order = wc_get_order( $order->ID );
+		}
+		$contribuinte = $order->get_meta( '_nfe_contribuinte' );
+		$modalidade_frete = $order->get_meta( '_nfe_modalidade_frete' );
+		$tipo_desconto = $order->get_meta( '_nfse_tipo_desconto' );
+		$volume_checked = $order->get_meta( '_nfe_volume_weight' );
+		$installments_checked = $order->get_meta( '_nfe_installments' );
+		$nfe_installments_n = $order->get_meta( '_nfe_installments_n' );
 		$nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : '1';
-		$nfe_installments_due_date = get_post_meta( $post->ID, '_nfe_installments_due_date', true );
-		$nfe_installments_value = get_post_meta( $post->ID, '_nfe_installments_value', true );
-		$additional_info_checked = get_post_meta( $post->ID, '_nfe_additional_info', true );
-		$nfe_additional_info_text = get_post_meta( $post->ID, '_nfe_additional_info_text', true );
-		$service_info_checked = get_post_meta( $post->ID, '_nfe_service_info', true );
-		$nfe_service_info_text = get_post_meta( $post->ID, '_nfe_service_info_text', true );
-		$info_intermediador_checked = get_post_meta( $post->ID, '_nfe_info_intermediador', true );
-		$info_intermediador_type = get_post_meta( $post->ID, '_nfe_info_intermediador_type', true );
-		$info_intermediador_cnpj = get_post_meta( $post->ID, '_nfe_info_intermediador_cnpj', true );
-		$info_intermediador_id = get_post_meta( $post->ID, '_nfe_info_intermediador_id', true );
+		$nfe_installments_due_date = $order->get_meta( '_nfe_installments_due_date' );
+		$nfe_installments_value = $order->get_meta( '_nfe_installments_value' );
+		$additional_info_checked = $order->get_meta( '_nfe_additional_info' );
+		$nfe_additional_info_text = $order->get_meta( '_nfe_additional_info_text' );
+		$service_info_checked = $order->get_meta( '_nfe_service_info' );
+		$nfe_service_info_text = $order->get_meta( '_nfe_service_info_text' );
+		$info_intermediador_checked = $order->get_meta( '_nfe_info_intermediador' );
+		$info_intermediador_type = $order->get_meta( '_nfe_info_intermediador_type' );
+		$info_intermediador_cnpj = $order->get_meta( '_nfe_info_intermediador_cnpj' );
+		$info_intermediador_id = $order->get_meta( '_nfe_info_intermediador_id' );
 
 	?>
 	<script>
@@ -1148,13 +1166,13 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Natureza da Operação</label>
 			</p>
-			<input type="text" name="natureza_operacao_pedido" value="<?php echo get_post_meta( $post->ID, '_nfe_natureza_operacao_pedido', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="natureza_operacao_pedido" value="<?php echo $order->get_meta( '_nfe_natureza_operacao_pedido' ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field outras_informacoes">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Benefício Fiscal</label>
 			</p>
-			<input type="text" name="beneficio_fiscal_pedido" value="<?php echo get_post_meta( $post->ID, '_nfe_beneficio_fiscal_pedido', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="beneficio_fiscal_pedido" value="<?php echo $order->get_meta( '_nfe_beneficio_fiscal_pedido' ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<input type="hidden" name="wp_admin_nfe" value="1" />
 	</div>
@@ -1204,25 +1222,25 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Volume</label>
 			</p>
-			<input type="text" name="transporte_volume" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_volume', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="transporte_volume" value="<?php echo $order->get_meta( '_nfe_transporte_volume' ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Espécie</label>
 			</p>
-			<input type="text" name="transporte_especie" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_especie', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="transporte_especie" value="<?php echo $order->get_meta( '_nfe_transporte_especie' ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Peso Bruto</label> (KG)
 			</p>
-			<input type="text" name="transporte_peso_bruto" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_bruto', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+			<input type="text" name="transporte_peso_bruto" value="<?php echo $order->get_meta( '_nfe_transporte_peso_bruto' ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Peso Líquido</label> (KG)
 			</p>
-			<input type="text" name="transporte_peso_liquido" value="<?php echo get_post_meta( $post->ID, '_nfe_transporte_peso_liquido', true ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+			<input type="text" name="transporte_peso_liquido" value="<?php echo $order->get_meta( '_nfe_transporte_peso_liquido' ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 		</div>
 	</div>
 	<div class="field" style="margin-bottom:10px;">
@@ -1509,7 +1527,7 @@ jQuery(document).ready(function($) {
 					<label class="title">Origem</label>
 			</p>
 			<?php
-				$origem = get_post_meta( $post->ID, '_nfe_origem', true );
+				$origem = get_post_meta($post->ID, '_nfe_origem', true);
 			?>
 			<select name="origem">
 					<option value="null" <?php if (!is_numeric($origem)) echo 'selected'; ?> ><?php _e( 'Selecionar Origem do Produto', $this->domain ); ?></option>
@@ -1607,14 +1625,16 @@ jQuery(document).ready(function($) {
 	 *
 	 * @return html
 	 */
-	function add_order_status_column_content( $column ) {
+	function add_order_status_column_content( $column, $order = null ) {
 
 		global $post;
 		if ( 'nfe' == $column ) {
 
 			// vars
-			$nfe = get_post_meta( $post->ID, 'nfe', true );
-			$order = new WC_Order( $post->ID );
+			if ($post){
+				$order = wc_get_order( $post->ID );
+			}
+			$nfe = $order->get_meta( 'nfe' );
 
 			// If order has the status pending or cancelled, don't print 'NF-e' status
 			if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
@@ -2114,17 +2134,18 @@ jQuery(document).ready(function($) {
 	 */
   function save_custom_shop_data( $post_id ) {
 
-		update_post_meta( $post_id, '_billing_number', wc_clean( $_POST['_billing_number'] ) );
-		update_post_meta( $post_id, '_billing_neighborhood', wc_clean( $_POST['_billing_neighborhood'] ) );
-		update_post_meta( $post_id, '_shipping_number', wc_clean( $_POST['_shipping_number'] ) );
-		update_post_meta( $post_id, '_shipping_neighborhood', wc_clean( $_POST['_shipping_neighborhood'] ) );
-		update_post_meta( $post_id, '_billing_persontype', wc_clean( $_POST['_billing_persontype'] ) );
-		update_post_meta( $post_id, '_billing_cpf', wc_clean( $_POST['_billing_cpf'] ) );
-		update_post_meta( $post_id, '_billing_cnpj', wc_clean( $_POST['_billing_cnpj'] ) );
-		update_post_meta( $post_id, '_billing_ie', wc_clean( $_POST['_billing_ie'] ) );
-		update_post_meta( $post_id, '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) );
-		update_post_meta( $post_id, '_billing_sex', wc_clean( $_POST['_billing_sex'] ) );
-		update_post_meta( $post_id, '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) );
+		$order = wc_get_order( $post_id );
+		$order->update_meta_data( '_billing_number', wc_clean( $_POST['_billing_number'] ) );
+		$order->update_meta_data( '_billing_neighborhood', wc_clean( $_POST['_billing_neighborhood'] ) );
+		$order->update_meta_data(  '_shipping_number', wc_clean( $_POST['_shipping_number'] ) );
+		$order->update_meta_data( '_shipping_neighborhood', wc_clean( $_POST['_shipping_neighborhood'] ) );
+		$order->update_meta_data( '_billing_persontype', wc_clean( $_POST['_billing_persontype'] ) );
+		$order->update_meta_data( '_billing_cpf', wc_clean( $_POST['_billing_cpf'] ) );
+		$order->update_meta_data( '_billing_cnpj', wc_clean( $_POST['_billing_cnpj'] ) );
+		$order->update_meta_data( '_billing_ie', wc_clean( $_POST['_billing_ie'] ) );
+		$order->update_meta_data( '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) );
+		$order->update_meta_data( '_billing_sex', wc_clean( $_POST['_billing_sex'] ) );
+		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) );
 
 	}
 
@@ -2135,19 +2156,20 @@ jQuery(document).ready(function($) {
 	 */
 	function wc_api_save_custom_shop_data($order_id, $data){
 
+		$order = wc_get_order( $order_id );
 		$billing_address = $data['customer']['billing_address'];
 		$shipping_address = $data['customer']['shipping_address'];
-		update_post_meta( $order_id, '_billing_number', wc_clean( $billing_address['number'] ) );
-		update_post_meta( $order_id, '_billing_neighborhood', wc_clean( $billing_address['neighborhood'] ) );
-		update_post_meta( $order_id, '_shipping_number', wc_clean( $shipping_address['number'] ) );
-		update_post_meta( $order_id, '_shipping_neighborhood', wc_clean( $shipping_address['neighborhood'] ) );
-		update_post_meta( $order_id, '_billing_persontype', wc_clean( $billing_address['persontype'] ) );
-		update_post_meta( $order_id, '_billing_cpf', wc_clean( $billing_address['cpf'] ) );
-		update_post_meta( $order_id, '_billing_cnpj', wc_clean( $billing_address['cnpj'] ) );
-		update_post_meta( $order_id, '_billing_ie', wc_clean( $billing_address['ie'] ) );
-		update_post_meta( $order_id, '_billing_birthdate', wc_clean( $billing_address['birthdate'] ) );
-		update_post_meta( $order_id, '_billing_sex', wc_clean( $billing_address['sex'] ) );
-		update_post_meta( $order_id, '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone']) ) );
+		$order->update_meta_data( '_billing_number', wc_clean( $billing_address['number'] ) );
+		$order->update_meta_data( '_billing_neighborhood', wc_clean( $billing_address['neighborhood'] ) );
+		$order->update_meta_data( '_shipping_number', wc_clean( $shipping_address['number'] ) );
+		$order->update_meta_data( '_shipping_neighborhood', wc_clean( $shipping_address['neighborhood'] ) );
+		$order->update_meta_data( '_billing_persontype', wc_clean( $billing_address['persontype'] ) );
+		$order->update_meta_data( '_billing_cpf', wc_clean( $billing_address['cpf'] ) );
+		$order->update_meta_data( '_billing_cnpj', wc_clean( $billing_address['cnpj'] ) );
+		$order->update_meta_data( '_billing_ie', wc_clean( $billing_address['ie'] ) );
+		$order->update_meta_data( '_billing_birthdate', wc_clean( $billing_address['birthdate'] ) );
+		$order->update_meta_data( '_billing_sex', wc_clean( $billing_address['sex'] ) );
+		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone']) ) );
 
 	}
 
@@ -2175,8 +2197,9 @@ jQuery(document).ready(function($) {
 					);
 
 					foreach ($info as $key => $value){
-						if (isset($value))
+						if (isset($value)){
 							update_post_meta($post_id, $key, $value);
+						}
 					}
 
 					if ($_POST['ignorar_nfe']){
@@ -2189,12 +2212,15 @@ jQuery(document).ready(function($) {
 						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
-					if (is_numeric($_POST['origem']) || $_POST['origem'])
+					if (is_numeric($_POST['origem']) || $_POST['origem']){
 						update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
-
+					}
+						
 			}
 
 			if (get_post_type($post_id) == 'shop_order' && $_POST && $_POST['wp_admin_nfe']){
+
+				$order = wc_get_order( $post_id );
 
 				$info = array(
 					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
@@ -2222,19 +2248,19 @@ jQuery(document).ready(function($) {
 				);
 
 				if (!$info['_nfe_volume_weight']){
-					delete_post_meta( $post_id, '_nfe_volume_weight' );
+					$order->delete_meta_data( '_nfe_volume_weight' );
 				}
 
 				if (!$info['_nfe_installments']){
-					delete_post_meta( $post_id, '_nfe_installments' );
+					$order->delete_meta_data( '_nfe_installments' );
 				}
 
 				if (!$info['_nfe_additional_info']) {
-					delete_post_meta( $post_id, '_nfe_additional_info' );
+					$order->delete_meta_data( '_nfe_additional_info' );
 				}
 
 				if (!$info['_nfe_service_info']) {
-					delete_post_meta( $post_id, '_nfe_service_info' );
+					$order->delete_meta_data( '_nfe_service_info' );
 				}
 
 				//Intermediador fields
@@ -2243,16 +2269,16 @@ jQuery(document).ready(function($) {
 					unset($info['_nfe_info_intermediador_cnpj']);
 					unset($info['_nfe_info_intermediador_id']);
 
-					delete_post_meta( $post_id, '_nfe_info_intermediador' );
-					delete_post_meta( $post_id, '_nfe_info_intermediador_type' );
-					delete_post_meta( $post_id, '_nfe_info_intermediador_cnpj' );
-					delete_post_meta( $post_id, '_nfe_info_intermediador_id' );
+					$order->delete_meta_data( '_nfe_info_intermediador' );
+					$order->delete_meta_data( '_nfe_info_intermediador_type' );
+					$order->delete_meta_data( '_nfe_info_intermediador_cnpj' );
+					$order->delete_meta_data( '_nfe_info_intermediador_id' );
 				}
 
 				foreach ($info as $key => $value){
 
 					if (isset($value))
-						update_post_meta($post_id, $key, $value);
+						$order->update_meta_data( $key, $value );
 
 				}
 
@@ -2480,7 +2506,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta($order_id, 'nfe', true);
+			$order_nfe_data = $order->get_meta( 'nfe' );
 			$is_new = true;
 
 			if ( is_array($order_nfe_data) ) {
@@ -2518,7 +2544,7 @@ jQuery(document).ready(function($) {
 				);
 			}
 
-			update_post_meta($order_id, 'nfe', $order_nfe_data);
+			$order->update_meta_data( 'nfe', $order_nfe_data );
 
 		}
 
@@ -2543,7 +2569,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta($order_id, 'nfe', true);
+			$order_nfe_data = $order->get_meta( 'nfe' );
 			$is_new = true;
 			$is_lote_update = false;
 
@@ -2604,7 +2630,7 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			update_post_meta($order_id, 'nfe', $order_nfe_data);
+			$order->update_meta_data( 'nfe', $order_nfe_data );
 
 		}
 
@@ -2635,24 +2661,24 @@ jQuery(document).ready(function($) {
 		$html .= '<h4>' . __( 'Informações do cliente', $this->domain ) . '</h4>';
 		$html .= '<p>';
 		// Person type information.
-		if ( 1 == get_post_meta( $order->get_id(), '_billing_persontype', true ) ) $html .= '<strong>' . __( 'CPF', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_cpf', true ) ) . '<br />';
-		if ( 2 == get_post_meta( $order->get_id(), '_billing_persontype', true ) ) {
-			$html .= '<strong>' . __( 'Razão Social', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_company', true ) ) . '<br />';
-			$html .= '<strong>' . __( 'CNPJ', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_cnpj', true ) ) . '<br />';
-			if ( ! empty( get_post_meta( $order->get_id(), '_billing_ie', true ) ) ) {
-				$html .= '<strong>' . __( 'I.E', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_ie', true ) ) . '<br />';
+		if ( 1 == $order->get_meta( '_billing_persontype', true ) ) $html .= '<strong>' . __( 'CPF', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cpf', true ) ) . '<br />';
+		if ( 2 == $order->get_meta( '_billing_persontype', true ) ) {
+			$html .= '<strong>' . __( 'Razão Social', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_company', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'CNPJ', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cnpj', true ) ) . '<br />';
+			if ( ! empty( $order->get_meta( '_billing_ie', true ) ) ) {
+				$html .= '<strong>' . __( 'I.E', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_ie', true ) ) . '<br />';
 			}
 		}
-		if ( ! empty( get_post_meta( $order->get_id(), '_billing_birthdate', true ) ) ) {
+		if ( ! empty( $order->get_meta( '_billing_birthdate', true ) ) ) {
 			// Birthdate information.
-			$html .= '<strong>' . __( 'Data de nascimento', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_birthdate', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'Data de nascimento', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_birthdate', true ) ) . '<br />';
 			// Sex Information.
-			$html .= '<strong>' . __( 'Sexo', $this->domain ) . ': </strong>' . esc_html( get_post_meta( $order->get_id(), '_billing_sex', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'Sexo', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_sex', true ) ) . '<br />';
 		}
-		$html .= '<strong>' . __( 'Telefone', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", get_post_meta( $order->get_id(), '_billing_cellphone', true ) ) ) . '<br />';
+		$html .= '<strong>' . __( 'Telefone', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) . '<br />';
 		// Cell Phone Information.
-		if ( ! empty( str_replace("?", "", get_post_meta( $order->get_id(), '_billing_cellphone', true ) ) ) ) {
-			$html .= '<strong>' . __( 'Telefone Cel.', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", get_post_meta( $order->get_id(), '_billing_cellphone', true ) ) ) . '<br />';
+		if ( ! empty( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) ) {
+			$html .= '<strong>' . __( 'Telefone Cel.', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) . '<br />';
 		}
 		$html .= '<strong>' . __( 'Email', $this->domain ) . ': </strong>' . make_clickable( esc_html( $order->get_billing_email() ) ) . '<br />';
 		$html .= '</p>';
@@ -2886,36 +2912,36 @@ jQuery(document).ready(function($) {
 		$format = new WooCommerceNFeFormat;
 
 		// Billing fields.
-		$order_data['billing_address']['persontype']   = $this->get_person_type( get_post_meta( $order->get_id(), '_billing_persontype', true ) );
-		$order_data['billing_address']['cpf']          = $format->format_number( get_post_meta( $order->get_id(), '_billing_cpf', true ) );
-		$order_data['billing_address']['cnpj']         = $format->format_number( get_post_meta( $order->get_id(), '_billing_cnpj', true ) );
-		$order_data['billing_address']['ie']           = $format->format_number( get_post_meta( $order->get_id(), '_billing_ie', true ) );
-		$order_data['billing_address']['birthdate']    = $format->get_formatted_birthdate( get_post_meta( $order->get_id(), '_billing_birthdate', true ), $server );
-		$order_data['billing_address']['sex']          = substr( get_post_meta( $order->get_id(), '_billing_sex', true ), 0, 1 );
-		$order_data['billing_address']['number']       = get_post_meta( $order->get_id(), '_billing_number', true );
-		$order_data['billing_address']['neighborhood'] = get_post_meta( $order->get_id(), '_billing_neighborhood', true );
-		$order_data['billing_address']['cellphone']    = str_replace("?", "", get_post_meta( $order->get_id(), '_billing_cellphone', true ));
+		$order_data['billing_address']['persontype']   = $this->get_person_type( $order->get_meta( '_billing_persontype' ) );
+		$order_data['billing_address']['cpf']          = $format->format_number( $order->get_meta( '_billing_cpf' ) );
+		$order_data['billing_address']['cnpj']         = $format->format_number( $order->get_meta( '_billing_cnpj' ) );
+		$order_data['billing_address']['ie']           = $format->format_number( $order->get_meta( '_billing_ie' ) );
+		$order_data['billing_address']['birthdate']    = $format->get_formatted_birthdate( $order->get_meta( '_billing_birthdate' ), $server );
+		$order_data['billing_address']['sex']          = substr( $order->get_meta( '_billing_sex' ), 0, 1 );
+		$order_data['billing_address']['number']       = $order->get_meta( '_billing_number' );
+		$order_data['billing_address']['neighborhood'] = $order->get_meta( '_billing_neighborhood' );
+		$order_data['billing_address']['cellphone']    = str_replace("?", "", $order->get_meta( '_billing_cellphone' ));
 
 		// Shipping fields.
-		$order_data['shipping_address']['number']       = get_post_meta( $order->get_id(), '_shipping_number', true );
-		$order_data['shipping_address']['neighborhood'] = get_post_meta( $order->get_id(), '_shipping_neighborhood', true );
+		$order_data['shipping_address']['number']       = $order->get_meta( '_shipping_number' );
+		$order_data['shipping_address']['neighborhood'] = $order->get_meta( '_shipping_neighborhood' );
 
 		// Customer fields.
 		if ( 0 == $order->customer_user && isset( $order_data['customer'] ) ) {
 			// Customer billing fields.
-			$order_data['customer']['billing_address']['persontype']   = $this->get_person_type( get_post_meta( $order->get_id(), '_billing_persontype', true ) );
-			$order_data['customer']['billing_address']['cpf']          = $format->format_number( get_post_meta( $order->get_id(), '_billing_cpf', true ) );
-			$order_data['customer']['billing_address']['cnpj']         = $format->format_number( get_post_meta( $order->get_id(), '_billing_cnpj', true ) );
-			$order_data['customer']['billing_address']['ie']           = $format->format_number( get_post_meta( $order->get_id(), '_billing_ie', true ) );
-			$order_data['customer']['billing_address']['birthdate']    = $format->get_formatted_birthdate( get_post_meta( $order->get_id(), '_billing_birthdate', true ), $server );
-			$order_data['customer']['billing_address']['sex']          = substr( get_post_meta( $order->get_id(), '_billing_sex', true ), 0, 1 );
-			$order_data['customer']['billing_address']['number']       = get_post_meta( $order->get_id(), '_billing_number', true );
-			$order_data['customer']['billing_address']['neighborhood'] = get_post_meta( $order->get_id(), '_billing_neighborhood', true );
-			$order_data['customer']['billing_address']['cellphone']    = str_replace("?", "", get_post_meta( $order->get_id(), '_billing_cellphone', true ));
+			$order_data['customer']['billing_address']['persontype']   = $this->get_person_type( $order->get_meta( '_billing_persontype' ) );
+			$order_data['customer']['billing_address']['cpf']          = $format->format_number( $order->get_meta( '_billing_cpf' ) );
+			$order_data['customer']['billing_address']['cnpj']         = $format->format_number( $order->get_meta( '_billing_cnpj' ) );
+			$order_data['customer']['billing_address']['ie']           = $format->format_number( $order->get_meta( '_billing_ie' ) );
+			$order_data['customer']['billing_address']['birthdate']    = $format->get_formatted_birthdate( $order->get_meta( '_billing_birthdate' ), $server );
+			$order_data['customer']['billing_address']['sex']          = substr( $order->get_meta( '_billing_sex' ), 0, 1 );
+			$order_data['customer']['billing_address']['number']       = $order->get_meta( '_billing_number' );
+			$order_data['customer']['billing_address']['neighborhood'] = $order->get_meta( '_billing_neighborhood' );
+			$order_data['customer']['billing_address']['cellphone']    = str_replace("?", "", $order->get_meta( '_billing_cellphone' ));
 
 			// Customer shipping fields.
-			$order_data['customer']['shipping_address']['number']       = get_post_meta( $order->get_id(), '_shipping_number', true );
-			$order_data['customer']['shipping_address']['neighborhood'] = get_post_meta( $order->get_id(), '_shipping_neighborhood', true );
+			$order_data['customer']['shipping_address']['number']       = $order->get_meta( '_shipping_number' );
+			$order_data['customer']['shipping_address']['neighborhood'] = $order->get_meta( '_shipping_neighborhood' );
 		}
 
 		if ( $fields ) {
@@ -2986,6 +3012,7 @@ jQuery(document).ready(function($) {
 	 */
 	function save_ncm_field_product_variation( $variation_id, $i ) {
 		
+		// remover 
 		$ncm = $_POST['variable_ncm'][$i];
 		update_post_meta( $variation_id, 'variable_ncm', $ncm );
 

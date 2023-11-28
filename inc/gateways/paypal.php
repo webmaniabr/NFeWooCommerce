@@ -34,7 +34,8 @@ class NFeGatewayPaypal extends WooCommerceNFe {
   static function installments( $post_id, $data, $order, $args ){
 
     // Vars
-    $paypal_data = get_post_meta( $post_id, 'wc_ppp_brasil_installments', true);
+    $order = wc_get_order( $post_id );
+    $paypal_data = $order->get_meta( 'wc_ppp_brasil_installments' );
 
     // Mount data
     if (

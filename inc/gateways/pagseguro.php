@@ -34,7 +34,8 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
   static function installments( $post_id, $data, $order, $args ){
 
     // Vars
-    $pagseguro_transaction_data = get_post_meta( $post_id, '_wc_pagseguro_payment_data', true);
+    $order = wc_get_order( $post_id );
+    $pagseguro_transaction_data = $order->get_meta( '_wc_pagseguro_payment_data' );
 
     // Mount data
     if (
@@ -65,7 +66,8 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
   static function payment_type( $post_id, $order, $data ){
 
     // Vars
-    $payment_type = get_post_meta($post_id, __( 'Payment type', 'woocommerce-pagseguro' ), true);
+    $order = wc_get_order( $post_id );
+    $payment_type = $order->get_meta( __( 'Payment type', 'woocommerce-pagseguro' ) );
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 
     // Set payment type

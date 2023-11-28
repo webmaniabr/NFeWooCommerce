@@ -45,7 +45,7 @@ class UtilsGateways {
    * @param array $args
    * @return string [Gateway name]
    */
-  function mount_installments_data( $post_id, $data, $order, $installments, $args ){
+  static function mount_installments_data( $post_id, $data, $order, $installments, $args ){
 
     // Vars
     $order_total = $data['pedido']['total'];

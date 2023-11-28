@@ -39,7 +39,8 @@ class NFeGatewayEbanx extends WooCommerceNFe {
 			in_array($order->payment_method, [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ])
 		) {
 
-			$installments = get_post_meta( $post_id, '_instalments_number', true);
+      $order = wc_get_order( $post_id );
+			$installments = $order->get_meta( '_instalments_number' );
 			$installments = ($installments) ? $installments : 1;
       $data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
 

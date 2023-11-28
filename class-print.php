@@ -48,7 +48,8 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 		foreach ($order_ids as $order_id) {
 
 			//Get order nfe data
-			$order_nfe_data = get_post_meta($order_id, 'nfe', true);
+			$order = wc_get_order( $order_id );
+			$order_nfe_data = $order->get_meta( 'nfe' );
 
 			if(!$order_nfe_data){
 				continue;

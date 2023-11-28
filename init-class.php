@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.4';
+	public $version = '3.3.5';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -271,14 +271,15 @@ class WooCommerceNFe {
 
 		// Vars
 		$order_id = $post->ID;
+		$order = wc_get_order( $order_id );
 
 		// Process
 		if (
 			$to == 'wc-processing' && ($option == 1 || $option == 'yes') ||
 			$to == 'wc-completed' && $option == 2
 		){
-
-			$nfes = get_post_meta( $order_id, 'nfe', true );
+			
+			$nfes = $order->get_meta( 'nfe' );
 
 			if ( !empty($nfes) && is_array($nfes) ) {
 				foreach ( $nfes as $nfe ) {
