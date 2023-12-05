@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.6';
+	public $version = '3.3.7';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -294,7 +294,7 @@ class WooCommerceNFe {
             // Prevent orders for only ignored products from auto issuing NFe
             if ($nf->is_only_ignored_items( $order_id )) return;
 
-            $response = $nf->send( array( $order_id ) );
+            $response = $nf->send( array( $order_id ), false, true );
 
 		}
 
@@ -308,8 +308,10 @@ class WooCommerceNFe {
 	function send_error_email( $message, $order_id ) {
 
 		$email = get_option('wc_settings_woocommercenfe_email_notification');
-
-		if ( !isset($email) ) return;
+		$ids_db = get_option('wmbr_auto_invoice_errors');
+		if ( !$email || (is_array($ids_db) && array_key_exists($order_id, $ids_db)) ) {
+			return;
+		}
 
 		$subject = 'Erro ao emitir NF-e - Pedido #'.$order_id;
 		$message = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
