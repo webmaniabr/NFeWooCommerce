@@ -13,7 +13,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 *
 	 * @return boolean
 	 */
-  function send( $order_ids = array(), $is_massa = false ){
+  function send( $order_ids = array(), $is_massa = false, $is_auto_invoice = false ){
 
 		$result = array();
 
@@ -66,7 +66,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					$mensagem .= '</ul>';
 	
 					$invoice_error = isset($response->error) ? $response->error : $error;
-					$this->send_error_email( $mensagem, $order_id );
+					$is_auto_invoice && $this->send_error_email( $mensagem, $order_id );
 					$this->add_id_to_invoice_errors( $invoice_error, $order_id );
 					$this->add_error( $mensagem );
 	
@@ -163,7 +163,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					}
 					$mensagem .= '</ul>';
 	
-					$this->send_error_email( $mensagem, $order_id );
+					$is_auto_invoice && $this->send_error_email( $mensagem, $order_id );
 					$this->add_id_to_invoice_errors( (is_array($error_message) ? implode(' | ', $error_message) : $error_message), $order_id );
 					$this->add_error( $mensagem );
 	
