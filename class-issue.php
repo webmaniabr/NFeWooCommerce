@@ -368,7 +368,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data['pedido'] = array(
 			'presenca'         => apply_filters( 'nfe_order_presence', 2, $post_id ), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
 			'modalidade_frete' => apply_filters( 'nfe_order_freight', (int) $modalidade_frete, $post_id ), // Modalidade do frete
-			'frete'            => number_format(floatval($order->get_meta( '_order_shipping' )), 2, '.', '' ), // Total do frete
+			'frete'            => $order->get_shipping_total(), // Total do frete
 			'desconto'         => number_format($total_discount, 2, '.', '' ), // Total do desconto
 			'total'            => $order->get_total() // Total do pedido - sem descontos
 		);
