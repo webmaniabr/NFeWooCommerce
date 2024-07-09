@@ -61,7 +61,7 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 
 			//Set Danfe's url 
 			$item = array('chave' => $nf['chave_acesso']);
-			if (isset($nf['url_danfe']) && trim($nf['url_danfe']) == '' && $nf['chave_acesso']) {
+			if ((isset($nf['url_danfe']) || trim($nf['url_danfe']) == '') && $nf['chave_acesso']) {
 				$nf['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$nf['chave_acesso'].'/';
 			}
 			if ($type == 'normal') {
@@ -112,7 +112,7 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 		foreach ($data as $item) {
 
 			try {
-				$content = ini_get('allow_url_fopen') ? file_get_contents($item['url']) : $this->curl_get_file_contents($item['url']);
+				$content = $this->curl_get_file_contents($item['url']);
 				if ($content && (strpos($content, '%PDF-') !== false && strpos($content, '%%EOF') !== false)) {
 					file_put_contents("{$this->files_folder}/{$item['chave']}.pdf", $content);
 					$pdf->addPDF("{$this->files_folder}/{$item['chave']}.pdf", 'all');
@@ -140,10 +140,24 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 	 * @return mixed
 	 */
 	private function curl_get_file_contents($url) {
+
+		$headers = [
+			'Authorization: Bearer ' . get_option('wc_settings_woocommercenfe_bearer_access_token'),
+			'X-Access-Token: ' . get_option('wc_settings_woocommercenfe_access_token'),
+			'X-Access-Token-Secret: ' . get_option('wc_settings_woocommercenfe_access_token_secret'),
+			'X-Consumer-Key: ' . get_option('wc_settings_woocommercenfe_consumer_key'),
+			'X-Consumer-Secret: ' . get_option('wc_settings_woocommercenfe_consumer_secret')
+		];
+
 		$c = curl_init();
-		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
+
 		curl_setopt($c, CURLOPT_URL, $url);
+		curl_setopt($c, CURLOPT_HTTPGET, true);
+		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($c, CURLOPT_HTTPHEADER, $headers);
+
 		$contents = curl_exec($c);
+		
 		curl_close($c);
 
 		return $contents ?? false;
