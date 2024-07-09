@@ -20,8 +20,8 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_action( 'admin_head', array($this, 'style') );
 		add_action( 'woocommerce_order_actions', array( $this, 'add_order_meta_box_actions' ) );
 		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( $this, 'process_order_meta_box_actions' ) );
-		add_action( 'admin_footer-edit.php', array( $this, 'add_order_bulk_actions' ) );
-		add_action( 'load-edit.php', array( $this, 'process_order_bulk_actions' ) );
+		add_action( 'admin_footer', array( $this, 'add_order_bulk_actions' ) );
+		add_action( 'init', array( $this, 'process_order_bulk_actions' ) );
 		add_filter( 'woocommerce_settings_tabs_array', array($this, 'add_settings_tab'), 100 );
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array($this, 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array($this, 'update_settings' ));
@@ -995,7 +995,7 @@ jQuery(document).ready(function($) {
 		if (isset($order->ID)){
 			$order = wc_get_order( $order->ID );
 		}
-		$nfe_data = get_post_meta( $order->id, 'nfe', true );
+		$nfe_data = $order->get_meta('nfe');
 		if (empty($nfe_data)):
 
 	?>
@@ -1015,6 +1015,11 @@ jQuery(document).ready(function($) {
 </div>
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
+
+	$password = $this->get_order_cpf_cnpj($order->ID);
+	$uuid = $order_nfe['uuid'];
+	$tokenData = $this->createSecureTokenDFe($password, $uuid);
+
 	(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
 	if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'nfse') {
 		$modelo_nfe = 'NFS-e';
@@ -1032,14 +1037,10 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
-	if (isset($order_nfe['url_danfe']) && trim($order_nfe['url_danfe']) == '' && $chave_acesso_nfe) {
-		$order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'/';
-	}
-	if (isset($order_nfe['url_xml']) && trim($order_nfe['url_xml']) == '' && $chave_acesso_nfe) {
-		$xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'/';
-	}
-	if ((!isset($order_nfe['url_danfe_simplificada']) || trim($order_nfe['url_danfe_simplificada']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
-	if ((!isset($order_nfe['url_danfe_etiqueta']) || trim($order_nfe['url_danfe_etiqueta']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	if ((isset($order_nfe['url_danfe']) || trim($order_nfe['url_danfe']) == '') && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'?token='.$tokenData;
+	if ((isset($order_nfe['url_xml']) || trim($order_nfe['url_xml']) == '') && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1?token='.$tokenData;
+	if ((isset($order_nfe['url_danfe_simplificada']) || trim($order_nfe['url_danfe_simplificada']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+	if ((isset($order_nfe['url_danfe_etiqueta']) || trim($order_nfe['url_danfe_etiqueta']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
@@ -1067,7 +1068,7 @@ jQuery(document).ready(function($) {
 			} ?>
 		</h4>
 		<?php
-			$post_url = get_edit_post_link($post->ID);
+			$post_url = get_edit_post_link($order->ID);
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
 		?>
 		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span>
@@ -1080,7 +1081,7 @@ jQuery(document).ready(function($) {
 				<?php if ($modelo_nfe != 'Lote RPS') { ?>
 					<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
 				<?php } ?>
-				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe.'?download=1'; ?>">Download XML</a></li>
+				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe; ?>">Download XML</a></li>
 				<?php if ($status_nfe == 'reprovado' && isset($order_nfe['motivo'])) { ?>
 					<li><strong>Motivo:</strong> <?php echo $order_nfe['motivo']; ?></li>
 				<?php } ?>
@@ -1689,11 +1690,11 @@ jQuery(document).ready(function($) {
 	 */
 	function add_order_bulk_actions() {
 
-		global $post_type, $post_status;
+		global $typenow;
 
-		if ( $post_type == 'shop_order' ) {
+		if ( $typenow == 'shop_order' || $_GET['page'] == 'wc-orders') {
 
-			if ($post_status == 'trash' || $post_status == 'wc-cancelled' || $post_status == 'wc-pending')
+			if ( isset($_GET['status']) && in_array($_GET['status'], ['trash', 'wc-cancelled', 'wc-pending']))
 				return false;
 			?>
 			<script type="text/javascript">
@@ -1742,45 +1743,68 @@ jQuery(document).ready(function($) {
 	 */
 	function process_order_bulk_actions(){
 
-		global $typenow;
+		$order_list = $_GET['post_type'] ?? $_GET['page'] ?? [];
 
-		if ( 'shop_order' == $typenow ) {
+		if (!$order_list) return;
 
-			$wp_list_table = _get_list_table( 'WP_Posts_List_Table' );
-			$action        = $wp_list_table->current_action();
+		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) ){
 
-			if ( ! in_array( $action, array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) )
-				return false;
-
-			if ( isset( $_REQUEST['post'] ) )
-				$order_ids = array_map( 'absint', $_REQUEST['post'] );
-
-			if ( empty( $order_ids ) )
-				return false;
-
-			if ($action == 'wc_nfe_emitir'){
-				$nf = new WooCommerceNFeIssue;
-				$nf->send( $order_ids, true );
-			}
-
-			// Adicionado módulo de impressão DANFE Normal
-			if ($action == 'wc_nfe_imprimir_danfe'){
-				$nf = new WooCommerceNFePrint;
-				$result = $nf->print( $order_ids, 'normal' );
-			}
+			// Verify selected action
+			if ( ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
 			
-			// Adicionado módulo de impressão DANFE Simplificada
-			if ($action == 'wc_nfe_imprimir_simplificada'){
-				$nf = new WooCommerceNFePrint;
-				$result = $nf->print( $order_ids, 'simplificada' );
+			isset( $_GET['action'] )? $action = $_GET['action'] : '';
+
+			// Verify order IDs
+			$order_ids = array_map('absint', $_GET['id'] ?? $_GET['post'] ?? []);
+
+			if ( !$order_ids ){
+				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação.');
+				$this->add_error($reason);
+				return false;
 			}
 
-			// Adicionado módulo de impressão DANFE Etiqueta
-			if ($action == 'wc_nfe_imprimir_etiqueta'){
-				$nf = new WooCommerceNFePrint;
-				$result = $nf->print( $order_ids, 'etiqueta' );
+			foreach ( $order_ids as $order_id){
+				$order = wc_get_order($order_id);
+				$order_status = $order->get_status();
 			}
 
+			// Verufy order status
+			if (in_array($order_status, ['trash', 'cancelled', 'pending'])) {
+				$status = [
+					'trash' => 'Excluído',
+					'cancelled' => 'Cancelado',
+					'pending' => 'Pendente'
+				];
+				if (in_array($order_status, array_keys($status))) {
+					$description = $status[$order_status];
+					$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível executar esta ação. O pedido <strong>' . $order_id . '</strong> encontra-se <strong>' . $description . '</strong>');
+					$this->add_error($reason);
+					return false;
+				}
+
+			} else {
+
+				// Issuance
+				if ($action == 'wc_nfe_emitir'){
+					$nf = new WooCommerceNFeIssue;
+					$nf->send( $order_ids, true );
+				}
+				// Print Danfe
+				if ($action == 'wc_nfe_imprimir_danfe'){
+					$nf = new WooCommerceNFePrint;
+					$result = $nf->print( $order_ids, 'normal' );
+				}
+				// Print Danfe Simplificada
+				if ($action == 'wc_nfe_imprimir_simplificada'){
+					$nf = new WooCommerceNFePrint;
+					$result = $nf->print( $order_ids, 'simplificada' );
+				}
+				// Print Danfe Etiqueta
+				if ($action == 'wc_nfe_imprimir_etiqueta'){
+					$nf = new WooCommerceNFePrint;
+					$result = $nf->print( $order_ids, 'etiqueta' );
+				}
+			}
 		}
 
 	}
@@ -2135,17 +2159,17 @@ jQuery(document).ready(function($) {
   function save_custom_shop_data( $post_id ) {
 
 		$order = wc_get_order( $post_id );
-		$order->update_meta_data( '_billing_number', wc_clean( $_POST['_billing_number'] ) );
-		$order->update_meta_data( '_billing_neighborhood', wc_clean( $_POST['_billing_neighborhood'] ) );
-		$order->update_meta_data(  '_shipping_number', wc_clean( $_POST['_shipping_number'] ) );
-		$order->update_meta_data( '_shipping_neighborhood', wc_clean( $_POST['_shipping_neighborhood'] ) );
-		$order->update_meta_data( '_billing_persontype', wc_clean( $_POST['_billing_persontype'] ) );
-		$order->update_meta_data( '_billing_cpf', wc_clean( $_POST['_billing_cpf'] ) );
-		$order->update_meta_data( '_billing_cnpj', wc_clean( $_POST['_billing_cnpj'] ) );
-		$order->update_meta_data( '_billing_ie', wc_clean( $_POST['_billing_ie'] ) );
-		$order->update_meta_data( '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) );
-		$order->update_meta_data( '_billing_sex', wc_clean( $_POST['_billing_sex'] ) );
-		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) );
+		isset($_POST['_billing_number']) ? $order->update_meta_data( '_billing_number', wc_clean( $_POST['_billing_number'] ) ) : '';
+		isset($_POST['_billing_neighborhood']) ? $order->update_meta_data( '_billing_neighborhood', wc_clean( $_POST['_billing_neighborhood'] ) ) : '';
+		isset($_POST['_shipping_number']) ? $order->update_meta_data(  '_shipping_number', wc_clean( $_POST['_shipping_number'] ) ) : '';
+		isset($_POST['_shipping_neighborhood']) ? $order->update_meta_data( '_shipping_neighborhood', wc_clean( $_POST['_shipping_neighborhood'] ) ) : '';
+		isset($_POST['_billing_persontype']) ? $order->update_meta_data( '_billing_persontype', wc_clean( $_POST['_billing_persontype'] ) ) : '';
+		isset($_POST['_billing_cpf']) ? $order->update_meta_data( '_billing_cpf', wc_clean( $_POST['_billing_cpf'] ) ) : '';
+		isset($_POST['_billing_cnpj']) ? $order->update_meta_data( '_billing_cnpj', wc_clean( $_POST['_billing_cnpj'] ) ) : '';
+		isset($_POST['_billing_ie']) ? $order->update_meta_data( '_billing_ie', wc_clean( $_POST['_billing_ie'] ) ) : '';
+		isset($_POST['_billing_birthdate']) ? $order->update_meta_data( '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) ) : '';
+		isset($_POST['_billing_sex']) ? $order->update_meta_data( '_billing_sex', wc_clean( $_POST['_billing_sex'] ) ) : '';
+		isset($_POST['_billing_cellphone']) ? $order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) ) : '';
 
 	}
 
@@ -2711,7 +2735,7 @@ jQuery(document).ready(function($) {
 			$html .= $order->get_formatted_shipping_address();
 			$html .= '</p>';
 		}
-		if ( apply_filters( 'woocommerce_enable_order_notes_field', 'yes' == get_option( 'woocommerce_enable_order_comments', 'yes' ) ) && $post->post_excerpt ) {
+		if ( apply_filters( 'woocommerce_enable_order_notes_field', 'yes' == get_option( 'woocommerce_enable_order_comments', 'yes' ) ) && $post !== null && $post->post_excerpt ) {
 			$html .= '<p><strong>' . __( 'Nota do cliente', $this->domain ) . ':</strong><br />' . nl2br( esc_html( $post->post_excerpt ) ) . '</p>';
 		}
 		$html .= '</div>';
@@ -3016,6 +3040,46 @@ jQuery(document).ready(function($) {
 		$ncm = $_POST['variable_ncm'][$i];
 		update_post_meta( $variation_id, 'variable_ncm', $ncm );
 
+	}
+
+	/**
+	 * Get Order CPF or CNPJ
+	 * 
+	 * @return void
+	 */
+	function get_order_cpf_cnpj($post_id) {
+
+		if (!$post_id) return;
+
+		$password = get_post_meta($post_id, '_doc_password', true);
+
+		if (!$password){
+
+			$cpf = get_post_meta($post_id, '_billing_cpf', true);
+			$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
+			isset($cpf) ? $doc = $cpf : (isset($cnpj) ? $doc = $cnpj : null);
+			$password = update_post_meta($post_id, '_doc_password', $doc);
+			return $password;
+
+		} else {
+
+			return $password;
+
+		}
+	}
+
+	/**
+	 * Create Secure Token DFe
+	 * 
+	 * @return void
+	 */
+	function createSecureTokenDFe( $password, $uuid ){
+		$password = preg_replace("/[^0-9]/", '', $password);
+		$key = hash('sha256', $password . ':' . $uuid, true);
+		$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('AES-256-CBC'));
+		$encryptedData = openssl_encrypt(time(), 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+		$tokenData = json_encode(['data' => base64_encode($encryptedData), 'iv' => base64_encode($iv)]);
+		return urlencode(base64_encode($tokenData));
 	}
 
 }

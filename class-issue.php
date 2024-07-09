@@ -78,7 +78,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 					} else {
 	
-						if ( is_object($response) && $data['previa_danfe'] ) {
+						if ( is_object($response) && isset($data['nfe']['previa_danfe']) ) {
 	
 							$this->add_success( 'Pré-visualizar Danfe: <a href="'.$response->danfe.'" target="_blank">'.$response->danfe.'</a>' );
 	
@@ -126,7 +126,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'status' => (string) $response->status,
 						'modelo' => 'nfe',
 						'chave_acesso' => $response->chave,
-						'n_recibo' => (int) $response->recibo,
+						'n_recibo' => (int) isset($response->recibo) ? $response->recibo : '',
 						'n_nfe' => (int) $response->nfe,
 						'n_serie' => (int) $response->serie,
 						'url_xml' => (string) $response->xml,
@@ -136,7 +136,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 
-					update_post_meta( $order->id, 'nfe', $nfe );
+					$order->update_meta_data('nfe', $nfe);
+					$order->save();
 	
 				}
 			}
@@ -305,10 +306,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Order
-		$modalidade_frete = $_POST['modalidade_frete'];
-
-		if (!isset($modalidade_frete))
-			$modalidade_frete = $order->get_meta( '_nfe_modalidade_frete' );
+		$modalidade_frete = isset($_POST['modalidade_frete'])? $_POST['modalidade_frete']: $order->get_meta( '_nfe_modalidade_frete' );
 
 		if (!$modalidade_frete || $modalidade_frete == 'null')
 			 $modalidade_frete = 0;
@@ -374,7 +372,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		);
 
 		//Intermediador da operação
-		$intermediador = (!empty($_POST)) ? $_POST['nfe_info_intermediador'] : $order->get_meta( '_nfe_info_intermediador' );
+		$intermediador = $_POST['nfe_info_intermediador'] ?? $order->get_meta( '_nfe_info_intermediador' ) ?? '';
 		if ($intermediador) {
 			$data['pedido']['intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_type'] : $order->get_meta( '_nfe_info_intermediador_type' );
 			$data['pedido']['cnpj_intermediador'] = (!empty($_POST)) ? $_POST['nfe_info_intermediador_cnpj'] : $order->get_meta( '_nfe_info_intermediador_cnpj' );
@@ -605,7 +603,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			// Carrier
-			if ($transportadoras[$shipping_method_id]){
+			if (!empty($transportadoras) && $transportadoras[$shipping_method_id]){
 
 				$transp = $transportadoras[$shipping_method_id];
 				$data['transporte']['cnpj']         = $transp['cnpj'];
@@ -640,13 +638,15 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if ($value){
 					$data['transporte'][$api_key] = $value;
 				}
+				if($value)$order->update_meta_data($meta_key, $value);
 
 			}
+			$order->save();
 
 		}
 
 		// Preview
-		if ($_POST['previa_danfe']){
+		if (isset($_POST['previa_danfe'])){
 			$data['previa_danfe'] = true;
 		}
 
@@ -898,6 +898,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 * @return boolean
 	 */
   function set_bundle_products_array( $bundles, $order){
+
+		if (empty($bundles) || !is_array($bundles)) return array('products' => [], 'bundle_discount' => 0);
 
 		$total_bundle = 0;
 		$total_products = 0;
