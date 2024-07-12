@@ -41,7 +41,7 @@ class NFeGatewayPaypal extends WooCommerceNFe {
     if (
 			NFeGatewayPaypal::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-      $order->payment_method == 'paypal-brasil-plus-gateway'
+      $order->get_payment_method() == 'paypal-brasil-plus-gateway'
 		) {
 
       $installments = ($paypal_data) ? $paypal_data : 1;

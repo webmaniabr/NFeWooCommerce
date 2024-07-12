@@ -297,7 +297,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 	<?php
 
-	include_once(plugin_dir_path(dirname(__FILE__)).'nota-fiscal-eletronica-woocommerce/templates/payment-setting.php');
+	include_once(__DIR__).'/templates/payment-setting.php';
 
 	}
 
@@ -958,7 +958,7 @@ jQuery(document).ready(function($) {
 			} else {
 
 				$new_status = $response->status;
-				$nfe_data = get_post_meta( $order->id, 'nfe', true );
+				$nfe_data = $order->get_meta( 'nfe', true );
 
 				foreach ($nfe_data as &$order_nfe) {
 
@@ -976,7 +976,8 @@ jQuery(document).ready(function($) {
 
 				}
 
-				update_post_meta( $order->id, 'nfe', $nfe_data );
+				$order->update_meta_data( 'nfe', $nfe_data );
+				$order->save();
 				$this->add_success( 'NF-e atualizada com sucesso' );
 
 			}
@@ -1068,7 +1069,7 @@ jQuery(document).ready(function($) {
 			} ?>
 		</h4>
 		<?php
-			$post_url = get_edit_post_link($order->ID);
+			$post_url = get_edit_post_link($order->get_id());
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
 		?>
 		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span>
@@ -1628,14 +1629,13 @@ jQuery(document).ready(function($) {
 	 */
 	function add_order_status_column_content( $column, $order = null ) {
 
-		global $post;
 		if ( 'nfe' == $column ) {
 
-			// vars
-			if ($post){
-				$order = wc_get_order( $post->ID );
+			if ( is_null( $order ) ) {
+				return;
 			}
-			$nfe = get_post_meta( $order->id, 'nfe', true );
+
+			$nfe = $order->get_meta( 'nfe', true );
 
 			// If order has the status pending or cancelled, don't print 'NF-e' status
 			if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
@@ -1816,8 +1816,8 @@ jQuery(document).ready(function($) {
 	 */
 	function process_order_meta_box_actions( $post ){
 
-		$order_id = $post->id;
-		$post_status = $post->post_status;
+		$order_id = $post->get_id();
+		$post_status = $post->get_status();
 
 		if ($post_status == 'trash' || $post_status == 'wc-cancelled')
 			return false;
@@ -2170,7 +2170,7 @@ jQuery(document).ready(function($) {
 		isset($_POST['_billing_birthdate']) ? $order->update_meta_data( '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) ) : '';
 		isset($_POST['_billing_sex']) ? $order->update_meta_data( '_billing_sex', wc_clean( $_POST['_billing_sex'] ) ) : '';
 		isset($_POST['_billing_cellphone']) ? $order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) ) : '';
-
+		$order->save();
 	}
 
 	/**
@@ -2194,6 +2194,7 @@ jQuery(document).ready(function($) {
 		$order->update_meta_data( '_billing_birthdate', wc_clean( $billing_address['birthdate'] ) );
 		$order->update_meta_data( '_billing_sex', wc_clean( $billing_address['sex'] ) );
 		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone']) ) );
+		$order->save();
 
 	}
 
@@ -2204,7 +2205,7 @@ jQuery(document).ready(function($) {
 	 */
     function save_informacoes_fiscais( $post_id ){
 
-			if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
+			if (get_post_type($post_id) == 'product' && isset( $_POST['wp_admin_nfe'] )){
 
 					$info = array(
 					'_nfe_tipo_produto'    => $_POST['tipo_produto'],
@@ -2226,7 +2227,7 @@ jQuery(document).ready(function($) {
 						}
 					}
 
-					if ($_POST['ignorar_nfe']){
+					if (isset($_POST['ignorar_nfe'])){
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
 					} else {
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', 0 );
@@ -2236,7 +2237,7 @@ jQuery(document).ready(function($) {
 						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
-					if (is_numeric($_POST['origem']) || $_POST['origem']){
+					if (is_numeric($_POST['origem']) || isset($_POST['origem'])){
 						update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
 					}
 						
@@ -2247,28 +2248,28 @@ jQuery(document).ready(function($) {
 				$order = wc_get_order( $post_id );
 
 				$info = array(
-					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
-					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
-					'_nfe_contribuinte' => $_POST['nfe_contribuinte'],
-					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
+					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'] ?? null,
+					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'] ?? null,
+					'_nfe_contribuinte' => $_POST['nfe_contribuinte'] ?? null,
+					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'] ?? null,
 					'_nfse_tipo_desconto' 		=> $_POST['tipo_desconto'],
 					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? $_POST['nfe_volume_weight'] : false,
-					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
-					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
-					'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
-					'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
+					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'] ?? null,
+					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'] ?? null,
+					'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'] ?? null,
+					'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'] ?? null,
 					'_nfe_installments'  => isset($_POST['nfe_installments']) ? $_POST['nfe_installments'] : false,
-					'_nfe_installments_n'  => $_POST['nfe_installments_n'],
-					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
-					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
+					'_nfe_installments_n'  => $_POST['nfe_installments_n'] ?? null,
+					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'] ?? null,
+					'_nfe_installments_value'  => $_POST['nfe_installments_value'] ?? null,
 					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? $_POST['nfe_additional_info'] : false,
-					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
+					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'] ?? null,
 					'_nfe_service_info' => isset($_POST['nfe_service_info']) ? $_POST['nfe_service_info'] : false,
-					'_nfe_service_info_text' => $_POST['nfe_service_info_text'],
+					'_nfe_service_info_text' => $_POST['nfe_service_info_text'] ?? null,
 					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? $_POST['nfe_info_intermediador'] : false,
-					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
-					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
-					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'],
+					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'] ?? null,
+					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'] ?? null,
+					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'] ?? null,
 				);
 
 				if (!$info['_nfe_volume_weight']){
@@ -2306,6 +2307,7 @@ jQuery(document).ready(function($) {
 
 				}
 
+				$order->save();
 			}
 
 	}
@@ -2459,7 +2461,7 @@ jQuery(document).ready(function($) {
 	public function page_auto_invoice_errors() {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
-		include_once(plugin_dir_path(dirname(__FILE__)).'nota-fiscal-eletronica-woocommerce/templates/page-reports.php');
+		include_once(__DIR__).'/templates/page-reports.php';
 
 	}
 
@@ -2530,7 +2532,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
+			$order_nfe_data = $order->get_meta( 'nfe', true );
 			$is_new = true;
 
 			if ( is_array($order_nfe_data) ) {
@@ -2568,7 +2570,8 @@ jQuery(document).ready(function($) {
 				);
 			}
 
-			update_post_meta( $order->id, 'nfe', $order_nfe_data );
+			$order->update_meta_data( 'nfe', $order_nfe_data );
+			$order->save();
 
 		}
 
@@ -2593,7 +2596,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
+			$order_nfe_data = $order->get_meta( 'nfe', true );
 			$is_new = true;
 			$is_lote_update = false;
 
@@ -2654,8 +2657,8 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			update_post_meta( $order->id, 'nfe', $order_nfe_data );
-
+			$order->update_meta_data( 'nfe', $order_nfe_data );
+			$order->save();
 		}
 
 	}
@@ -2818,7 +2821,7 @@ jQuery(document).ready(function($) {
 		} 
 
 		// If credentials have been changed or are not in cache, connect to API
-		if ($old_credentials != $this->settings || !$cached) {
+		if ( isset( $old_credentials ) && $old_credentials != $this->settings || !$cached) {
 
 			$webmaniabr = new NFe( $this->settings );
 			$response = $webmaniabr->validadeCertificado();
@@ -2831,7 +2834,7 @@ jQuery(document).ready(function($) {
 			if (!$cached){
 
 				set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
-				if ($old_credentials != $this->settings) {
+				if ( isset( $old_credentials ) && $old_credentials != $this->settings) {
 					update_option('old_credentials', $this->settings);
 				}
 

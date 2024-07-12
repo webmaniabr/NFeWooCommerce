@@ -96,7 +96,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// If API respond with status, register 'NF-e'
 				if ( is_object($response) && $response->status ) {
 
-					$nfe = get_post_meta( $order->id, 'nfe', true );
+					$order = wc_get_order( $order_id );
+					$nfe = $order->get_meta( 'nfe', true ); 
 	
 					if (!$nfe)
 						$nfe = array();
@@ -186,7 +187,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				// If API respond with status, register 'NFS-e'
 				if ( is_object($response) && $response->status ) {
 	
-					$nfe = get_post_meta( $order->id, 'nfe', true );
+					$order = wc_get_order( $order_id );
+					$nfe = $order->get_meta( 'nfe', true ); 
 	
 					if (!$nfe)
 						$nfe = array();
@@ -223,7 +225,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 	
-					update_post_meta( $order->id, 'nfe', $nfe );
+					$order->update_meta_data( 'nfe', $nfe );
+					$order->save();
 	
 				}
 			}
@@ -250,7 +253,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$services = [];
 
 		foreach ($order->get_items() as $item) {
-			$product_id = $item['product_id'];
+			$product_id = $item->get_product_id();
 			if (get_post_meta($product_id, '_nfe_tipo_produto', true) == 2) $services[] = $item;
 			else $products[] = $item;
 		}
@@ -293,7 +296,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$total_discount = $total_fee = 0;
 		$fee_aditional_informations = '';
 		$natureza_operacao = '';
-		$payment_gateway = UtilsGateways::get_gateway_class( $order->payment_method );
+		$payment_gateway = UtilsGateways::get_gateway_class( $order->get_payment_method() );
 
 		// Coupons
 		if ($coupons){
@@ -393,10 +396,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			$data = $payment_gateway::payment_type( $post_id, $order, $data );
 
-		} elseif ( isset($payment_methods[$order->payment_method]) && $payment_methods[$order->payment_method] ) {
+		} elseif ( isset($payment_methods[$order->get_payment_method()]) && $payment_methods[$order->get_payment_method()] ) {
 
-			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
-			$data['pedido']['desc_pagamento'] = [$payment_descs[$order->payment_method]];
+			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->get_payment_method()] ];
+			$data['pedido']['desc_pagamento'] = [$payment_descs[$order->get_payment_method()]];
 
 		} else {
 
@@ -471,9 +474,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		foreach ($products as $key => $item){
 			
-			$product      = wc_get_product($item['product_id']);
+			$product      = wc_get_product($item->get_product_id());
 			$product_type = $product->get_type();
-			$product_id   = $item['product_id'];
+			$product_id   = $item->get_product_id();
 			$bundled_by   = isset($item['bundled_by']);
 			$variation_description = $beneficio_fiscal = ''; 
 
@@ -630,9 +633,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			foreach ($order_specifics as $api_key => $meta_key) {
 
-				$value = $_POST[str_replace('_nfe_', '', $meta_key)];
+				$value = $_POST[str_replace('_nfe_', '', $meta_key)] ?? '';
 
-				if (!isset($value))
+				if (!isset($value) && !empty($value))
 					$value = $order->get_meta( $meta_key );
 
 				if ($value){
@@ -713,12 +716,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$services_info = [];
 		foreach ($services as $item) {
 
-			$product_id  = $item['product_id'];
+			$product_id  = $item->get_product_id();
 			$ignore_product = apply_filters( 'nfe_order_product_ignore', get_post_meta($product_id, '_nfe_ignorar_nfe', true), $product_id, $post_id);
 
 			if (!$ignore_product){
 
-				$product = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
+				$product = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item->get_product_id()));
 				$classe_imposto = get_post_meta($product_id, '_nfe_classe_imposto', true) ?: get_option('wc_settings_woocommercenfe_imposto_nfse');
 				$service_info = [
 					'descricao' => $item['name'],
@@ -806,8 +809,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		global $wpdb;
 
 		// Vars
-		$product_id  = $item['product_id'];
-		$product     = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item['product_id']));
+		$product_id  = $item->get_product_id();
+		$product     = wc_get_product((($item['variation_id']) ? $item['variation_id'] : $item->get_product_id()));
 		$codigo_gtin  = get_post_meta($product_id, '_nfe_codigo_ean', true);
 		$gtin_tributavel = get_post_meta($product_id, '_nfe_gtin_tributavel', true);
 		$codigo_ncm  = get_post_meta($product_id, '_nfe_codigo_ncm', true);
@@ -879,12 +882,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'cest' => ($codigo_cest) ? $codigo_cest : '', // Código CEST
 			'ind_escala' => ($ind_escala) ? $ind_escala : '', // Indicador de escala relevante
 			'cnpj_fabricante' => ($cnpj_fabricante) ? $cnpj_fabricante : '', // CNPJ do fabricante da mercadoria
-			'quantidade' => $item['qty'], // Quantidade de itens
+			'quantidade' => $item->get_quantity(), // Quantidade de itens
 			'unidade' => $unidade ? $unidade : 'UN', // Unidade de medida da quantidade de itens
 			'peso' => ($peso) ? $peso : '', // Peso em KG. Ex: 800 gramas = 0.800 KG
 			'origem' => (int) $origem, // Origem do produto
 			'subtotal' => number_format($product_active_price, 2, '.', '' ), // Preço unitário do produto - sem descontos
-			'total' => number_format($product_active_price*$item['qty'], 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
+			'total' => number_format($product_active_price*$item->get_quantity(), 2, '.', '' ), // Preço total (quantidade x preço unitário) - sem descontos
 			'classe_imposto' => $imposto // Referência do imposto cadastrado
 		);
 
@@ -907,7 +910,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		foreach($bundles as $item){
 
-			$product = wc_get_product($item['product_id']);
+			$product = wc_get_product($item->get_product_id());
 			$product_type = $product->get_type();
 			$product_price = $product->get_price();
 			$bundled_by = isset($item['bundled_by']);
@@ -916,36 +919,36 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$bundled_by = $item->meta_exists('_bundled_by');
 			}
 
-			$product_total = $product_price * $item['qty'];
+			$product_total = $product_price * $item->get_quantity();
 
 			if ($bundled_by){
 
 				$total_products += $product_total;
 
-				if (!isset($bundle_products[$item['product_id']])) {
+				if (!isset($bundle_products[$item->get_product_id()])) {
 
-					$bundle_products[$item['product_id']] = $this->get_product_nfe_info($item, $order);
-					$bundle_products[$item['product_id']]['subtotal'] = number_format($product_price, 2, '.', '' );
-					$bundle_products[$item['product_id']]['total'] = number_format($product_total, 2, '.', '' );
+					$bundle_products[$item->get_product_id()] = $this->get_product_nfe_info($item, $order);
+					$bundle_products[$item->get_product_id()]['subtotal'] = number_format($product_price, 2, '.', '' );
+					$bundle_products[$item->get_product_id()]['total'] = number_format($product_total, 2, '.', '' );
 
 				} else {
 
-					$new_qty = ((int)$bundle_products[$item['product_id']]['quantidade']) + 1;
+					$new_qty = ((int)$bundle_products[$item->get_product_id()]['quantidade']) + 1;
 					$new_total = $new_qty * $product_price;
-					$bundle_products[$item['product_id']]['quantidade'] = $new_qty;
-					$bundle_products[$item['product_id']]['total'] = number_format($new_total, 2, '.', '' );
+					$bundle_products[$item->get_product_id()]['quantidade'] = $new_qty;
+					$bundle_products[$item->get_product_id()]['total'] = number_format($new_total, 2, '.', '' );
 
 				}
 
 			} elseif($product_type == 'yith_bundle' || $product_type == 'bundle') {
 
-				$total_bundle += $product_price*$item['qty'];
+				$total_bundle += $product_price*$item->get_quantity();
 
 			} elseif($product_type == 'mix-and-match') {
 
 				$total_products_bundle = 0;
 				$mnm_products_price = 0;
-				$mnm_qty = $item['qty'];
+				$mnm_qty = $item->get_quantity();
 
 				foreach ( $order->get_items() as $key => $item ) {
 					// Get if the product belongs to Mix and Match to calculate discount
@@ -1070,8 +1073,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$billing = array_merge( $this->get_persontype_info($post_id, $tipo_pessoa_billing, '_billing'), $billing);
 			$shipping = array_merge( $this->get_persontype_info($post_id, $tipo_pessoa_shipping, '_shipping'), $shipping);
 
-			$return['cliente'] = $billing;
-			$return['transporte']['entrega'] = $shipping;
+						$return['cliente'] = $billing;
+						$return['transporte']['entrega'] = $shipping;
 		}
 
 		//Foreign customer NFS-e
@@ -1213,7 +1216,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
 		$order = wc_get_order( $order_id );
-		$nfes = get_post_meta( $order->id,  'nfe', true );
+		$nfes = $order->get_meta( 'nfe', true );
 
 		if ( !empty($nfes) && is_array($nfes) ) {
 			foreach ( $nfes as $nfe ) {
@@ -1272,6 +1275,6 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
         return true;
-    }
+	}
 
 }
