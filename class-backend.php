@@ -993,7 +993,7 @@ jQuery(document).ready(function($) {
 	 */
 	function metabox_content_woocommernfe_nfe_emitida( $order ) {
 
-		if (isset($order->ID)){
+		if ( ! is_a( $order, 'WC_Order' ) && isset($order->ID) ) {
 			$order = wc_get_order( $order->ID );
 		}
 		$nfe_data = $order->get_meta('nfe');
@@ -1106,7 +1106,7 @@ jQuery(document).ready(function($) {
 	function metabox_content_woocommernfe_informacoes_adicionais( $order ) {
 
 		// Vars
-		if (isset($order->ID)){
+		if ( ! is_a( $order, 'WC_Order' ) && isset($order->ID) ) {
 			$order = wc_get_order( $order->ID );
 		}
 		$contribuinte = $order->get_meta( '_nfe_contribuinte' );
@@ -1692,7 +1692,7 @@ jQuery(document).ready(function($) {
 
 		global $typenow;
 
-		if ( $typenow == 'shop_order' || $_GET['page'] == 'wc-orders') {
+		if ( $typenow == 'shop_order' || ( isset( $_GET['page'] ) && $_GET['page'] == 'wc-orders') ) {
 
 			if ( isset($_GET['status']) && in_array($_GET['status'], ['trash', 'wc-cancelled', 'wc-pending']))
 				return false;
@@ -1750,9 +1750,9 @@ jQuery(document).ready(function($) {
 		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) ){
 
 			// Verify selected action
-			if ( ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
+			if ( ! isset( $_GET['action'] ) || ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
 			
-			isset( $_GET['action'] )? $action = $_GET['action'] : '';
+			$action = $_GET['action'];
 
 			// Verify order IDs
 			$order_ids = array_map('absint', $_GET['id'] ?? $_GET['post'] ?? []);

@@ -907,6 +907,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$total_bundle = 0;
 		$total_products = 0;
 		$bundle_products = array();
+		$product_type = '';
 
 		foreach($bundles as $item){
 
