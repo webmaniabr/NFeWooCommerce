@@ -8,6 +8,7 @@ class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
 	public $version = '3.3.9';
+	public $settings;
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -270,6 +271,7 @@ class WooCommerceNFe {
 		}
 
 		// Vars
+		$response = null;
 		$order_id = $post->ID;
 		$order = wc_get_order( $order_id );
 
@@ -279,7 +281,7 @@ class WooCommerceNFe {
 			$to == 'wc-completed' && $option == 2
 		){
 			
-			$nfes = get_post_meta( $order->id,  'nfe', true );
+			$nfes = $order->get_meta( 'nfe', true );
 
 			if ( !empty($nfes) && is_array($nfes) ) {
 				foreach ( $nfes as $nfe ) {

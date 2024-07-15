@@ -36,7 +36,7 @@ class NFeGatewayBacs extends WooCommerceNFe {
     if (
 			NFeGatewayEbanx::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-			in_array($order->payment_method, [ 'bacs' ])
+			in_array($order->get_payment_method(), [ 'bacs' ])
 		) {
 
       $order = wc_get_order( $post_id );
@@ -63,9 +63,9 @@ class NFeGatewayBacs extends WooCommerceNFe {
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 
     // Set payment type
-    if ( in_array( $order->payment_method, [ 'bacs', 'other' ] ) ){
+    if ( in_array( $order->get_payment_method(), [ 'bacs', 'other' ] ) ){
 
-      $data['pedido']['forma_pagamento'] = ( $order->payment_method == 'bacs' ) ? ['18'] : ['99']; //18 - Transferência bancária, Carteira Digital (bacs) or 99 - Outros (other)
+      $data['pedido']['forma_pagamento'] = ( $order->get_payment_method() == 'bacs' ) ? ['18'] : ['99']; //18 - Transferência bancária, Carteira Digital (bacs) or 99 - Outros (other)
 
     }
 

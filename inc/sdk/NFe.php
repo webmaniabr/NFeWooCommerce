@@ -5,6 +5,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class NFe {
+	public $consumerKey;
+	public $consumerSecret;
+	public $accessToken;
+	public $accessTokenSecret;
 
 	function __construct( array $vars ){
 
@@ -143,7 +147,7 @@ class NFe {
 				'X-Access-Token: '.$this->accessToken,
 				'X-Access-Token-Secret: '.$this->accessTokenSecret
 			);
-
+			
 			// Init connection
 			$rest = curl_init();
 			curl_setopt($rest, CURLOPT_CONNECTTIMEOUT , 10);

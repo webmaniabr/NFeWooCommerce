@@ -5,6 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 class NFSe {
+	public $token;
 
 	function __construct( string $token ){
 
