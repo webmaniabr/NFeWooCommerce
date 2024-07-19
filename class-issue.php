@@ -97,6 +97,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if ( is_object($response) && $response->status ) {
 
 					$nfe = get_post_meta( $order->id, 'nfe', true );
+					$nfe_doc = $data['nfe']['cliente']['cpf'] ?? $data['nfe']['cliente']['cnpj'];
+					$nfe_doc = str_replace(['.', '-', '/'], '', $nfe_doc);
 	
 					if (!$nfe)
 						$nfe = array();
@@ -129,6 +131,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'n_recibo' => (int) isset($response->recibo) ? $response->recibo : '',
 						'n_nfe' => (int) $response->nfe,
 						'n_serie' => (int) $response->serie,
+						'nfe_doc' => (string) $nfe_doc,
 						'url_xml' => (string) $response->xml,
 						'url_danfe' => (string) $response->danfe,
 						'url_danfe_simplificada' => (string) $response->danfe_simples,

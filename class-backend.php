@@ -1016,9 +1016,9 @@ jQuery(document).ready(function($) {
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
 
-	$password = $this->get_order_cpf_cnpj($order->ID);
+	$nfe_doc = $this->get_order_cpf_cnpj($order->ID, $order_nfe);
 	$uuid = $order_nfe['uuid'];
-	$tokenData = $this->createSecureTokenDFe($password, $uuid);
+	$tokenData = $this->createSecureTokenDFe($nfe_doc, $uuid);
 
 	(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
 	if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'nfse') {
@@ -3047,23 +3047,52 @@ jQuery(document).ready(function($) {
 	 * 
 	 * @return void
 	 */
-	function get_order_cpf_cnpj($post_id) {
+	function get_order_cpf_cnpj($post_id, $order_nfe) {
 
 		if (!$post_id) return;
 
-		$password = get_post_meta($post_id, '_doc_password', true);
+		$cpf = get_post_meta($post_id, '_billing_cpf', true);
+		$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
+		$person_type = get_post_meta($post_id, '_billing_persontype', true);
+		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
 
-		if (!$password){
+		$nfe = get_post_meta($post_id, 'nfe', true);
+		$nfe_doc = isset($nfe[0]['nfe_doc'])? $nfe[0]['nfe_doc'] : '';
 
-			$cpf = get_post_meta($post_id, '_billing_cpf', true);
-			$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
-			isset($cpf) ? $doc = $cpf : (isset($cnpj) ? $doc = $cnpj : null);
-			$password = update_post_meta($post_id, '_doc_password', $doc);
-			return $password;
+		if ( $nfe_doc == '' || $nfe_doc != $post_doc ){
+			
+			$print = new WooCommerceNFePrint;
+			$return = $print->curl_get_file_contents($order_nfe['url_xml']);
+			$sxml = simplexml_load_string($return);
+			$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
+			$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
+
+			if ($order_nfe['status'] == 'reprovado') {
+				$doc = $json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ;
+			} else {
+				$doc = $json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ;
+			}
+
+			if (!$doc) {
+	
+				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Erro:</strong> Não foi possível gerar o Token para uma ou mais emissões deste pedido. Acesso restrito - Token (E1.3)");
+				$this->add_error($reason);
+				return;
+
+			} else {
+
+				$nfe[0]['nfe_doc'] = $doc;
+				update_post_meta($post_id, 'nfe', $nfe);
+
+				$nfe = get_post_meta($post_id, 'nfe', true);
+				$nfe_doc = $nfe[0]['nfe_doc'];
+
+				return $nfe_doc;
+			}
 
 		} else {
-
-			return $password;
+			
+			return $nfe_doc;
 
 		}
 	}
