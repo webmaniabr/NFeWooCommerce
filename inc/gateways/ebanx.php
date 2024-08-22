@@ -36,7 +36,7 @@ class NFeGatewayEbanx extends WooCommerceNFe {
     if (
 			NFeGatewayEbanx::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-			in_array($order->payment_method, [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ])
+			in_array($order->get_payment_method(), [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ])
 		) {
 
       $order = wc_get_order( $post_id );
@@ -63,15 +63,15 @@ class NFeGatewayEbanx extends WooCommerceNFe {
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 
     // Set payment type
-    if ( $order->payment_method == 'ebanx-banking-ticket' ){
+    if ( $order->get_payment_method() == 'ebanx-banking-ticket' ){
 
       $data['pedido']['forma_pagamento'] = ['15']; // 15 - Boleto Bancário
 
-    } elseif (in_array($order->payment_method, [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ]) && $origem_state == 'BR:SC'){
+    } elseif (in_array($order->get_payment_method(), [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ]) && $origem_state == 'BR:SC'){
 
       $data['pedido']['forma_pagamento'] = ['99']; // 99 - Outros
 
-    } elseif (in_array($order->payment_method, [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ])){
+    } elseif (in_array($order->get_payment_method(), [ 'ebanx-credit-card-br', 'ebanx-credit-card-international' ])){
 
       $data['pedido']['forma_pagamento'] = ['03']; // 03 - Cartão de crédito
 
