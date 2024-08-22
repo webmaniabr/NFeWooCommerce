@@ -139,7 +139,7 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 	 * @param string $url
 	 * @return mixed
 	 */
-	private function curl_get_file_contents($url) {
+	public static function curl_get_file_contents($url) {
 
 		$headers = [
 			'Authorization: Bearer ' . get_option('wc_settings_woocommercenfe_bearer_access_token'),
