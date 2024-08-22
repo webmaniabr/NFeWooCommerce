@@ -3054,12 +3054,14 @@ jQuery(document).ready(function($) {
 
 		if (!$post_id) return;
 
-		$cpf = get_post_meta($post_id, '_billing_cpf', true);
-		$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
-		$person_type = get_post_meta($post_id, '_billing_persontype', true);
-		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
+		$order = wc_get_order($post_id);
+		if (!$order) return
 
-		$nfe = get_post_meta($post_id, 'nfe', true);
+		$cpf = $order->get_meta( '_billing_cpf', true );
+		$cnpj = $order->get_meta( '_billing_cnpj', true );
+		$person_type = $order->get_meta( '_billing_persontype', true );
+		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
+		$nfe = $order->get_meta( 'nfe', true );
 		$nfe_doc = isset($nfe[0]['nfe_doc'])? $nfe[0]['nfe_doc'] : '';
 
 		if ( $nfe_doc == '' || $nfe_doc != $post_doc ){
@@ -3085,12 +3087,10 @@ jQuery(document).ready(function($) {
 			} else {
 
 				$nfe[0]['nfe_doc'] = $doc;
-				update_post_meta($post_id, 'nfe', $nfe);
+				$order->update_meta_data( 'nfe', $nfe );
+				$order->save();
 
-				$nfe = get_post_meta($post_id, 'nfe', true);
-				$nfe_doc = $nfe[0]['nfe_doc'];
-
-				return $nfe_doc;
+				return $doc;
 			}
 
 		} else {
