@@ -475,6 +475,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		foreach ($products as $key => $item){
 			
 			$product      = wc_get_product($item['product_id']);
+			if(empty($product)){
+				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Um ou mais produtos deste pedido estão <strong>indisponíveis ou foram excluídos permanentemente</strong> impossibilitando a emissão da nota fiscal.");
+				$this->add_error($reason);
+				return;
+			}
 			$product_type = $product->get_type();
 			$product_id   = $item['product_id'];
 			$bundled_by   = isset($item['bundled_by']);
