@@ -1038,7 +1038,7 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
 	if ((isset($order_nfe['url_danfe']) || trim($order_nfe['url_danfe']) == '') && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'?token='.$tokenData;
-	if ((isset($order_nfe['url_xml']) || trim($order_nfe['url_xml']) == '') && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1?token='.$tokenData;
+	if ((isset($order_nfe['url_xml']) || trim($order_nfe['url_xml']) == '') && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1&token='.$tokenData;
 	if ((isset($order_nfe['url_danfe_simplificada']) || trim($order_nfe['url_danfe_simplificada']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
 	if ((isset($order_nfe['url_danfe_etiqueta']) || trim($order_nfe['url_danfe_etiqueta']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
@@ -3057,23 +3057,28 @@ jQuery(document).ready(function($) {
 		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
 
 		$nfe = get_post_meta($post_id, 'nfe', true);
-		$nfe_doc = isset($nfe[0]['nfe_doc'])? $nfe[0]['nfe_doc'] : '';
+		if (is_array($nfe)) {
+			foreach ($nfe as $item) {
+				$nfe_doc = isset($item['nfe_doc']) ? $item['nfe_doc'] : null;
+			}
+		}
 
-		if ( $nfe_doc == '' || $nfe_doc != $post_doc ){
+		if ( empty($nfe_doc) || $nfe_doc != $post_doc ){
 			
 			$print = new WooCommerceNFePrint;
 			$return = $print->curl_get_file_contents($order_nfe['url_xml']);
 			$sxml = simplexml_load_string($return);
 			$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
 			$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
+			$doc = null;
 
 			if ($order_nfe['status'] == 'reprovado') {
-				$doc = $json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ;
+				$doc = isset($json->infNFe->dest) ? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ) : null;
 			} else {
-				$doc = $json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ;
+				$doc = isset($json->NFe->infNFe->dest) ? ($json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ) : null;
 			}
 
-			if (!$doc) {
+			if (empty($doc)) {
 	
 				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Erro:</strong> Não foi possível gerar o Token para uma ou mais emissões deste pedido. Acesso restrito - Token (E1.3)");
 				$this->add_error($reason);
