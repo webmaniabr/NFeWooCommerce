@@ -17,6 +17,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		$result = array();
 
+		if (isset($_POST['save']) && $_POST['save'] === 'Update') {
+			$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: </strong> Para relizar esta emissão utilize o botão <strong>'Aplicar'</strong> localizado ao lado da lista de ações do pedido.");return;
+		}
+
 		foreach ($order_ids as $order_id) {
 
 			// Data
@@ -35,6 +39,16 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$webmaniabr_nfse = new NFSe($this->settings['bearer_access_token']);
 
 			if (isset($data['nfe'])) {
+
+				$issuance_ID = $data['nfe']['ID'];
+				$cached_id = get_transient('cached_nfe_id');
+
+				if ($cached_id && $cached_id == $issuance_ID) {
+					$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: Identificada possível NF-e em duplicidade.</strong> Para relizar uma nova emissão para o pedido <strong>nº $issuance_ID</strong> aguarde alguns instantes.");
+					return;
+				} else {
+					set_transient('cached_nfe_id', $issuance_ID, 10);
+				}
 
 				$response = $webmaniabr->emissaoNotaFiscal( $data['nfe'] );
 				$result[] = $response;
@@ -146,6 +160,17 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			if (isset($data['nfse'])) {
+
+				$issuance_ID = $data['nfse']['ID'];
+				$cached_id = get_transient('cached_nfse_id');
+
+				if ($cached_id && $cached_id == $issuance_ID) {
+					$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: Identificada possível NFS-e em duplicidade.</strong> Para relizar uma nova emissão para o pedido <strong>nº $issuance_ID</strong> aguarde alguns instantes.");
+					return;
+				} else {
+					set_transient('cached_nfse_id', $issuance_ID, 10);
+				}
+
 				$response = $webmaniabr_nfse->emissaoNFSe($data['nfse']);
 				$result[] = $response;
 
@@ -226,7 +251,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 						'data' => date_i18n('d/m/Y'),
 					);
 	
-					update_post_meta( $order->id, 'nfe', $nfe );
+					$order->update_meta_data('nfe', $nfe);
+					$order->save();
 	
 				}
 			}
@@ -731,7 +757,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$service_info = [
 					'descricao' => $item['name'],
 					'quantidade' => $item['qty'],
-					'total' => number_format($order->get_item_subtotal( $item, false, false )*$item['qty'], 2, '.', '' ),
+					'total' => number_format($order->get_item_total( $item, false, false )*$item['qty'], 2, '.', '' ),
+					'subtotal' => number_format($order->get_item_subtotal( $item, false, false )*$item['qty'], 2, '.', '' ),
 				];
 				if (array_key_exists($classe_imposto, $services_info)) $services_info[$classe_imposto][] = $service_info;
 				else $services_info[$classe_imposto] = [$service_info];
@@ -748,10 +775,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$discriminacao = '';
 	
 				foreach ($item as $key2 => $service) {
-
+					$service_value = ($service['total'] != $service['subtotal'])? $service['total'] : $service['subtotal'];
 					$valor_servicos += $service['total'];
 					if ($key2 != 0) $discriminacao .= ' | ';
-					$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service['total'];
+					$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service_value;
 
 				}
 				
@@ -773,7 +800,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if (!empty($servico_inf)) $discriminacao .= ' - ' . $servico_inf;
 
 				// Discount
-				$tipo_desconto = $_POST['tipo_desconto'];
+				$tipo_desconto = isset($_POST['tipo_desconto']) ? $_POST['tipo_desconto'] : null;
 				if (empty($tipo_desconto)) $tipo_desconto = $order->get_meta( '_nfse_tipo_desconto' );
 				if (empty($tipo_desconto)) $tipo_desconto = get_option('wc_settings_woocommercenfe_tipo_desconto_nfse');
 				if (empty($tipo_desconto)) $tipo_desconto = 1;

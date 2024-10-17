@@ -160,6 +160,8 @@ class WooCommerceNFePrint extends WooCommerceNFe {
 		
 		curl_close($c);
 
+		if(strpos($contents, 'error') !== false) return false;
+
 		return $contents ?? false;
 	}
 }

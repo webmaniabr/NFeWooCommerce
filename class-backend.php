@@ -297,7 +297,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 	<?php
 
-	include_once(plugin_dir_path(dirname(__FILE__)).'nota-fiscal-eletronica-woocommerce/templates/payment-setting.php');
+	include_once(__DIR__).'/templates/payment-setting.php';
 
 	}
 
@@ -976,7 +976,8 @@ jQuery(document).ready(function($) {
 
 				}
 
-				update_post_meta( $order->id, 'nfe', $nfe_data );
+				$order->update_meta_data( 'nfe', $nfe_data );
+				$order->save();
 				$this->add_success( 'NF-e atualizada com sucesso' );
 
 			}
@@ -992,7 +993,7 @@ jQuery(document).ready(function($) {
 	 */
 	function metabox_content_woocommernfe_nfe_emitida( $order ) {
 
-		if (isset($order->ID)){
+		if ( !is_a( $order, 'WC_Order' ) && isset($order->ID) ) {
 			$order = wc_get_order( $order->ID );
 		}
 		$nfe_data = $order->get_meta('nfe');
@@ -1016,11 +1017,16 @@ jQuery(document).ready(function($) {
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
 
+	if (empty($order_nfe['data'])){
+		continue;
+	}
+
+	$data_nfe = $order_nfe['data'];
+
 	$nfe_doc = $this->get_order_cpf_cnpj($order->ID, $order_nfe);
-	$uuid = $order_nfe['uuid'];
+	$uuid = isset($order_nfe['uuid']) ? $order_nfe['uuid'] : '';
 	$tokenData = $this->createSecureTokenDFe($nfe_doc, $uuid);
 
-	(isset($order_nfe['data']) ? $data_nfe = $order_nfe['data'] : $data_nfe = '' );
 	if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'nfse') {
 		$modelo_nfe = 'NFS-e';
 	}
@@ -1037,10 +1043,14 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_recibo']) ? $recibo_nfe = $order_nfe['n_recibo'] : $recibo_nfe = '' );
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
-	if ((isset($order_nfe['url_danfe']) || trim($order_nfe['url_danfe']) == '') && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'?token='.$tokenData;
-	if ((isset($order_nfe['url_xml']) || trim($order_nfe['url_xml']) == '') && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1&token='.$tokenData;
-	if ((isset($order_nfe['url_danfe_simplificada']) || trim($order_nfe['url_danfe_simplificada']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
-	if ((isset($order_nfe['url_danfe_etiqueta']) || trim($order_nfe['url_danfe_etiqueta']) == '') && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	if ($modelo_nfe == 'NF-e'){
+		if (isset($order_nfe['url_danfe']) && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'?token='.$tokenData;
+		if (isset($order_nfe['url_xml']) && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1&token='.$tokenData;
+		if (isset($order_nfe['url_danfe_simplificada']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
+		if (isset($order_nfe['url_danfe_etiqueta']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
+	} else{
+		$xml_nfe = (!empty($order_nfe['url_xml']))? $order_nfe['url_xml'].'?token='.$tokenData : '';
+	}
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
@@ -1053,9 +1063,9 @@ jQuery(document).ready(function($) {
 			<span>---</span>
 			<?php } else if ($modelo_nfe == 'NFS-e') {
 				if (isset($order_nfe['url_pdf']) && !empty($order_nfe['url_pdf'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'] ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'].'?token='.$tokenData ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php } elseif (isset($order_nfe['pdf_rps']) && !empty($order_nfe['pdf_rps'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'] ?>"><span class="wrt">DARPS </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'].'?token='.$tokenData ?>"><span class="wrt">DARPS </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php }
 			} else { ?>
 			<?php if (isset($order_nfe['url_danfe'])) { ?>
@@ -1080,8 +1090,12 @@ jQuery(document).ready(function($) {
 				<?php if ($recibo_nfe) { ?><li><strong>Recibo:</strong> <?php echo $recibo_nfe; ?></li><?php } ?>
 				<?php if ($modelo_nfe != 'Lote RPS') { ?>
 					<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
-				<?php } ?>
+				<?php } 
+				if (empty($xml_nfe)){?>
+				<li><strong>Arquivo XML: </strong>Indisponível</li>
+				<?php } else { ?>
 				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe; ?>">Download XML</a></li>
+				<?php } ?>
 				<?php if ($status_nfe == 'reprovado' && isset($order_nfe['motivo'])) { ?>
 					<li><strong>Motivo:</strong> <?php echo $order_nfe['motivo']; ?></li>
 				<?php } ?>
@@ -1105,7 +1119,7 @@ jQuery(document).ready(function($) {
 	function metabox_content_woocommernfe_informacoes_adicionais( $order ) {
 
 		// Vars
-		if (isset($order->ID)){
+		if ( !is_a( $order, 'WC_Order' ) && isset($order->ID) ) {
 			$order = wc_get_order( $order->ID );
 		}
 		$contribuinte = $order->get_meta( '_nfe_contribuinte' );
@@ -1627,29 +1641,23 @@ jQuery(document).ready(function($) {
 	 * @return html
 	 */
 	function add_order_status_column_content( $column, $order = null ) {
-
-		global $post;
+		
 		if ( 'nfe' == $column ) {
 
 			// vars
-			if ($post){
-				$order = wc_get_order( $post->ID );
+			if ( is_null( $order ) ) {
+				return;
 			}
-			$nfe = get_post_meta( $order->id, 'nfe', true );
+			$nfe = $order->get_meta( 'nfe', true );
 
-			// If order has the status pending or cancelled, don't print 'NF-e' status
-			if ($order->get_status() == 'pending' || $order->get_status() == 'cancelled') {
-
-				echo '<span class="nfe_none">-</span>';
-
-			// Else if $nfe has information, check status from array
-			} elseif ($nfe) {
+			// if $nfe has information, check status from array
+			if ($nfe) {
 
 				$nfe_emitida = false;
 
 				foreach ( $nfe as $item ) {
 
-					if ( $item['status'] == 'aprovado' ) {
+					if ( isset($item['status']) && $item['status'] == 'aprovado' ) {
 						$nfe_emitida = true;
 					}
 
@@ -1658,12 +1666,12 @@ jQuery(document).ready(function($) {
 				if ( $nfe_emitida ) {
 					echo '<div class="nfe_success">Emitida</div>';
 				} else {
-					echo '<div class="nfe_alert">Não emitida</div>';
+					echo '<div class="nfe_alert">Reprovada</div>';
 				}
 
-			} else {
+			} else { 
 
-				echo '<div class="nfe_alert">Não emitida</div>';
+				echo '<div class="nfe_pending">Pendente</div>';
 
 			}
 
@@ -1692,7 +1700,7 @@ jQuery(document).ready(function($) {
 
 		global $typenow;
 
-		if ( $typenow == 'shop_order' || $_GET['page'] == 'wc-orders') {
+		if ( $typenow == 'shop_order' || isset($_GET['page']) && $_GET['page'] == 'wc-orders') {
 
 			if ( isset($_GET['status']) && in_array($_GET['status'], ['trash', 'wc-cancelled', 'wc-pending']))
 				return false;
@@ -1724,6 +1732,7 @@ jQuery(document).ready(function($) {
 
 		?>
 		<style>
+		.nfe_pending { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #969696; }
 		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
 		.nfe_success { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em;  background-color: #5cb85c; }
 		.nfe_none { color: #999; text-align:center; }
@@ -1747,10 +1756,10 @@ jQuery(document).ready(function($) {
 
 		if (!$order_list) return;
 
-		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) ){
+		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) && isset( $_GET['action'] ) ) {
 
 			// Verify selected action
-			if ( ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
+			if ( ! isset( $_GET['action'] ) || ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
 			
 			isset( $_GET['action'] )? $action = $_GET['action'] : '';
 
@@ -2459,7 +2468,7 @@ jQuery(document).ready(function($) {
 	public function page_auto_invoice_errors() {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
-		include_once(plugin_dir_path(dirname(__FILE__)).'nota-fiscal-eletronica-woocommerce/templates/page-reports.php');
+		include_once(__DIR__).'/templates/page-reports.php';
 
 	}
 
@@ -2530,7 +2539,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
+			$order_nfe_data = $order->get_meta( 'nfe', true );
 			$is_new = true;
 
 			if ( is_array($order_nfe_data) ) {
@@ -2556,8 +2565,9 @@ jQuery(document).ready(function($) {
 				$order_nfe_data[] = array(
 					'uuid'   => (string) $_POST['uuid'],
 					'status' => (string) $_POST['status'],
+					'modelo' => 'nfe',
 					'chave_acesso' => (string) $_POST['chave'],
-					'n_recibo' => (int) $_POST['recibo'],
+					'n_recibo' => (int) isset($_POST['recibo']) ? $_POST['recibo'] : '',
 					'n_nfe' => (int) $_POST['nfe'],
 					'n_serie' => (int) $_POST['serie'],
 					'url_xml' => (string) $_POST['xml'],
@@ -2568,7 +2578,8 @@ jQuery(document).ready(function($) {
 				);
 			}
 
-			update_post_meta( $order->id, 'nfe', $order_nfe_data );
+			$order->update_meta_data( 'nfe', $order_nfe_data );
+			$order->save();
 
 		}
 
@@ -2593,7 +2604,7 @@ jQuery(document).ready(function($) {
 				exit;
 			}
 
-			$order_nfe_data = get_post_meta( $order->id, 'nfe', true );
+			$order_nfe_data = $order->get_meta( 'nfe', true );
 			$is_new = true;
 			$is_lote_update = false;
 
@@ -2654,7 +2665,8 @@ jQuery(document).ready(function($) {
 				}
 			}
 
-			update_post_meta( $order->id, 'nfe', $order_nfe_data );
+			$order->update_meta_data( 'nfe', $order_nfe_data );
+			$order->save();
 
 		}
 
@@ -3055,37 +3067,53 @@ jQuery(document).ready(function($) {
 		$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
 		$person_type = get_post_meta($post_id, '_billing_persontype', true);
 		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
-
 		$nfe = get_post_meta($post_id, 'nfe', true);
-		if (is_array($nfe)) {
+		$order_doc = false;
+
+		if ( !empty($nfe) && is_array($nfe)) {
 			foreach ($nfe as $item) {
 				$nfe_doc = isset($item['nfe_doc']) ? $item['nfe_doc'] : null;
+				if ($nfe_doc != $post_doc) $order_doc = true;
 			}
 		}
 
-		if ( empty($nfe_doc) || $nfe_doc != $post_doc ){
+		if ( empty($nfe_doc) || $order_doc == true ){
 			
 			$print = new WooCommerceNFePrint;
-			$return = $print->curl_get_file_contents($order_nfe['url_xml']);
+			if (!empty($order_nfe['url_xml'])) {
+				$return = $print->curl_get_file_contents($order_nfe['url_xml']);
+			} else {
+				return;
+			}
 			$sxml = simplexml_load_string($return);
 			$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
 			$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
 			$doc = null;
 
-			if ($order_nfe['status'] == 'reprovado') {
-				$doc = isset($json->infNFe->dest) ? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ) : null;
+			if (isset($order_nfe['modelo']) && in_array($order_nfe['modelo'], ['nfse', 'lote_rps'])) {
+				$searchTag = ['IdentificacaoTomador'];	
+				$tomador = $this->searchKeyInJson($json, $searchTag);
+				$tomDoc = $this->searchKeyInJson($tomador, [], true);
+				$doc = implode('',$tomDoc);
 			} else {
-				$doc = isset($json->NFe->infNFe->dest) ? ($json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ) : null;
+				if ($order_nfe['status'] == 'reprovado') {
+					$doc = isset($json->infNFe->dest) ? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ) : null;
+				} else {
+					$doc = isset($json->infNFe->dest) 
+					? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ)
+					: ($json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ ?? null);
+				}
 			}
 
 			if (empty($doc)) {
-	
 				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Erro:</strong> Não foi possível gerar o Token para uma ou mais emissões deste pedido. Acesso restrito - Token (E1.3)");
 				$this->add_error($reason);
 				return;
 
 			} else {
 
+				!is_array($nfe) ? $nfe = array() ?: isset($nfe[0]) : $nfe[0] = array();
+				
 				$nfe[0]['nfe_doc'] = $doc;
 				update_post_meta($post_id, 'nfe', $nfe);
 
@@ -3108,14 +3136,61 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function createSecureTokenDFe( $password, $uuid ){
-		$password = preg_replace("/[^0-9]/", '', $password);
+		$password = trim(preg_replace('/[^a-zA-Z0-9 ]/', '', $password));
+    	$password = explode(' ', $password);
+    	$password = mb_strtolower($password[0]);
 		$key = hash('sha256', $password . ':' . $uuid, true);
-		$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('AES-256-CBC'));
-		$encryptedData = openssl_encrypt(time(), 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+    	$iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length('AES-256-CBC'));
+    	$encryptedData = openssl_encrypt(time(), 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
 		$tokenData = json_encode(['data' => base64_encode($encryptedData), 'iv' => base64_encode($iv)]);
-		return urlencode(base64_encode($tokenData));
+    	return urlencode(base64_encode($tokenData));
 	}
 
+	/**
+	 *
+	 * search Key In Json
+	 *
+	 * @param mixed
+	 * @param array
+	 * @return array
+	 */
+	function searchKeyInJson($data, $keysToFind = [], $searchNumbersOnly = false) {
+		$results = [];
+
+		if (is_array($data)) {
+			foreach ($data as $key => $value) {
+				if (in_array($key, $keysToFind) || (!$keysToFind && is_numeric($value))) {
+					$results[$key] = $value;
+				}
+
+				if (is_array($value) || is_object($value)) {
+					$results = array_merge($results, self::searchKeyInJson($value, $keysToFind, $searchNumbersOnly));
+				}
+
+				if ($searchNumbersOnly && is_string($value) && preg_match('/^\d+$/', $value)) {
+					$results[$key] = $value;
+				}
+			}
+		}
+	
+		if (is_object($data)) {
+			foreach ($data as $key => $value) {
+				if (in_array($key, $keysToFind) || (!$keysToFind && is_numeric($value))) {
+					$results[$key] = $value;
+				}
+	
+				if (is_array($value) || is_object($value)) {
+					$results = array_merge($results, self::searchKeyInJson($value, $keysToFind, $searchNumbersOnly));
+				}
+	
+				if ($searchNumbersOnly && is_string($value) && preg_match('/^\d+$/', $value)) {
+					$results[$key] = $value;
+				}
+			}
+		}
+	
+		return $results;
+	}
 }
 
 new WooCommerceNFeBackend;
