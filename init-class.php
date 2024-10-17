@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public $domain = 'WooCommerceNFe';
-	public $version = '3.3.9.2';
+	public $version = '3.4.0';
 	protected static $_instance = NULL;
 
 	public static function instance() {
@@ -283,7 +283,7 @@ class WooCommerceNFe {
 
 			if ( !empty($nfes) && is_array($nfes) ) {
 				foreach ( $nfes as $nfe ) {
-					if ( $nfe['status'] == 'aprovado' ) {
+					if ( isset($nfe) ) {
 						return;
 					}
 				}
@@ -298,7 +298,9 @@ class WooCommerceNFe {
 
 		}
 
-		do_action( 'nfe_issued_automatic', $order_id, $to, $response );
+		if (!empty($response)) {
+			do_action( 'nfe_issued_automatic', $order_id, $to, $response );
+	   	}
 
 	}
 
