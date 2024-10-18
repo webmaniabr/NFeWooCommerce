@@ -1648,6 +1648,15 @@ jQuery(document).ready(function($) {
 			if ( is_null( $order ) ) {
 				return;
 			}
+			// Verify if $order is a valid instace from WC_Order
+			if (is_int($order)) {
+
+				$order = wc_get_order( $order );
+
+			} else if ( is_null( $order ) || ! is_a( $order, 'WC_Order' ) ) {
+				return;
+			}
+			
 			$nfe = $order->get_meta( 'nfe', true );
 
 			// if $nfe has information, check status from array
@@ -1657,16 +1666,24 @@ jQuery(document).ready(function($) {
 
 				foreach ( $nfe as $item ) {
 
-					if ( isset($item['status']) && $item['status'] == 'aprovado' ) {
-						$nfe_emitida = true;
+					if ( isset($item['status']) ) {
+						$nfe_emitida = $item['status'];
 					}
 
 				}
 
-				if ( $nfe_emitida ) {
+				if ( $nfe_emitida == 'aprovado' ) {
+
 					echo '<div class="nfe_success">Emitida</div>';
-				} else {
+					
+				} else if ( $nfe_emitida == 'reprovado' ) {
+
 					echo '<div class="nfe_alert">Reprovada</div>';
+
+				} else if ( $nfe_emitida == 'cancelado' ) {
+
+					echo '<div class="nfe_cancel">Cancelada</div>';
+
 				}
 
 			} else { 
@@ -1733,7 +1750,8 @@ jQuery(document).ready(function($) {
 		?>
 		<style>
 		.nfe_pending { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #969696; }
-		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #d9534f; }
+		.nfe_alert { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #ff5703; }
+		.nfe_cancel { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em; background-color: #e33244; }
 		.nfe_success { display: inline; padding: .2em .6em .3em; font-size: 11px; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: .25em;  background-color: #5cb85c; }
 		.nfe_none { color: #999; text-align:center; }
 		.nfe_danfe { padding: 0px 12px 2px; border: 1px solid #CCC; margin-top: 5px; float: left; }
@@ -3063,6 +3081,7 @@ jQuery(document).ready(function($) {
 
 		if (!$post_id) return;
 
+		$nfe_doc = get_transient('cached_nfe_doc_'.$order_nfe['uuid']);
 		$cpf = get_post_meta($post_id, '_billing_cpf', true);
 		$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
 		$person_type = get_post_meta($post_id, '_billing_persontype', true);
@@ -3114,11 +3133,9 @@ jQuery(document).ready(function($) {
 
 				!is_array($nfe) ? $nfe = array() ?: isset($nfe[0]) : $nfe[0] = array();
 				
-				$nfe[0]['nfe_doc'] = $doc;
-				update_post_meta($post_id, 'nfe', $nfe);
+				$nfe_doc  = $doc;
 
-				$nfe = get_post_meta($post_id, 'nfe', true);
-				$nfe_doc = $nfe[0]['nfe_doc'];
+				set_transient( 'cached_nfe_doc_'.$order_nfe['uuid'], $nfe_doc, 24 * HOUR_IN_SECONDS );
 
 				return $nfe_doc;
 			}
