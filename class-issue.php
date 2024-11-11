@@ -776,7 +776,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				foreach ($item as $key2 => $service) {
 					$service_value = ($service['total'] != $service['subtotal'])? $service['total'] : $service['subtotal'];
-					$valor_servicos += $service['total'];
+					$valor_servicos += (!$total_discount)? $service['total'] : $service['subtotal'];
 					if ($key2 != 0) $discriminacao .= ' | ';
 					$discriminacao .= $service['descricao'] . ' - Qtd.: ' . $service['quantidade'] . ' - R$' . $service_value;
 
