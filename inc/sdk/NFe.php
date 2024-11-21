@@ -144,6 +144,14 @@ class NFe {
 				'X-Access-Token-Secret: '.$this->accessTokenSecret
 			);
 
+			// Debug
+			$debug_enabled = get_option('wc_settings_woocommercenfe_debug');
+			if ( $debug_enabled ) {
+				$logger  = wc_get_logger();
+				$context = array( 'source' => 'webmania' );
+				$logger->debug( 'Dados enviados para Webmania (json): ' . json_encode( $data ), $context );
+			}
+
 			// Init connection
 			$rest = curl_init();
 			curl_setopt($rest, CURLOPT_CONNECTTIMEOUT , 10);
@@ -195,9 +203,19 @@ class NFe {
 
 			// Return
 			if ( isset($curl_error->error) ) {
-					return $curl_error;
+				if ( $debug_enabled ) {
+					$context = array( 'source' => 'webmania' );
+					$logger->debug( 'Erro: ' . $curl_error, $context );
+				}
+
+				return $curl_error;
 			} else {
-					return json_decode($response);
+				if ( $debug_enabled ) {
+					$context = array( 'source' => 'webmania' );
+					$logger->debug( 'Resposta da API: ' . $response, $context );
+				}
+
+				return json_decode($response);
 			}
 
 	}
