@@ -1017,7 +1017,7 @@ jQuery(document).ready(function($) {
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
 
-	$nfe_doc = $this->get_order_cpf_cnpj($order->ID, $order_nfe);
+	$nfe_doc = $this->get_order_cpf_cnpj($order->get_id(), $order_nfe);
 	$uuid = $order_nfe['uuid'];
 	$tokenData = $this->createSecureTokenDFe($nfe_doc, $uuid);
 
@@ -2690,7 +2690,7 @@ jQuery(document).ready(function($) {
 		// Person type information.
 		if ( 1 == $order->get_meta( '_billing_persontype', true ) ) $html .= '<strong>' . __( 'CPF', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cpf', true ) ) . '<br />';
 		if ( 2 == $order->get_meta( '_billing_persontype', true ) ) {
-			$html .= '<strong>' . __( 'Razão Social', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_company', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'Razão Social', $this->domain ) . ': </strong>' . esc_html( $order->get_billing_company() ) . '<br />';
 			$html .= '<strong>' . __( 'CNPJ', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cnpj', true ) ) . '<br />';
 			if ( ! empty( $order->get_meta( '_billing_ie', true ) ) ) {
 				$html .= '<strong>' . __( 'I.E', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_ie', true ) ) . '<br />';

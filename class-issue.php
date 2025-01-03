@@ -1019,32 +1019,33 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$WooCommerceNFeFormat = new WooCommerceNFeFormat;
 
 		$order = wc_get_order( $post_id );
-		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : $order->get_meta( '_billing_phone' ));
-		$email = ($envio_email && $envio_email == 'yes' ? $order->get_meta( '_billing_email' ) : '');
+		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : $order->get_billing_phone());
+		$phone = str_replace("+", "", $phone); // Remove '+' preffix from international phones.
+		$email = ($envio_email && $envio_email == 'yes' ? $order->get_billing_email() : '');
 
 		$billing = array(
-			'endereco'    => $order->get_meta( '_billing_address_1' ),
-			'complemento' => $order->get_meta( '_billing_address_2' ),
+			'endereco'    => $order->get_billing_address_1(),
+			'complemento' => $order->get_billing_address_2(),
 			'numero'      => $order->get_meta( '_billing_number' ),
 			'bairro'      => $order->get_meta( '_billing_neighborhood' ),
-			'cidade'      => $order->get_meta( '_billing_city' ),
-			'uf'          => $order->get_meta( '_billing_state' ),
-			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_billing_postcode' )),
+			'cidade'      => $order->get_billing_city(),
+			'uf'          => $order->get_billing_state(),
+			='cep'        => $WooCommerceNFeFormat->cep($order->get_billing_postcode()),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => $order->get_meta( '_billing_country' )
+			'pais'        => $order->get_billing_country()
 		);
 		$shipping = array(
-			'endereco'    => $order->get_meta( '_shipping_address_1' ),
-			'complemento' => $order->get_meta( '_shipping_address_2' ),
+			'endereco'    => $order->get_shipping_address_1(),
+			'complemento' => $order->get_shipping_address_2(),
 			'numero'      => $order->get_meta( '_shipping_number' ),
 			'bairro'      => $order->get_meta( '_shipping_neighborhood' ),
-			'cidade'      => $order->get_meta( '_shipping_city' ),
-			'uf'          => $order->get_meta( '_shipping_state' ),
-			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_shipping_postcode' )),
+			'cidade'      => $order->get_shipping_city(),
+			'uf'          => $order->get_shipping_state(),
+			'cep'         => $WooCommerceNFeFormat->cep($order->get_shipping_postcode()),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => $order->get_meta( '_shipping_country' )
+			'pais'        => $order->get_shipping_country()
 		);
 
 		if ( $shipping['endereco'] == '' ) {
@@ -1154,6 +1155,15 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$order = wc_get_order( $post_id );
 		$WooCommerceNFeFormat = new WooCommerceNFeFormat;
 
+		if ( $type === '_shipping' ) {
+			$order_name = $order->get_shipping_first_name() . ' ' . $order->get_shipping_last_name();
+			$order_company = $order->get_shipping_company();
+		} else {
+			$order_name = $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
+			$order_company = $order->get_billing_company();
+		}
+
+
 		if ( $persontype == 3 && $type == '_shipping' ) {
 			$persontype = $this->detect_persontype($post_id, '_billing');
 			$type = '_billing';
@@ -1162,13 +1172,13 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $persontype == 1 ) {
 
 			// Full name and CPF
-			$person_info['nome_completo'] = $order->get_meta( $type.'_first_name' ).' '.$order->get_meta( $type.'_last_name' );
+			$person_info['nome_completo'] = $order_name;
 			$person_info['cpf'] = $WooCommerceNFeFormat->cpf($order->get_meta( $type.'_cpf' ));
 
 		} elseif ( $persontype == 2 ) {
 
 			// Razao Social, CNPJ and IE
-			$person_info['razao_social'] = $order->get_meta( $type.'_company', true);
+			$person_info['razao_social'] = $order_company;
 			$person_info['cnpj'] = $WooCommerceNFeFormat->cnpj($order->get_meta( $type.'_cnpj' ));
 			$person_info['ie'] = str_replace(array('-','.',','), '', $order->get_meta( $type.'_ie' ));
 
