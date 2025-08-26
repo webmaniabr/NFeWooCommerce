@@ -698,7 +698,23 @@ jQuery(document).ready(function($) {
 			'section_end4' => array(
 				'type' => 'sectionend',
 				'id' => 'wc_settings_woocommercenfe_end4'
-			)
+			),
+			'debug_title' => array(
+				'name'     => __( 'Log de depuração', $this->domain ),
+				'type'     => 'title',
+				'desc'     => ''
+			),
+			'debug' => array(
+				'name' => __( 'Habilitar log de depuração', $this->domain ),
+				'type' => 'checkbox',
+				'desc' => __( 'Caso esteja marcado registra no log os dados enviados para a API do Webmania e a resposta recebida.', $this->domain ),
+				'id'   => 'wc_settings_woocommercenfe_debug',
+				'default' => 'no',
+			),
+			'section_end5' => array(
+				'type' => 'sectionend',
+				'id' => 'wc_settings_woocommercenfe_end5'
+			),
 		);
 
 		// WooCommerce Extra Checkout Fields for Brazil
