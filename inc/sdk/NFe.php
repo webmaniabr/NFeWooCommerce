@@ -6,7 +6,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class NFe {
 
-	function __construct( array $vars ){
+	public string $consumerKey = '';
+	public string $consumerSecret = '';
+	public string $accessToken = '';
+	public string $accessTokenSecret = '';
+
+	public function __construct( array $vars ) {
 
 			$this->consumerKey = $vars['consumer_key'];
 			$this->consumerSecret = $vars['consumer_secret'];
@@ -150,8 +155,8 @@ class NFe {
 			curl_setopt($rest, CURLOPT_TIMEOUT, $timeout);
 			curl_setopt($rest, CURLOPT_URL, $endpoint);
 			curl_setopt($rest, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, false);
-			curl_setopt($rest, CURLOPT_SSL_VERIFYHOST, false);
+			curl_setopt($rest, CURLOPT_SSL_VERIFYPEER, true);
+			curl_setopt($rest, CURLOPT_SSL_VERIFYHOST, 2);
 			curl_setopt($rest, CURLOPT_CUSTOMREQUEST, $request);
 			curl_setopt($rest, CURLOPT_POSTFIELDS, json_encode( $data ));
 			curl_setopt($rest, CURLOPT_HTTPHEADER, $headers);
@@ -174,14 +179,8 @@ class NFe {
 			// Get cURL errors
 			$curl_error = new StdClass;
 			if ($curl_errno){
-				// Get User IP
-				$ip = $_SERVER['CF-Connecting-IP']; // CloudFlare
-				if (!$ip){
-					$ip = $_SERVER['REMOTE_ADDR']; // Standard
-				}
-				if (is_array($ip)){
-					$ip = $ip[0];
-				}
+				// Security: Get User IP safely
+				$ip = $this->get_user_ip();
 
 				// cURL errors
 				if (!$http_status){
@@ -220,6 +219,48 @@ class NFe {
 			$unit = strtolower(substr(trim($value), -1));
 			return $multipliers[$unit] ?? 1 * (int)$value;
 
+	}
+
+	/**
+	 * Security: Get real user IP address safely
+	 * 
+	 * @return string
+	 */
+	private function get_user_ip() {
+		
+		// List of possible IP headers in order of preference
+		$ip_headers = [
+			'HTTP_CF_CONNECTING_IP',     // CloudFlare
+			'HTTP_CLIENT_IP',            // Proxy
+			'HTTP_X_FORWARDED_FOR',      // Load Balancer/Proxy
+			'HTTP_X_FORWARDED',          // Proxy
+			'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+			'HTTP_FORWARDED_FOR',        // Proxy
+			'HTTP_FORWARDED',            // Proxy
+			'REMOTE_ADDR'                // Standard
+		];
+		
+		foreach ($ip_headers as $header) {
+			if (!empty($_SERVER[$header])) {
+				$ip_list = $_SERVER[$header];
+				
+				// Handle comma-separated IPs
+				if (strpos($ip_list, ',') !== false) {
+					$ip_list = explode(',', $ip_list);
+					$ip = trim($ip_list[0]);
+				} else {
+					$ip = trim($ip_list);
+				}
+				
+				// Validate IP address
+				if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+					return $ip;
+				}
+			}
+		}
+		
+		// Fallback to REMOTE_ADDR even if private/reserved
+		return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : 'unknown';
 	}
 
 }

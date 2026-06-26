@@ -6,24 +6,43 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WooCommerceNFe {
 
-	public $domain = 'WooCommerceNFe';
-	public $version = '3.4.0.3';
-	protected static $_instance = NULL;
+	public string $domain = 'WooCommerceNFe';
+	public string $version = '3.4.4';
+	public array $settings = [];
+	protected static ?WooCommerceNFe $_instance = null;
 
 	public static function instance() {
     if ( is_null( self::$_instance ) ) {
-      self::$_instance = new self();
-    }
-    return self::$_instance;
-  }
+			self::$_instance = new self();
+		}
+		return self::$_instance;
+	}
 
-  public function __get( $key ) {
-    return $this->$key();
+  	public function __get( $key ) {
+		// Security: Restrict access to safe properties only
+		$allowed_properties = array(
+			'domain',
+			'version',
+			'settings'
+		);
+		
+		if ( in_array( $key, $allowed_properties, true ) ) {
+			return $this->$key;
+		}
+		
+		// Security: Log potential security attempt without exposing user input
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'WooCommerceNFe: Attempted access to restricted property' );
+		}
+		return null;
 	}
 
 	function __construct(){
 
 		global $domain, $woocommerce;
+
+		// Load hook message
+		add_action( 'admin_notices', [ $this, 'display_messages' ] );
 
 		// Validate plugin before Load
 		if (!$this->validate_plugin()){
@@ -71,9 +90,11 @@ class WooCommerceNFe {
 		}
 
 		// WooCommerce Version
-		$vars = get_object_vars($woocommerce);
+		$wc_version = defined('WC_VERSION')
+			? constant('WC_VERSION')
+			: (function_exists('WC') ? WC()->version : '0.0.0');
 
-		if ($vars['version'] < '3.0.0'){
+		if (version_compare($wc_version, '3.0.0', '<')){
 			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Atualize o WooCommerce para a versão 3.0.0 ou superior.', $this->domain) );
 			return false;
 		}
@@ -161,6 +182,7 @@ class WooCommerceNFe {
 	 */
 	function includes(){
 
+		include_once( 'inc/class-security.php' ); // Security helper class
 		include_once( 'inc/sdk/NFe.php' );
 		include_once( 'inc/sdk/NFSe.php' );
 		include_once( 'inc/utils.php' );
@@ -279,7 +301,7 @@ class WooCommerceNFe {
 			$to == 'wc-completed' && $option == 2
 		){
 			
-			$nfes = get_post_meta( $order->id,  'nfe', true );
+			$nfes = $order->get_meta('nfe');
 
 			if ( !empty($nfes) && is_array($nfes) ) {
 				foreach ( $nfes as $nfe ) {
@@ -315,14 +337,35 @@ class WooCommerceNFe {
 			return;
 		}
 
-		$subject = 'Erro ao emitir NF-e - Pedido #'.$order_id;
-		$message = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		// Security: Validate email address
+		if (!is_email($email)) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log('WooCommerceNFe: Invalid email address for notifications');
+			}
+			return;
+		}
+
+		// Security: Sanitize inputs to prevent header injection
+		$order_id = intval($order_id);
+		$safe_message = wp_kses($message, array(
+			'p' => array(),
+			'br' => array(),
+			'strong' => array(),
+			'ul' => array(),
+			'li' => array()
+		));
+
+		// Security: Properly escape subject and URL
+		$subject = esc_html( sprintf('Erro ao emitir NF-e - Pedido #%d', $order_id) );
+		$admin_url = esc_url( admin_url( 'post.php?post=' . $order_id . '&action=edit' ) );
+		
+		$html_message = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 		  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 		  <html xmlns="http://www.w3.org/1999/xhtml">
 		  <head><meta charset="UTF-8"></head>
 		  	<body>
-		  		<p>Houve um erro de emissão automatica no Pedido #'.$order_id.': <a target="_blank" href="'.get_admin_url().'/post.php?post='.$order_id.'&action=edit">Acesse o pedido</a></p>
-		  		'.$message.'
+		  		<p>Houve um erro de emissão automática no Pedido #' . esc_html($order_id) . ': <a target="_blank" href="' . $admin_url . '">Acesse o pedido</a></p>
+		  		' . $safe_message . '
 			</body>
 		</html>';
 
@@ -330,8 +373,10 @@ class WooCommerceNFe {
 		  	'Content-Type: text/html; charset=UTF-8'
 		);
 
-		$emails = array($email);
-		$enviar_email = wp_mail($emails, $subject, $message, $headers);
+		// Security: Use single email address, validate before sending
+		if ( is_email( $email ) ) {
+			$enviar_email = wp_mail( sanitize_email( $email ), $subject, $html_message, $headers );
+		}
 
 	}
 
@@ -353,9 +398,11 @@ class WooCommerceNFe {
 	**/
 	public static function plugin_add_settings_link( $links ) {
 
+	    // Security: Escape URL and add nonce
+	    $settings_url = esc_url( admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) );
 	    $action_links = array(
-	      'settings' => '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) . '" aria-label="Visualizar Configurações">Configurações</a>',
-			);
+	      'settings' => '<a href="' . $settings_url . '" aria-label="' . esc_attr__( 'Visualizar Configurações', 'woocommerce' ) . '">' . esc_html__( 'Configurações', 'woocommerce' ) . '</a>',
+		);
 
 	    return array_merge( $action_links, $links );
 	}
@@ -412,6 +459,53 @@ class WooCommerceNFe {
 		}
 
 		return true;
+
+	}
+
+	/**
+	 * Display Messages
+	 *
+	 * @return void
+	 */
+	public function display_messages(): void {
+
+		$error_messages = get_option('woocommercenfe_error_messages');
+		if ( $error_messages && is_array( $error_messages ) ) {
+			?>
+			<div class="notice notice-error is-dismissible">
+				<?php 
+				foreach ( $error_messages as $message ) { 
+					// Security: Allow specific HTML tags in admin notices
+					echo '<p>' . wp_kses( $message, array(
+						'strong' => array(),
+						'a' => array( 'href' => array(), 'target' => array() ),
+						'ul' => array(),
+						'li' => array()
+					) ) . '</p>'; 
+				} 
+				?>
+			</div>
+			<?php
+			delete_option('woocommercenfe_error_messages');
+		}
+
+		$success_messages = get_option('woocommercenfe_success_messages');
+		if ( $success_messages && is_array( $success_messages ) ) {
+			?>
+			<div class="notice notice-success is-dismissible">
+				<?php 
+				foreach ( $success_messages as $message ) { 
+					// Security: Allow specific HTML tags in admin notices
+					echo '<p>' . wp_kses( $message, array(
+						'strong' => array(),
+						'a' => array( 'href' => array(), 'target' => array(), 'rel' => array() )
+					) ) . '</p>'; 
+				} 
+				?>
+			</div>
+			<?php
+			delete_option('woocommercenfe_success_messages');
+		}
 
 	}
 

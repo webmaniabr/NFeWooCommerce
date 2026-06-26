@@ -41,9 +41,9 @@ Observação: A descrição do pagamento é obrigatória para o método de pagam
 	  ?>
 
 	    <div class="entry" style="margin-top:0">
-	    	<div><h4 style="display:inline-block;min-width:250px"><?php echo $gateway->method_title; ?></h4></div>
-	    	<div><?php echo $this->get_payment_methods_select($gateway->id); ?></div>
-				<div><?php echo $this->get_payment_desc_input($gateway->id); ?></div>
+	    	<div><h4 style="display:inline-block;min-width:250px"><?php echo esc_html( $gateway->method_title ); ?></h4></div>
+	    	<div><?php echo $this->get_payment_methods_select( $gateway->id ); ?></div>
+				<div><?php echo $this->get_payment_desc_input( $gateway->id ); ?></div>
 	    </div>
 	  <?php endforeach; ?>
 
