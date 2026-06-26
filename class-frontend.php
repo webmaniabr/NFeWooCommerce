@@ -83,13 +83,18 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
         $cep = get_option('wc_settings_woocommercenfe_cep');
       }
 
-      wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version, true );
+      // Security: Use HTTPS for external resources
+      wp_register_script( 'woocommercenfe_maskedinput', 'https://cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version, true );
       wp_register_script( 'woocommercenfe_correios', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/correios.min.js', __FILE__ ) ), array('jquery'), $version, true );
       wp_register_script( 'woocommercenfe_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/scripts.js', __FILE__ ) ), array('jquery'), $version, true );
 
+      // Security: Ensure boolean values
       if ($mascara_campos == 'yes') $array['maskedinput'] = 1;
       if ($cep == 'yes') $array['cep'] = 1;
       if ($tipo_pessoa == 'yes') $array['person_type'] = 1;
+      
+      // Security: Add nonce for AJAX calls
+      $array['ajax_nonce'] = wp_create_nonce('woocommerce_nfe_ajax');
 
       if ($mascara_campos == 'yes') wp_enqueue_script( 'woocommercenfe_maskedinput' );
       if ($cep == 'yes') wp_enqueue_script( 'woocommercenfe_correios' );
@@ -307,19 +312,38 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   function validate_checkout_fields(){
 
-    $billing_persontype = isset( $_POST['billing_persontype'] ) ? $_POST['billing_persontype'] : 0;
+    // Security: Verify nonce
+    if ( ! isset( $_POST['woocommerce-process-checkout-nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce-process-checkout-nonce'], 'woocommerce-process_checkout' ) ) {
+      return;
+    }
+
+    // Security: Sanitize and validate inputs
+    $billing_persontype = isset( $_POST['billing_persontype'] ) ? sanitize_text_field( $_POST['billing_persontype'] ) : 0;
+    $billing_persontype = intval( $billing_persontype );
 
     if ($billing_persontype == 1){
 
-      if (empty( $_POST['billing_cpf'] )){
+      $billing_cpf = isset( $_POST['billing_cpf'] ) ? sanitize_text_field( $_POST['billing_cpf'] ) : '';
 
-          wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
+      if (empty( $billing_cpf )){
+
+          wc_add_notice( sprintf( '<strong>%s</strong> %s.', esc_html__( 'CPF', $this->domain ), esc_html__( 'é um campo obrigatório', $this->domain ) ), 'error' );
 
       }
 
-      if (!empty( $_POST['billing_cpf'] ) && !WooCommerceNFeFormat::is_cpf( $_POST['billing_cpf'] )){
+      if (!empty( $billing_cpf ) && !WooCommerceNFeFormat::is_cpf( $billing_cpf )){
 
-          wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CPF', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
+          // Security: Use esc_html for all outputs
+          wc_add_notice( 
+            wp_kses( 
+              sprintf( '<strong>%s</strong> %s.', 
+                esc_html__( 'CPF', $this->domain ), 
+                esc_html__( 'informado não é válido', $this->domain ) 
+              ),
+              array( 'strong' => array() )
+            ), 
+            'error' 
+          );
 
       }
 
@@ -327,21 +351,34 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
     if ($billing_persontype == 2){
 
-      if (empty( $_POST['billing_cnpj'] )){
+      $billing_cnpj = isset( $_POST['billing_cnpj'] ) ? sanitize_text_field( $_POST['billing_cnpj'] ) : '';
+      $billing_company = isset( $_POST['billing_company'] ) ? sanitize_text_field( $_POST['billing_company'] ) : '';
 
-          wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
+      if (empty( $billing_cnpj )){
 
-      }
-
-      if (empty( $_POST['billing_company'] )){
-
-          wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Razão Social', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
+          wc_add_notice( sprintf( '<strong>%s</strong> %s.', esc_html__( 'CNPJ', $this->domain ), esc_html__( 'é um campo obrigatório', $this->domain ) ), 'error' );
 
       }
 
-      if (!empty( $_POST['billing_cnpj'] ) && !WooCommerceNFeFormat::is_cnpj( $_POST['billing_cnpj'] )){
+      if (empty( $billing_company )){
 
-          wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'CNPJ', $domain ), __( 'informado não é válido', $domain ) ), 'error' );
+          wc_add_notice( sprintf( '<strong>%s</strong> %s.', esc_html__( 'Razão Social', $this->domain ), esc_html__( 'é um campo obrigatório', $this->domain ) ), 'error' );
+
+      }
+
+      if (!empty( $billing_cnpj ) && !WooCommerceNFeFormat::is_cnpj( $billing_cnpj )){
+
+          // Security: Use wp_kses for safe HTML output
+          wc_add_notice( 
+            wp_kses( 
+              sprintf( '<strong>%s</strong> %s.', 
+                esc_html__( 'CNPJ', $this->domain ), 
+                esc_html__( 'informado não é válido', $this->domain ) 
+              ),
+              array( 'strong' => array() )
+            ), 
+            'error' 
+          );
 
       }
 
@@ -351,12 +388,20 @@ class WooCommerceNFeFrontend extends WooCommerceNFe {
 
   function validate_checkout_fields_with_plugin(){
 
+    // Security: Verify nonce
+    if ( ! isset( $_POST['woocommerce-process-checkout-nonce'] ) || ! wp_verify_nonce( $_POST['woocommerce-process-checkout-nonce'], 'woocommerce-process_checkout' ) ) {
+      return;
+    }
+
     $domain = '';
     $bairro = get_option('wc_settings_woocommercenfe_bairro');
+    
+    // Security: Sanitize input
+    $billing_neighborhood = isset( $_POST['billing_neighborhood'] ) ? sanitize_text_field( $_POST['billing_neighborhood'] ) : '';
 
-    if ($bairro == 'yes' && empty( $_POST['billing_neighborhood'] )){
+    if ($bairro == 'yes' && empty( $billing_neighborhood )){
 
-      wc_add_notice( sprintf( '<strong>%s</strong> %s.', __( 'Bairro', $domain ), __( 'é um campo obrigatório', $domain ) ), 'error' );
+      wc_add_notice( sprintf( '<strong>%s</strong> %s.', esc_html__( 'Bairro', $domain ), esc_html__( 'é um campo obrigatório', $domain ) ), 'error' );
 
     }
 

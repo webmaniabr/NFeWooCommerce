@@ -6,10 +6,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WooCommerceNFeBackend extends WooCommerceNFe {
 
+	private $auto_invoice_notice = null;
+
 	function __construct(){
 
-		add_action( 'admin_notices', array($this, 'display_messages') );
 		add_action( 'admin_notices', array($this, 'validate_certificate') );
+		add_action( 'admin_notices', array($this, 'render_auto_invoice_notice') );
 		add_action( 'add_meta_boxes', array($this, 'register_metabox_nfe_emitida') );
 		add_action( 'admin_init', array($this, 'wmbr_compatibility_issues') );
 		add_action( 'add_meta_boxes', array($this, 'register_metabox_listar_nfe') );
@@ -21,7 +23,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_action( 'woocommerce_order_actions', array( $this, 'add_order_meta_box_actions' ) );
 		add_action( 'woocommerce_order_action_wc_nfe_emitir', array( $this, 'process_order_meta_box_actions' ) );
 		add_action( 'admin_footer', array( $this, 'add_order_bulk_actions' ) );
-		add_action( 'init', array( $this, 'process_order_bulk_actions' ) );
+		add_action( 'admin_init', array( $this, 'process_order_bulk_actions' ) );
 		add_filter( 'woocommerce_settings_tabs_array', array($this, 'add_settings_tab'), 100 );
 		add_action( 'woocommerce_settings_tabs_woocommercenfe_tab', array($this, 'settings_tab'));
 		add_action( 'woocommerce_update_options_woocommercenfe_tab', array($this, 'update_settings' ));
@@ -34,6 +36,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		add_action( 'admin_menu', array($this, 'add_admin_menu_item'));
 		add_action( 'admin_init', array($this, 'alert_auto_invoice_errors'));
 		add_action( 'wp_ajax_wmbr_remove_order_id_auto_invoice', array($this, 'wmbr_remove_order_id_auto_invoice'));
+		add_action( 'wp_ajax_wmbr_dismiss_auto_invoice_notice', array($this, 'wmbr_dismiss_auto_invoice_notice'));
 		add_filter( 'woocommerce_admin_shipping_fields', array($this, 'extra_shipping_fields') );
 		add_action( 'admin_enqueue_scripts', array($this, 'scripts') );
 		add_action( 'wp_ajax_force_digital_certificate_update', array($this, 'ajax_force_certificate_update') );
@@ -42,6 +45,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		if (class_exists( \Automattic\WooCommerce\Utilities\OrderUtil::class ) && \Automattic\WooCommerce\Utilities\OrderUtil::custom_orders_table_usage_is_enabled()){
 			add_filter( 'manage_woocommerce_page_wc-orders_columns', array( $this, 'add_order_status_column_header' ), 20 );
 			add_action( 'manage_woocommerce_page_wc-orders_custom_column', array( $this, 'add_order_status_column_content' ), 10, 2 ); 
+			add_action( 'woocommerce_process_shop_order_meta', array($this, 'save_informacoes_fiscais'), 10, 1 );
 		}
 
 		// Legacy version
@@ -252,11 +256,11 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 
 	echo '<span id="update-digital-certificate-response">';
 		if ( isset($certificate->status) && $certificate->status == 'success' ) {
-			echo '<h4 class="cert_ajax_success">Faltam ' . $certificate->msg . ' dias para o Certificado Digital A1 expirar.</h4>';
+			echo '<h4 class="cert_ajax_success">Faltam ' . esc_html( (string) $certificate->msg ) . ' dias para o Certificado Digital A1 expirar.</h4>';
 		} elseif ( isset($certificate->status) && $certificate->status == 'error' ) {
 			echo '<h4 class="cert_ajax_error">Certificado Digital A1 expirado</h4>';
 		} elseif ( isset($certificate->status) && $certificate->status == 'null_credentials' ) {
-			echo '<h4 class="cert_ajax_error">'.$certificate->msg.'</h4>';
+			echo '<h4 class="cert_ajax_error">'.esc_html( (string) $certificate->msg ).'</h4>';
 		} else {
 			echo '<h4 class="cert_ajax_error">Informe as credenciais da API 1.0 para verificar o Certificado Digital A1.</h4>';
 		}
@@ -292,7 +296,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 		<?php echo $this->get_transportadoras_entries(); ?>
 	</div>
 	<button type="button" class="button-primary" id="wmbr-add-shipping-info">Adicionar Método de Entrega</button>
-	<input type="hidden" name="shipping-info-count" value="<?php echo count($transportadoras); ?>" />
+	<input type="hidden" name="shipping-info-count" value="<?php echo esc_attr( (string) count( $transportadoras ) ); ?>" />
 </div>
 
 	<?php
@@ -312,7 +316,8 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 <script type="text/javascript">
 jQuery(document).ready(function($) {
 	var data = {
-		'action': 'force_digital_certificate_update'
+		'action': 'force_digital_certificate_update',
+		'security': '<?php echo esc_js( wp_create_nonce( 'woocommerce_nfe_ajax' ) ); ?>'
 	};
 	$("#update-digital-certificate").click(function(){
 		var response = '';
@@ -346,18 +351,24 @@ jQuery(document).ready(function($) {
 
 		woocommerce_update_options( $this->get_settings() );
 
+		// Capability check for safety
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
 		// Vars
-		$count = (int) $_POST['shipping-info-count'];
+		$count = isset($_POST['shipping-info-count']) ? (int) $_POST['shipping-info-count'] : 0;
 		$transportadoras = array();
 		$payment_methods = array();
-		$patment_descs = array();
+		$payment_descs = array();
 		$cnpj_payment_methods = array();
 
 		if ($method = @$_POST['payment_method']){
 			$desc = @$_POST['payment_desc'];
 			foreach($method as $key => $value){
-				$payment_methods[$key] = sanitize_text_field($value);
-				$payment_descs[$key] = sanitize_text_field($desc[$key]);
+				$san_key = sanitize_text_field( (string) $key );
+				$payment_methods[$san_key] = sanitize_text_field($value);
+				$payment_descs[$san_key] = isset($desc[$key]) ? sanitize_text_field($desc[$key]) : '';
 			}
 		}
 
@@ -365,7 +376,7 @@ jQuery(document).ready(function($) {
 		if ($_POST){
 			for ($i = 1; $i < $count+1; $i++) {
 
-				$id = $_POST['shipping_info_method_'.$i];
+				$id = isset($_POST['shipping_info_method_'.$i]) ? sanitize_text_field($_POST['shipping_info_method_'.$i]) : '';
 				if (!$id) continue;
 				$transportadoras[$id] = array();
 				$keys = array(
@@ -379,7 +390,7 @@ jQuery(document).ready(function($) {
 				);
 
 				foreach($keys as $name => $post_key){
-					$transportadoras[$id][$name] = sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]);
+					$transportadoras[$id][$name] = isset($_POST['shipping_info_'.$post_key.'_'.$i]) ? sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]) : '';
 				}
 
 			}
@@ -741,13 +752,13 @@ jQuery(document).ready(function($) {
 			$html .= '<div class="entry">';
 			$html .= '<div class="shipping-method-col">'.$this->get_shipping_methods_select($i, $key).'</div>';
 			$html .= '<div class="shipping-info-col">';
-			$html .= '<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_'.$i.'" value="'.$transp['razao_social'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">CNPJ: </label><input type="text" name="shipping_info_cnpj_'.$i.'" value="'.$transp['cnpj'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">Inscrição estadual: </label><input type="text" name="shipping_info_ie_'.$i.'" value="'.$transp['ie'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">Endereço: </label><input type="text" name="shipping_info_address_'.$i.'" value="'.$transp['address'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">CEP: </label><input type="text" name="shipping_info_cep_'.$i.'" value="'.$transp['cep'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">Cidade: </label><input type="text" name="shipping_info_city_'.$i.'" value="'.$transp['city'].'"/></p>';
-			$html .= '<p><label class="nfe-shipping-label">UF: </label><input type="text" name="shipping_info_uf_'.$i.'" value="'.$transp['uf'].'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_'.$i.'" value="'.esc_attr( isset($transp['razao_social']) ? $transp['razao_social'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">CNPJ: </label><input type="text" name="shipping_info_cnpj_'.$i.'" value="'.esc_attr( isset($transp['cnpj']) ? $transp['cnpj'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">Inscrição estadual: </label><input type="text" name="shipping_info_ie_'.$i.'" value="'.esc_attr( isset($transp['ie']) ? $transp['ie'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">Endereço: </label><input type="text" name="shipping_info_address_'.$i.'" value="'.esc_attr( isset($transp['address']) ? $transp['address'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">CEP: </label><input type="text" name="shipping_info_cep_'.$i.'" value="'.esc_attr( isset($transp['cep']) ? $transp['cep'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">Cidade: </label><input type="text" name="shipping_info_city_'.$i.'" value="'.esc_attr( isset($transp['city']) ? $transp['city'] : '' ).'"/></p>';
+			$html .= '<p><label class="nfe-shipping-label">UF: </label><input type="text" name="shipping_info_uf_'.$i.'" value="'.esc_attr( isset($transp['uf']) ? $transp['uf'] : '' ).'"/></p>';
 			$html .= '<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>';
 			$html .= '</div>';
 			$html .= '</div>';
@@ -768,7 +779,7 @@ jQuery(document).ready(function($) {
 
 		// Vars
 		$carriers = get_option('wc_settings_woocommercenfe_transportadoras', array());
-		$html = '<select class="nfe-shipping-methods-sel" name="shipping_info_method_'.$index.'">';
+		$html = '<select class="nfe-shipping-methods-sel" name="shipping_info_method_'.esc_attr( (string) $index ).'">';
 		$html .= '<option value="">Selecionar</option>';
 
 		// Shipping Methods
@@ -799,7 +810,7 @@ jQuery(document).ready(function($) {
 					if ($id){
 						((isset($carriers['FRENET_'.$var->ServiceCode]) && $id == 'FRENET_'.$var->ServiceCode) ? $selected = 'selected' : $selected = '');
 					}
-					$html .= '<option value="FRENET_'.$var->ServiceCode.'" '.$selected.'>Frenet - '.$var->Carrier.' ('.$var->ServiceDescription.')</option>';
+					$html .= '<option value="'.esc_attr( 'FRENET_'.$var->ServiceCode ).'" '.$selected.'>Frenet - '.esc_html( $var->Carrier ).' ('.esc_html( $var->ServiceDescription ).')</option>';
 
 				}
 
@@ -817,7 +828,7 @@ jQuery(document).ready(function($) {
 
 			}
 
-			$html .= '<option value="'.$method->id.'" '.$selected.'>'.$title.'</option>';
+			$html .= '<option value="'.esc_attr( $method->id ).'" '.$selected.'>'.esc_html( $title ).'</option>';
 
 		}
 
@@ -854,7 +865,7 @@ jQuery(document).ready(function($) {
 			'99' => 'Outros',
 		);
 
-		$html = '<select class="nfe-payment-methods-sel" name="payment_method['.$method.']">';
+		$html = '<select class="nfe-payment-methods-sel" name="payment_method['.esc_attr( $method ).']">';
 		$html .= '<option value="">Selecionar</option>';
 
 		foreach ($options as $value => $label) {
@@ -865,7 +876,7 @@ jQuery(document).ready(function($) {
 				$selected = 'selected';
 			}
 
-			$html .= '<option value="'.$value.'" '.$selected.'>'.$label.'</option>';
+			$html .= '<option value="'.esc_attr( $value ).'" '.$selected.'>'.esc_html( $label ).'</option>';
 
 		}
 
@@ -886,14 +897,14 @@ jQuery(document).ready(function($) {
 
 		$saved_values = get_option('wc_settings_woocommercenfe_payment_descs', array());
 
-		$html = '<input type="text" class="nfe-payment-desc" name="payment_desc['.$method.']" style="width: 400px; ';
+		$html = '<input type="text" class="nfe-payment-desc" name="payment_desc['.esc_attr( $method ).']" style="width: 400px; ';
 
 		if (!$is_method_99) {
 			$html .= 'display: none;';
 		} 
 
 		if (isset($saved_values[$method]) && $is_method_99) {
-			$html .= '" value="'.$saved_values[$method].'">';
+			$html .= '" value="'.esc_attr( $saved_values[$method] ).'">';
 		}
 		else {
 			$html .= '">';
@@ -942,7 +953,16 @@ jQuery(document).ready(function($) {
 			return false;
 		}
 
-		if ( isset($_GET['atualizar_nfe']) && $_GET['post'] && $_GET['chave']) {
+		if ( isset($_GET['atualizar_nfe']) && isset($_GET['post']) && isset($_GET['chave']) && isset($_GET['nonce']) ) {
+
+			if ( ! current_user_can( 'manage_woocommerce' ) ) {
+				return false;
+			}
+
+			// Security: Verify nonce
+			if ( ! wp_verify_nonce( $_GET['nonce'], 'atualizar_nfe_' . $_GET['post'] ) ) {
+				wp_die( __( 'Security check failed', 'woocommerce' ) );
+			}
 
 			$this->get_credentials();
 			$post_id = (int) sanitize_text_field($_GET['post']);
@@ -958,7 +978,7 @@ jQuery(document).ready(function($) {
 			} else {
 
 				$new_status = $response->status;
-				$nfe_data = get_post_meta( $order->id, 'nfe', true );
+				$nfe_data = $order->get_meta('nfe');
 
 				foreach ($nfe_data as &$order_nfe) {
 
@@ -1023,9 +1043,9 @@ jQuery(document).ready(function($) {
 
 	$data_nfe = $order_nfe['data'];
 
-	$nfe_doc = $this->get_order_cpf_cnpj($order->ID, $order_nfe);
+	$nfe_doc = $this->get_order_cpf_cnpj($order, $order_nfe);
 	$uuid = isset($order_nfe['uuid']) ? $order_nfe['uuid'] : '';
-	$tokenData = $this->createSecureTokenDFe($nfe_doc, $uuid);
+	$tokenData = !empty($nfe_doc) ? $this->createSecureTokenDFe($nfe_doc, $uuid) : '';
 
 	if (isset($order_nfe['modelo']) && $order_nfe['modelo'] == 'nfse') {
 		$modelo_nfe = 'NFS-e';
@@ -1044,60 +1064,60 @@ jQuery(document).ready(function($) {
 	(isset($order_nfe['n_serie']) ? $serie_nfe = $order_nfe['n_serie'] : $serie_nfe = '' );
 	if ($status_nfe == 'processando') $status_nfe = 'processamento';
 	if ($modelo_nfe == 'NF-e'){
-		if (isset($order_nfe['url_danfe']) && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.'?token='.$tokenData;
-		if (isset($order_nfe['url_xml']) && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1&token='.$tokenData;
+		if (isset($order_nfe['url_danfe']) && $chave_acesso_nfe) $order_nfe['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$chave_acesso_nfe.(!empty($tokenData) ? '?token='.$tokenData : '');
+		if (isset($order_nfe['url_xml']) && $chave_acesso_nfe) $xml_nfe = 'https://nfe.webmaniabr.com/xmlnfe/'.$chave_acesso_nfe.'?download=1'.(!empty($tokenData) ? '&token='.$tokenData : '');
 		if (isset($order_nfe['url_danfe_simplificada']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_simplificada'] = str_replace('/danfe/', '/danfe/simples/', $order_nfe['url_danfe']);
 		if (isset($order_nfe['url_danfe_etiqueta']) && isset($order_nfe['url_danfe'])) $order_nfe['url_danfe_etiqueta'] = str_replace('/danfe/', '/danfe/etiqueta/', $order_nfe['url_danfe']);
 	} else{
-		$xml_nfe = (!empty($order_nfe['url_xml']))? $order_nfe['url_xml'].'?token='.$tokenData : '';
+		$xml_nfe = (!empty($order_nfe['url_xml']))? $order_nfe['url_xml'].(!empty($tokenData) ? '?token='.$tokenData : '') : '';
 	}
 	if ($modelo_nfe == 'Lote RPS' && $status_nfe == 'processado') continue;
 	?>
 	<div class="single">
 		<div>
-		<h4 class="body-info"><?php echo $data_nfe; ?></h4>
-		<h4 class="body-info modelo-column"><?php echo $modelo_nfe; ?></h4>
-		<h4 class="body-info n-column"><?php echo $numero_nfe; ?></h4>
+		<h4 class="body-info"><?php echo esc_html( (string) $data_nfe ); ?></h4>
+		<h4 class="body-info modelo-column"><?php echo esc_html( (string) $modelo_nfe ); ?></h4>
+		<h4 class="body-info n-column"><?php echo esc_html( (string) $numero_nfe ); ?></h4>
 		<h4 class="body-info danfe-column">
 			<?php if ($modelo_nfe == 'Lote RPS') { ?>
 			<span>---</span>
 			<?php } else if ($modelo_nfe == 'NFS-e') {
 				if (isset($order_nfe['url_pdf']) && !empty($order_nfe['url_pdf'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_pdf'].'?token='.$tokenData ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo esc_url( $order_nfe['url_pdf'].(!empty($tokenData) ? '?token='.$tokenData : '') ); ?>"><span class="wrt">PDF </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php } elseif (isset($order_nfe['pdf_rps']) && !empty($order_nfe['pdf_rps'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['pdf_rps'].'?token='.$tokenData ?>"><span class="wrt">DARPS </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo esc_url( $order_nfe['pdf_rps'].(!empty($tokenData) ? '?token='.$tokenData : '') ); ?>"><span class="wrt">DARPS </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php }
 			} else { ?>
 			<?php if (isset($order_nfe['url_danfe'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe'] ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+				<a class="unstyled" target="_blank" href="<?php echo esc_url( $order_nfe['url_danfe'] ); ?>"><span class="wrt">Danfe </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
 			<?php } if (isset($order_nfe['url_danfe_simplificada'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_simplificada'] ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
+				<a class="unstyled" target="_blank" href="<?php echo esc_url( $order_nfe['url_danfe_simplificada'] ); ?>"><span class="wrt"> Danfe Simples </span><span class="dashicons dashicons-media-text danfe-icon"></span></a>|
 			<?php } if (isset($order_nfe['url_danfe_etiqueta'])) { ?>
-				<a class="unstyled" target="_blank" href="<?php echo $order_nfe['url_danfe_etiqueta'] ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
+				<a class="unstyled" target="_blank" href="<?php echo esc_url( $order_nfe['url_danfe_etiqueta'] ); ?>"><span class="wrt"> Danfe Etiqueta</span><span class="dashicons dashicons-media-text danfe-icon"></span></a>
 			<?php }
 			} ?>
 		</h4>
 		<?php
-			$post_url = get_edit_post_link($order->ID);
+			$post_url = get_edit_post_link($order->get_id());
 			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
 		?>
-		<h4 class="body-info status-column"><span class="nfe-status <?php echo $status_nfe; ?>"><?php echo $status_nfe; ?></span>
-		<?php if (!in_array($modelo_nfe, ['NFS-e', 'Lote RPS'])) { ?><a class="unstyled" href="<?php echo $update_url; ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a><?php } ?>
+		<h4 class="body-info status-column"><span class="nfe-status <?php echo esc_attr( (string) $status_nfe ); ?>"><?php echo esc_html( (string) $status_nfe ); ?></span>
+		<?php if (!in_array($modelo_nfe, ['NFS-e', 'Lote RPS'])) { ?><a class="unstyled" href="<?php echo esc_url( $update_url ); ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a><?php } ?>
 		</h4></div>
 		<div class="extra">
 			<ul>
-			  <?php if ($chave_acesso_nfe) { ?><li><strong>Chave:</strong> <?php echo $chave_acesso_nfe; ?></li><?php } ?>
-				<?php if ($recibo_nfe) { ?><li><strong>Recibo:</strong> <?php echo $recibo_nfe; ?></li><?php } ?>
+			  <?php if ($chave_acesso_nfe) { ?><li><strong>Chave:</strong> <?php echo esc_html( (string) $chave_acesso_nfe ); ?></li><?php } ?>
+				<?php if ($recibo_nfe) { ?><li><strong>Recibo:</strong> <?php echo esc_html( (string) $recibo_nfe ); ?></li><?php } ?>
 				<?php if ($modelo_nfe != 'Lote RPS') { ?>
-					<li><strong>Série:</strong> <?php echo $serie_nfe ?></li>
+					<li><strong>Série:</strong> <?php echo esc_html( (string) $serie_nfe ); ?></li>
 				<?php } 
 				if (empty($xml_nfe)){?>
 				<li><strong>Arquivo XML: </strong>Indisponível</li>
 				<?php } else { ?>
-				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo $xml_nfe; ?>">Download XML</a></li>
+				<li><strong>Arquivo XML:</strong> <a target="_blank" href="<?php echo esc_url( $xml_nfe ); ?>">Download XML</a></li>
 				<?php } ?>
 				<?php if ($status_nfe == 'reprovado' && isset($order_nfe['motivo'])) { ?>
-					<li><strong>Motivo:</strong> <?php echo $order_nfe['motivo']; ?></li>
+					<li><strong>Motivo:</strong> <?php echo esc_html( (string) $order_nfe['motivo'] ); ?></li>
 				<?php } ?>
 			</ul>
 		</div>
@@ -1141,6 +1161,7 @@ jQuery(document).ready(function($) {
 		$info_intermediador_id = $order->get_meta( '_nfe_info_intermediador_id' );
 
 	?>
+	<?php wp_nonce_field( 'save_nfe_meta_box_' . $order->get_id(), 'nfe_meta_box_nonce' ); ?>
 	<script>
 		jQuery(function($){
 
@@ -1181,13 +1202,13 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Natureza da Operação</label>
 			</p>
-			<input type="text" name="natureza_operacao_pedido" value="<?php echo $order->get_meta( '_nfe_natureza_operacao_pedido' ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="natureza_operacao_pedido" value="<?php echo esc_attr( $order->get_meta( '_nfe_natureza_operacao_pedido' ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field outras_informacoes">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Benefício Fiscal</label>
 			</p>
-			<input type="text" name="beneficio_fiscal_pedido" value="<?php echo $order->get_meta( '_nfe_beneficio_fiscal_pedido' ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="beneficio_fiscal_pedido" value="<?php echo esc_attr( $order->get_meta( '_nfe_beneficio_fiscal_pedido' ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<input type="hidden" name="wp_admin_nfe" value="1" />
 	</div>
@@ -1237,25 +1258,25 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Volume</label>
 			</p>
-			<input type="text" name="transporte_volume" value="<?php echo $order->get_meta( '_nfe_transporte_volume' ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="transporte_volume" value="<?php echo esc_attr( $order->get_meta( '_nfe_transporte_volume' ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Espécie</label>
 			</p>
-			<input type="text" name="transporte_especie" value="<?php echo $order->get_meta( '_nfe_transporte_especie' ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="transporte_especie" value="<?php echo esc_attr( $order->get_meta( '_nfe_transporte_especie' ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Peso Bruto</label> (KG)
 			</p>
-			<input type="text" name="transporte_peso_bruto" value="<?php echo $order->get_meta( '_nfe_transporte_peso_bruto' ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+			<input type="text" name="transporte_peso_bruto" value="<?php echo esc_attr( $order->get_meta( '_nfe_transporte_peso_bruto' ) ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 		</div>
 		<div class="field transporte">
 			<p class="label" style="margin-bottom:8px;">
 				<label class="title">Peso Líquido</label> (KG)
 			</p>
-			<input type="text" name="transporte_peso_liquido" value="<?php echo $order->get_meta( '_nfe_transporte_peso_liquido' ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
+			<input type="text" name="transporte_peso_liquido" value="<?php echo esc_attr( $order->get_meta( '_nfe_transporte_peso_liquido' ) ); ?>" style="width:100%;padding:5px;" placeholder="Ex: 50.210 = 50,210KG">
 		</div>
 	</div>
 	<div class="field" style="margin-bottom:10px;">
@@ -1268,7 +1289,7 @@ jQuery(document).ready(function($) {
 		<p class="label" style="margin-bottom:8px;">
 			<label class="title">Parcelas</label>
 		</p>
-		<input type="number" name="nfe_installments_n" min="1" value="<?php echo $nfe_installments_n; ?>" style="width:100%;padding:5px;">
+		<input type="number" name="nfe_installments_n" min="1" value="<?php echo esc_attr( (string) $nfe_installments_n ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="nfe_installments block">
 
@@ -1277,13 +1298,13 @@ jQuery(document).ready(function($) {
 				<p class="label">
 					<label class="title">Vencimento (DD/MM/AAAA)</label>
 				</p>
-				<input type="text" name="nfe_installments_due_date[]" value="<?php echo ($nfe_installments_due_date) ? $nfe_installments_due_date[0] : ''; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo ($nfe_installments_due_date) ? esc_attr( (string) $nfe_installments_due_date[0] ) : ''; ?>" style="width:100%;">
 			</div>
 			<div class="field">
 				<p class="label">
 					<label class="title">Valor (R$)</label>
 				</p>
-				<input type="text" name="nfe_installments_value[]" value="<?php echo ($nfe_installments_value) ? $nfe_installments_value[0] : ''; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_value[]" value="<?php echo ($nfe_installments_value) ? esc_attr( (string) $nfe_installments_value[0] ) : ''; ?>" style="width:100%;">
 			</div>
 		</div>
 
@@ -1297,13 +1318,13 @@ jQuery(document).ready(function($) {
 				<p class="label">
 					<label class="title">Vencimento (DD/MM/AAAA)</label>
 				</p>
-				<input type="text" name="nfe_installments_due_date[]" value="<?php echo $nfe_installments_due_date[$i]; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo esc_attr( (string) $nfe_installments_due_date[$i] ); ?>" style="width:100%;">
 			</div>
 			<div class="field">
 				<p class="label">
 					<label class="title">Valor (R$)</label>
 				</p>
-				<input type="text" name="nfe_installments_value[]" value="<?php echo $nfe_installments_value[$i]; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_value[]" value="<?php echo esc_attr( (string) $nfe_installments_value[$i] ); ?>" style="width:100%;">
 			</div>
 		</div>
 
@@ -1334,13 +1355,13 @@ jQuery(document).ready(function($) {
 			<p class="label">
 				<label class="title">CNPJ do Intermediador</label>
 			</p>
-			<input type="text" name="nfe_info_intermediador_cnpj" style="width:100%;" value="<?php echo $info_intermediador_cnpj ?>" />
+			<input type="text" name="nfe_info_intermediador_cnpj" style="width:100%;" value="<?php echo esc_attr( (string) $info_intermediador_cnpj ) ?>" />
 		</div>
 		<div class="field">
 			<p class="label">
 				<label class="title">ID do Intermediador</label>
 			</p>
-			<input type="text" name="nfe_info_intermediador_id" style="width:100%;" value="<?php echo $info_intermediador_id ?>" />
+			<input type="text" name="nfe_info_intermediador_id" style="width:100%;" value="<?php echo esc_attr( (string) $info_intermediador_id ) ?>" />
 		</div>
 	</div>
 
@@ -1351,7 +1372,7 @@ jQuery(document).ready(function($) {
 		</p>
 	</div>
 	<div class="field nfe_additional_info_text">
-		<textarea type="text" name="nfe_additional_info_text" rows="6" style="width:100%;padding:5px;"><?php echo $nfe_additional_info_text; ?></textarea>
+		<textarea type="text" name="nfe_additional_info_text" rows="6" style="width:100%;padding:5px;"><?php echo esc_textarea( (string) $nfe_additional_info_text ); ?></textarea>
 	</div>
 
 	<div class="field" style="margin-bottom:10px;">
@@ -1361,7 +1382,7 @@ jQuery(document).ready(function($) {
 		</p>
 	</div>
 	<div class="field nfe_service_info_text">
-		<textarea type="text" name="nfe_service_info_text" rows="6" style="width:100%;padding:5px;"><?php echo $nfe_service_info_text; ?></textarea>
+		<textarea type="text" name="nfe_service_info_text" rows="6" style="width:100%;padding:5px;"><?php echo esc_textarea( (string) $nfe_service_info_text ); ?></textarea>
 	</div>
 
 			<?php
@@ -1397,6 +1418,7 @@ jQuery(document).ready(function($) {
 		$others_checked = get_post_meta( $post->ID, '_nfe_product_others', true );
 
 	?>
+	<?php wp_nonce_field( 'save_nfe_meta_box_' . $post->ID, 'nfe_meta_box_nonce' ); ?>
 	<script>
 		jQuery(function($){
 
@@ -1433,7 +1455,7 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Tipo de produto</label>
 			</p>
-			<select name="tipo_produto" value="<?php echo get_post_meta( $post->ID, '_nfe_tipo_produto', true ); ?>" style="width:100%;padding:5px;">
+			<select name="tipo_produto" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_tipo_produto', true ) ); ?>" style="width:100%;padding:5px;">
 				<option value="1" <?php if (get_post_meta( $post->ID, '_nfe_tipo_produto', true ) == 1) echo 'selected'; ?>>Produto físico</option>
 				<option value="2" <?php if (get_post_meta( $post->ID, '_nfe_tipo_produto', true ) == 2) echo 'selected'; ?>>Prestação de serviço</option>
 			</select>
@@ -1442,20 +1464,20 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Classe de Imposto</label>
 			</p>
-			<input type="text" name="classe_imposto" value="<?php echo get_post_meta( $post->ID, '_nfe_classe_imposto', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="classe_imposto" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_classe_imposto', true ) ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="nfe_fields">
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Código NCM</label>
 			</p>
-			<input type="text" name="codigo_ncm" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ncm', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="codigo_ncm" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_codigo_ncm', true ) ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Código CEST</label>
 			</p>
-			<input type="text" name="codigo_cest" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_cest', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="codigo_cest" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_codigo_cest', true ) ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field">
 		<p class="label" style="margin-bottom:8px;">
@@ -1531,7 +1553,7 @@ jQuery(document).ready(function($) {
 			<?php
 			foreach ($lista_unidades as $k => $v) {
 				?>
-				<option value="<?php echo $k;?>" <?php if ($unidade == $k) echo 'selected'; ?> ><?php echo $v; ?></option>
+				<option value="<?php echo esc_attr( (string) $k );?>" <?php if ($unidade == $k) echo 'selected'; ?> ><?php echo esc_html( (string) $v ); ?></option>
 				<?php
 			}
 			?>
@@ -1562,7 +1584,7 @@ jQuery(document).ready(function($) {
 			<p class="label" style="margin-bottom:8px;">
 					<label class="title">Informações adicionais do produto</label>
 			</p>
-			<input type="text" name="produto_informacoes_adicionais" value="<?php echo get_post_meta( $post->ID, '_nfe_produto_informacoes_adicionais', true ); ?>" style="width:100%;padding:5px;">
+			<input type="text" name="produto_informacoes_adicionais" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_produto_informacoes_adicionais', true ) ); ?>" style="width:100%;padding:5px;">
 	</div>
 	<div class="field" style="margin-bottom:10px;">
 		<p class="label" style="margin-bottom:8px;">
@@ -1575,13 +1597,13 @@ jQuery(document).ready(function($) {
 				<p class="label" style="margin-bottom:8px;">
 						<label class="title">GTIN</label>
 				</p>
-				<input type="text" name="codigo_ean" value="<?php echo get_post_meta( $post->ID, '_nfe_codigo_ean', true ); ?>" style="width:100%;padding:5px;">
+				<input type="text" name="codigo_ean" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_codigo_ean', true ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field">
 				<p class="label" style="margin-bottom:8px;">
 						<label class="title">GTIN tributável</label>
 				</p>
-				<input type="text" name="gtin_tributavel" value="<?php echo get_post_meta( $post->ID, '_nfe_gtin_tributavel', true ); ?>" style="width:100%;padding:5px;">
+				<input type="text" name="gtin_tributavel" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_gtin_tributavel', true ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 		<div class="field">
 				<p class="label" style="margin-bottom:8px;">
@@ -1601,7 +1623,7 @@ jQuery(document).ready(function($) {
 				<p class="label" style="margin-bottom:8px;">
 						<label class="title">CNPJ do Fabricante</label>
 				</p>
-				<input type="text" name="cnpj_fabricante" value="<?php echo get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ); ?>" style="width:100%;padding:5px;">
+				<input type="text" name="cnpj_fabricante" value="<?php echo esc_attr( get_post_meta( $post->ID, '_nfe_cnpj_fabricante', true ) ); ?>" style="width:100%;padding:5px;">
 		</div>
 	</div>
 	</div>
@@ -1732,6 +1754,16 @@ jQuery(document).ready(function($) {
 					$( 'select[name^="action"]' ).append( $imprimir_danfe );
 					$( 'select[name^="action"]' ).append( $imprimir_simplificada );
 					$( 'select[name^="action"]' ).append( $imprimir_etiqueta );
+
+					var bulkNonce = '<?php echo esc_js( wp_create_nonce( 'wmbr_bulk_order_actions' ) ); ?>';
+					$( '#posts-filter, #wc-orders-filter' ).each( function() {
+						var $form = $( this );
+						if ( $form.find('input[name="wmbr_bulk_order_actions_nonce"]').length === 0 ) {
+							$('<input>')
+								.attr({ type: 'hidden', name: 'wmbr_bulk_order_actions_nonce', value: bulkNonce })
+								.appendTo( $form );
+						}
+					});
 				});
 			</script>
 			<?php
@@ -1770,19 +1802,48 @@ jQuery(document).ready(function($) {
 	 */
 	function process_order_bulk_actions(){
 
+		// Security: only process from wp-admin and authorized users
+		if ( ! is_admin() ) {
+			return false;
+		}
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return false;
+		}
+
 		$order_list = $_GET['post_type'] ?? $_GET['page'] ?? [];
 
 		if (!$order_list) return;
 
-		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) && isset( $_GET['action'] ) ) {
+		if ( isset( $order_list ) && in_array($order_list, ['shop_order', 'wc-orders']) ) {
 
-			// Verify selected action
-			if ( ! isset( $_GET['action'] ) || ! in_array( $_GET['action'], array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta') ) ) return false;
-			
-			isset( $_GET['action'] )? $action = $_GET['action'] : '';
+			// Resolve selected action (WP uses action + action2; often action=-1 when none is selected)
+			$action  = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
+			$action2 = isset( $_GET['action2'] ) ? sanitize_text_field( wp_unslash( $_GET['action2'] ) ) : '';
+			if ( empty( $action ) || '-1' === $action ) {
+				$action = $action2;
+			}
+
+			// Verify selected action (only proceed for plugin actions)
+			$allowed_actions = array( 'wc_nfe_emitir', 'wc_nfe_imprimir_danfe', 'wc_nfe_imprimir_simplificada', 'wc_nfe_imprimir_etiqueta' );
+			if ( ! $action || ! in_array( $action, $allowed_actions, true ) ) {
+				return false;
+			}
+
+			// Security: Verify nonce ONLY for plugin actions (prevents notice spam on action=-1)
+			$bulk_nonce = isset( $_GET['wmbr_bulk_order_actions_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['wmbr_bulk_order_actions_nonce'] ) ) : '';
+			if ( ! $bulk_nonce || ! wp_verify_nonce( $bulk_nonce, 'wmbr_bulk_order_actions' ) ) {
+				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível validar a ação. Atualize a página e tente novamente.', $this->domain );
+				$this->add_error( $reason );
+				return false;
+			}
 
 			// Verify order IDs
-			$order_ids = array_map('absint', $_GET['id'] ?? $_GET['post'] ?? []);
+			$order_ids_raw = $_GET['id'] ?? $_GET['post'] ?? [];
+			if ( ! is_array( $order_ids_raw ) ) {
+				$order_ids_raw = array( $order_ids_raw );
+			}
+			$order_ids = array_filter( array_map( 'absint', $order_ids_raw ) );
 
 			if ( !$order_ids ){
 				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação.');
@@ -2231,20 +2292,30 @@ jQuery(document).ready(function($) {
 	 */
     function save_informacoes_fiscais( $post_id ){
 
-			if (get_post_type($post_id) == 'product' && $_POST['wp_admin_nfe']){
+			// Security: Check user capabilities
+			if ( ! current_user_can( 'edit_post', $post_id ) ) {
+				return;
+			}
+
+			// Security: Verify nonce for CSRF protection
+			if ( ! isset( $_POST['nfe_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['nfe_meta_box_nonce'], 'save_nfe_meta_box_' . $post_id ) ) {
+				return;
+			}
+
+			if (get_post_type($post_id) == 'product' && !empty($_POST['wp_admin_nfe'])){
 
 					$info = array(
-					'_nfe_tipo_produto'    => $_POST['tipo_produto'],
-					'_nfe_classe_imposto'  => $_POST['classe_imposto'],
-					'_nfe_codigo_ean'      => $_POST['codigo_ean'],
-					'_nfe_gtin_tributavel' => $_POST['gtin_tributavel'],
-					'_nfe_codigo_ncm'      => $_POST['codigo_ncm'],
-					'_nfe_codigo_cest'     => $_POST['codigo_cest'],
-					'_nfe_cnpj_fabricante' => $_POST['cnpj_fabricante'],
-					'_nfe_ind_escala'      => $_POST['ind_escala'],
-					'_nfe_produto_informacoes_adicionais' => $_POST['produto_informacoes_adicionais'],
-					'_nfe_unidade'         => $_POST['unidade'],
-					'_nfe_product_others'  => $_POST['product_others']
+					'_nfe_tipo_produto'    => sanitize_text_field($_POST['tipo_produto'] ?? ''),
+					'_nfe_classe_imposto'  => sanitize_text_field($_POST['classe_imposto'] ?? ''),
+					'_nfe_codigo_ean'      => sanitize_text_field($_POST['codigo_ean'] ?? ''),
+					'_nfe_gtin_tributavel' => sanitize_text_field($_POST['gtin_tributavel'] ?? ''),
+					'_nfe_codigo_ncm'      => sanitize_text_field($_POST['codigo_ncm'] ?? ''),
+					'_nfe_codigo_cest'     => sanitize_text_field($_POST['codigo_cest'] ?? ''),
+					'_nfe_cnpj_fabricante' => sanitize_text_field($_POST['cnpj_fabricante'] ?? ''),
+					'_nfe_ind_escala'      => sanitize_text_field($_POST['ind_escala'] ?? ''),
+					'_nfe_produto_informacoes_adicionais' => sanitize_text_field($_POST['produto_informacoes_adicionais'] ?? ''),
+					'_nfe_unidade'         => sanitize_text_field($_POST['unidade'] ?? ''),
+					'_nfe_product_others'  => sanitize_text_field($_POST['product_others'] ?? '')
 					);
 
 					foreach ($info as $key => $value){
@@ -2253,8 +2324,8 @@ jQuery(document).ready(function($) {
 						}
 					}
 
-					if ($_POST['ignorar_nfe']){
-						update_post_meta( $post_id, '_nfe_ignorar_nfe', $_POST['ignorar_nfe'] );
+					if (!empty($_POST['ignorar_nfe'])){
+						update_post_meta( $post_id, '_nfe_ignorar_nfe', sanitize_text_field($_POST['ignorar_nfe']) );
 					} else {
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', 0 );
 					}
@@ -2263,39 +2334,39 @@ jQuery(document).ready(function($) {
 						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
-					if (is_numeric($_POST['origem']) || $_POST['origem']){
-						update_post_meta( $post_id, '_nfe_origem', $_POST['origem'] );
+					if (isset($_POST['origem']) && (is_numeric($_POST['origem']) || $_POST['origem'])){
+						update_post_meta( $post_id, '_nfe_origem', sanitize_text_field($_POST['origem']) );
 					}
 						
 			}
 
-			if (get_post_type($post_id) == 'shop_order' && $_POST && $_POST['wp_admin_nfe']){
+			if (get_post_type($post_id) == 'shop_order' && $_POST && !empty($_POST['wp_admin_nfe'])){
 
 				$order = wc_get_order( $post_id );
 
 				$info = array(
-					'_nfe_natureza_operacao_pedido'	=> $_POST['natureza_operacao_pedido'],
-					'_nfe_beneficio_fiscal_pedido'	=> $_POST['beneficio_fiscal_pedido'],
-					'_nfe_contribuinte' => $_POST['nfe_contribuinte'],
-					'_nfe_modalidade_frete' 		=> $_POST['modalidade_frete'],
-					'_nfse_tipo_desconto' 		=> $_POST['tipo_desconto'],
-					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? $_POST['nfe_volume_weight'] : false,
-					'_nfe_transporte_volume'    	=> $_POST['transporte_volume'],
-					'_nfe_transporte_especie'   	=> $_POST['transporte_especie'],
-					'_nfe_transporte_peso_bruto'    => $_POST['transporte_peso_bruto'],
-					'_nfe_transporte_peso_liquido'  => $_POST['transporte_peso_liquido'],
-					'_nfe_installments'  => isset($_POST['nfe_installments']) ? $_POST['nfe_installments'] : false,
-					'_nfe_installments_n'  => $_POST['nfe_installments_n'],
-					'_nfe_installments_due_date'  => $_POST['nfe_installments_due_date'],
-					'_nfe_installments_value'  => $_POST['nfe_installments_value'],
-					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? $_POST['nfe_additional_info'] : false,
-					'_nfe_additional_info_text' => $_POST['nfe_additional_info_text'],
-					'_nfe_service_info' => isset($_POST['nfe_service_info']) ? $_POST['nfe_service_info'] : false,
-					'_nfe_service_info_text' => $_POST['nfe_service_info_text'],
-					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? $_POST['nfe_info_intermediador'] : false,
-					'_nfe_info_intermediador_type' => $_POST['nfe_info_intermediador_type'],
-					'_nfe_info_intermediador_cnpj' => $_POST['nfe_info_intermediador_cnpj'],
-					'_nfe_info_intermediador_id' => $_POST['nfe_info_intermediador_id'],
+					'_nfe_natureza_operacao_pedido'	=> sanitize_text_field($_POST['natureza_operacao_pedido'] ?? ''),
+					'_nfe_beneficio_fiscal_pedido'	=> sanitize_text_field($_POST['beneficio_fiscal_pedido'] ?? ''),
+					'_nfe_contribuinte' => sanitize_text_field($_POST['nfe_contribuinte'] ?? ''),
+					'_nfe_modalidade_frete'		=> sanitize_text_field($_POST['modalidade_frete'] ?? ''),
+					'_nfse_tipo_desconto'		=> sanitize_text_field($_POST['tipo_desconto'] ?? ''),
+					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? sanitize_text_field($_POST['nfe_volume_weight']) : false,
+					'_nfe_transporte_volume'		=> sanitize_text_field($_POST['transporte_volume'] ?? ''),
+					'_nfe_transporte_especie'		=> sanitize_text_field($_POST['transporte_especie'] ?? ''),
+					'_nfe_transporte_peso_bruto'    => sanitize_text_field($_POST['transporte_peso_bruto'] ?? ''),
+					'_nfe_transporte_peso_liquido'  => sanitize_text_field($_POST['transporte_peso_liquido'] ?? ''),
+					'_nfe_installments'  => isset($_POST['nfe_installments']) ? (bool) $_POST['nfe_installments'] : false,
+					'_nfe_installments_n'  => isset($_POST['nfe_installments_n']) ? (int) $_POST['nfe_installments_n'] : 0,
+					'_nfe_installments_due_date'  => isset($_POST['nfe_installments_due_date']) ? array_map('sanitize_text_field', (array) $_POST['nfe_installments_due_date']) : [],
+					'_nfe_installments_value'  => isset($_POST['nfe_installments_value']) ? array_map('sanitize_text_field', (array) $_POST['nfe_installments_value']) : [],
+					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? (bool) $_POST['nfe_additional_info'] : false,
+					'_nfe_additional_info_text' => sanitize_text_field($_POST['nfe_additional_info_text'] ?? ''),
+					'_nfe_service_info' => isset($_POST['nfe_service_info']) ? (bool) $_POST['nfe_service_info'] : false,
+					'_nfe_service_info_text' => sanitize_text_field($_POST['nfe_service_info_text'] ?? ''),
+					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? (bool) $_POST['nfe_info_intermediador'] : false,
+					'_nfe_info_intermediador_type' => sanitize_text_field($_POST['nfe_info_intermediador_type'] ?? ''),
+					'_nfe_info_intermediador_cnpj' => sanitize_text_field($_POST['nfe_info_intermediador_cnpj'] ?? ''),
+					'_nfe_info_intermediador_id' => sanitize_text_field($_POST['nfe_info_intermediador_id'] ?? '')
 				);
 
 				if (!$info['_nfe_volume_weight']){
@@ -2373,7 +2444,7 @@ jQuery(document).ready(function($) {
 				<label>NCM</label>
 			</th>
 			<td>
-				<input name="term-ncm" id="term-ncm" type="text" size="40" value="<?php echo $ncm; ?>"/>
+				<input name="term-ncm" id="term-ncm" type="text" size="40" value="<?php echo esc_attr( (string) $ncm ); ?>"/>
 				<p class="description">Este valor será utilizado caso o NCM não esteja definido diretamente no produto. Se vazio, será utilizado o NCM geral definido nas configurações da Nota Fiscal.</p>
 			</td>
 		</div>
@@ -2389,7 +2460,7 @@ jQuery(document).ready(function($) {
 	function save_product_cat_ncm( $term_id, $tag_id ){
 
 		if ( isset( $_POST['term-ncm'] ) ) {
-			update_term_meta( $term_id, '_ncm', $_POST['term-ncm']);
+			update_term_meta( $term_id, '_ncm', sanitize_text_field( $_POST['term-ncm'] ) );
 		}
 
 	}
@@ -2442,7 +2513,7 @@ jQuery(document).ready(function($) {
 
 		if ($post_type == 'product' && !$this->is_categories_ncm_valid($post->ID)){ ?>
 
-			<div class="error" style="background-color: #f2dede; color: #a94442;"><p><strong>Atenção:</strong> Duas ou mais categorias deste produto possuem o NCM definido e, caso diferentes, podem ter o valor incorreto durante a emissão da NF-e.</p></div>
+			<div class="notice notice-error is-dismissible" style="background-color: #f2dede; color: #a94442;"><p><strong>Atenção:</strong> Duas ou mais categorias deste produto possuem o NCM definido e, caso diferentes, podem ter o valor incorreto durante a emissão da NF-e.</p></div>
 
 		<?php }
 
@@ -2497,15 +2568,111 @@ jQuery(document).ready(function($) {
 
 		$ids_db = get_option('wmbr_auto_invoice_errors');
 
-		if ( !empty($ids_db) ) {
-
-			$menu_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
-			$message = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="'.$menu_url.'">Visualizar Pedidos</a>');
-
-			$this->add_error( $message );
-
+		if ( empty($ids_db) ) {
+			return;
 		}
 
+		$notice_key = $this->get_auto_invoice_notice_key( $ids_db );
+		$dismissed_key = get_user_meta( get_current_user_id(), 'wmbr_dismiss_auto_invoice_notice', true );
+
+		if ( $dismissed_key === $notice_key ) {
+			return;
+		}
+
+		$menu_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
+		$message = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="'.$menu_url.'">Visualizar Pedidos</a>');
+
+		$this->auto_invoice_notice = array(
+			'message' => $message,
+			'key' => $notice_key,
+		);
+
+	}
+
+	/**
+	 * Render dismissible notice for auto invoice errors.
+	 *
+	 * @return void
+	 */
+	public function render_auto_invoice_notice() {
+
+		if ( empty( $this->auto_invoice_notice ) ) {
+			return;
+		}
+
+		$notice = $this->auto_invoice_notice;
+		$nonce = wp_create_nonce( 'wmbr_dismiss_auto_invoice_notice' );
+		?>
+		<div class="notice notice-error is-dismissible wmbr-auto-invoice-notice" data-notice-key="<?php echo esc_attr( (string) $notice['key'] ); ?>" data-sec-nonce="<?php echo esc_attr( (string) $nonce ); ?>">
+			<p>
+				<?php
+				// Security: Allow specific HTML tags in admin notices
+				echo wp_kses( $notice['message'], array(
+					'strong' => array(),
+					'a' => array( 'href' => array(), 'target' => array() ),
+					'ul' => array(),
+					'li' => array()
+				) );
+				?>
+			</p>
+		</div>
+		<script>
+			jQuery(function($){
+				$(document).on('click', '.wmbr-auto-invoice-notice .notice-dismiss', function(){
+					var $notice = $(this).closest('.wmbr-auto-invoice-notice');
+					$.post(ajaxurl, {
+						action: 'wmbr_dismiss_auto_invoice_notice',
+						sec_nonce: $notice.data('sec-nonce'),
+						notice_key: $notice.data('notice-key')
+					});
+				});
+			});
+		</script>
+		<?php
+	}
+
+	/**
+	 * Dismiss auto invoice notice per user.
+	 *
+	 * @return void
+	 */
+	public function wmbr_dismiss_auto_invoice_notice() {
+
+		// Security: Check proper nonce and capabilities
+		if ( ! check_ajax_referer( 'wmbr_dismiss_auto_invoice_notice', 'sec_nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_die();
+		}
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_die();
+		}
+
+		$notice_key = isset($_POST['notice_key']) ? sanitize_text_field( wp_unslash( $_POST['notice_key'] ) ) : '';
+		if ( !$notice_key ) {
+			wp_send_json_error( array( 'message' => 'Invalid notice key' ), 400 );
+			wp_die();
+		}
+
+		update_user_meta( get_current_user_id(), 'wmbr_dismiss_auto_invoice_notice', $notice_key );
+
+		wp_send_json_success( array( 'message' => 'Notice dismissed' ) );
+		wp_die();
+	}
+
+	/**
+	 * Build notice key for auto invoice errors.
+	 *
+	 * @param array $ids_db
+	 * @return string
+	 */
+	private function get_auto_invoice_notice_key( $ids_db ) {
+
+		$order_ids = array_map( 'strval', array_keys( (array) $ids_db ) );
+		sort( $order_ids );
+
+		return md5( wp_json_encode( $order_ids ) );
 	}
 
 	/**
@@ -2515,25 +2682,32 @@ jQuery(document).ready(function($) {
 	 */
 	public function wmbr_remove_order_id_auto_invoice(){
 
-		$secure = check_ajax_referer( 'G7EZCEv3tA', 'sec_nonce', false);
-
-		if ($secure) {
-
-			$order_id = $_POST['order_id'];
-			$orders_auto_invoice_errors = get_option('wmbr_auto_invoice_errors', array());
-
-			if ( is_array($orders_auto_invoice_errors) ) {
-				if ( !array_key_exists($order_id, $orders_auto_invoice_errors) ) return false;
-
-				unset($orders_auto_invoice_errors[$order_id]);
-				update_option( 'wmbr_auto_invoice_errors', $orders_auto_invoice_errors );
-			}
-
-			echo json_encode(array('success' => true));
-
+		// Security: Check proper nonce and capabilities
+		if ( ! check_ajax_referer( 'wmbr_remove_order_invoice_nonce_' . get_current_user_id(), 'sec_nonce', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_die();
+		}
+		
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_die();
 		}
 
-		die();
+		$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+		$orders_auto_invoice_errors = get_option('wmbr_auto_invoice_errors', array());
+
+		if ( is_array($orders_auto_invoice_errors) ) {
+			if ( !array_key_exists($order_id, $orders_auto_invoice_errors) ) {
+				wp_send_json_error( array( 'message' => 'Order not found' ), 404 );
+				wp_die();
+			}
+
+			unset($orders_auto_invoice_errors[$order_id]);
+			update_option( 'wmbr_auto_invoice_errors', $orders_auto_invoice_errors );
+		}
+
+		wp_send_json_success( array( 'message' => 'Order removed successfully' ) );
+		wp_die();
 
 	}
 
@@ -2544,15 +2718,27 @@ jQuery(document).ready(function($) {
 	 */
 	function nfe_callback(){
 
-		if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['order_key']) && isset($_GET['order_id'])) {
 
-			$nfe_data = json_decode(stripslashes($_POST['data']), true);
+			// Security: Validate and sanitize inputs
+			$raw_data = isset($_POST['data']) ? wp_unslash($_POST['data']) : '';
+			if (strlen($raw_data) > 5000) { // Limit data size
+				header( 'HTTP/1.1 413 Request Entity Too Large' );
+				exit;
+			}
+			
+			$nfe_data = json_decode($raw_data, true);
+			if (json_last_error() !== JSON_ERROR_NONE || !is_array($nfe_data) || !isset($nfe_data['ID'])) {
+				header( 'HTTP/1.1 400 Bad Request' );
+				exit;
+			}
+			
 			$nfe_order_id = (int) $nfe_data['ID'];
-			$order_key = esc_attr($_GET['order_key']);
+			$order_key = sanitize_text_field($_GET['order_key']);
 			$order_id = (int) $_GET['order_id'];
 			$order = wc_get_order($order_id);
 
-			if ($order->get_order_key() != $order_key || $nfe_order_id != $order_id || ! $order) {
+			if (!$order || $order->get_order_key() !== $order_key || $nfe_order_id !== $order_id) {
 				header( 'HTTP/1.1 401 Unauthorized' );
 				exit;
 			}
@@ -2564,11 +2750,11 @@ jQuery(document).ready(function($) {
 
 				foreach($order_nfe_data as $key => $order_nfe){
 					$current_status = $order_nfe['status'];
-					$received_status = $_POST['status'];
-					if($order_nfe['uuid'] == $_POST['uuid'] && $current_status != $received_status) {
+					$received_status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
+					if($order_nfe['uuid'] == ($_POST['uuid'] ?? '') && $current_status != $received_status) {
 						$order_nfe_data[$key]['status'] = $received_status;
 					}
-					if ( $order_nfe['uuid'] == $_POST['uuid'] ) {
+					if ( $order_nfe['uuid'] == ($_POST['uuid'] ?? '') ) {
 						$is_new = false;
 					}
 				}
@@ -2581,17 +2767,17 @@ jQuery(document).ready(function($) {
 
 			if ( $is_new ) {
 				$order_nfe_data[] = array(
-					'uuid'   => (string) $_POST['uuid'],
-					'status' => (string) $_POST['status'],
+					'uuid'   => (string) sanitize_text_field($_POST['uuid'] ?? ''),
+					'status' => (string) sanitize_text_field($_POST['status'] ?? ''),
 					'modelo' => 'nfe',
-					'chave_acesso' => (string) $_POST['chave'],
-					'n_recibo' => (int) isset($_POST['recibo']) ? $_POST['recibo'] : '',
-					'n_nfe' => (int) $_POST['nfe'],
-					'n_serie' => (int) $_POST['serie'],
-					'url_xml' => (string) $_POST['xml'],
-					'url_danfe' => (string) $_POST['danfe'],
-					'url_danfe_simplificada' => (string) $_POST['danfe_simples'],
-					'url_danfe_etiqueta' => (string) $_POST['danfe_etiqueta'],
+					'chave_acesso' => (string) sanitize_text_field($_POST['chave'] ?? ''),
+					'n_recibo' => (int) ($_POST['recibo'] ?? ''),
+					'n_nfe' => (int) ($_POST['nfe'] ?? 0),
+					'n_serie' => (int) ($_POST['serie'] ?? 0),
+					'url_xml' => (string) esc_url_raw($_POST['xml'] ?? ''),
+					'url_danfe' => (string) esc_url_raw($_POST['danfe'] ?? ''),
+					'url_danfe_simplificada' => (string) esc_url_raw($_POST['danfe_simples'] ?? ''),
+					'url_danfe_etiqueta' => (string) esc_url_raw($_POST['danfe_etiqueta'] ?? ''),
 					'data' => date_i18n('d/m/Y'),
 				);
 			}
@@ -2610,14 +2796,22 @@ jQuery(document).ready(function($) {
 	 */
 	function nfse_callback(){
 
-		if ($_SERVER['REQUEST_METHOD'] === 'POST' && $_GET['order_key'] && $_GET['order_id']) {
+		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['order_key']) && isset($_GET['order_id'])) {
 
-			$order_key = esc_attr($_GET['order_key']);
+			$order_key = sanitize_text_field($_GET['order_key']);
 			$order_id = (int) $_GET['order_id'];
 			$order = wc_get_order($order_id);
-			$response = json_decode(file_get_contents("php://input"));
+			
+			// Security: Validate and sanitize input data
+			$raw_input = file_get_contents("php://input");
+			if (strlen($raw_input) > 10000) { // Limit input size
+				header( 'HTTP/1.1 413 Request Entity Too Large' );
+				exit;
+			}
+			
+			$response = json_decode($raw_input);
 
-			if (!$order || $order->get_order_key() != $order_key || !$response) {
+			if (!$order || $order->get_order_key() !== $order_key || !$response || json_last_error() !== JSON_ERROR_NONE) {
 				header( 'HTTP/1.1 401 Unauthorized' );
 				exit;
 			}
@@ -2775,33 +2969,6 @@ jQuery(document).ready(function($) {
 	}
 
 	/**
-	 * Display Messages
-	 *
-	 * @return void
-	 */
-	function display_messages(){
-
-		if (get_option('woocommercenfe_error_messages')){
-			?>
-			<div class="error">
-				<?php foreach (get_option('woocommercenfe_error_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
-			</div>
-			<?php
-			delete_option('woocommercenfe_error_messages');
-		}
-
-		if (get_option('woocommercenfe_success_messages')){
-			?>
-			<div class="updated notice notice-success">
-				<?php foreach (get_option('woocommercenfe_success_messages') as $message) { echo '<p>'.$message.'</p>'; } ?>
-			</div>
-			<?php
-			delete_option('woocommercenfe_success_messages');
-		}
-
-	}
-
-	/**
 	 * Certificate A1 validate
 	 *
 	 * @return void
@@ -2927,12 +3094,12 @@ jQuery(document).ready(function($) {
 		if ($plugins_list && count($plugins_list) > 0){
 			foreach ( $plugins_list as $plugin_path => $plugin_name ) {
 
-				if ( self::wmbr_is_plugin_active($plugin_path) ) {
+									if ( self::wmbr_is_plugin_active($plugin_path) ) {
 	
-					echo '<div class="error">
-							<p>O plugin <b>'.$plugin_name.'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>
-							<p>Por favor, desative-o para prosseguir com as emissões de Nota Fiscal.</p>
-						</div>';
+						echo '<div class="notice notice-error is-dismissible">
+								<p>O plugin <b>'.esc_html($plugin_name).'</b> não possui compatibilidade com os plugins <b>WooCommerce</b> e <b>Nota Fiscal Eletrônica WooCommerce</b>.</p>
+								<p>Por favor, desative-o para prosseguir com as emissões de Nota Fiscal.</p>
+							</div>';
 	
 				}
 	
@@ -2942,13 +3109,24 @@ jQuery(document).ready(function($) {
 
 	}
 
-	/**
+		/**
 	 * Function to handle ajax requisistion
 	 * to force digital certificate update
 	 *
 	 * @return void
-	**/
+	 **/
 	public function ajax_force_certificate_update() {
+
+		// Security: Verify nonce
+		if ( ! check_ajax_referer( 'woocommerce_nfe_ajax', 'security', false ) ) {
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_die();
+		}
+
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_die();
+		}
 
 		echo $this->validate_certificate( true, true );
 		die();
@@ -3013,6 +3191,9 @@ jQuery(document).ready(function($) {
 	**/
 	function api_customer_response( $customer_data, $customer, $fields, $server ) {
 
+		// Vars
+		$format = new WooCommerceNFeFormat;
+
         // Billing fields.
 		$customer_data['billing_address']['persontype']   = $this->get_person_type( $customer->billing_persontype );
 		$customer_data['billing_address']['cpf']          = $format->format_number( $customer->billing_cpf );
@@ -3022,7 +3203,7 @@ jQuery(document).ready(function($) {
 		$customer_data['billing_address']['sex']          = substr( $customer->billing_sex, 0, 1 );
 		$customer_data['billing_address']['number']       = $customer->billing_number;
 		$customer_data['billing_address']['neighborhood'] = $customer->billing_neighborhood;
-		$customer_data['billing_address']['cellphone']    = str_replace("?", "", $order->billing_cellphone);
+		$customer_data['billing_address']['cellphone']    = str_replace("?", "", $customer->billing_cellphone);
 
 		// Shipping fields.
 		$customer_data['shipping_address']['number']       = $customer->shipping_number;
@@ -3066,9 +3247,11 @@ jQuery(document).ready(function($) {
 	 */
 	function save_ncm_field_product_variation( $variation_id, $i ) {
 		
-		// remover 
-		$ncm = $_POST['variable_ncm'][$i];
-		update_post_meta( $variation_id, 'variable_ncm', $ncm );
+		// Security: Sanitize input
+		if ( isset($_POST['variable_ncm'][$i]) ) {
+			$ncm = sanitize_text_field( $_POST['variable_ncm'][$i] );
+			update_post_meta( $variation_id, 'variable_ncm', $ncm );
+		}
 
 	}
 
@@ -3077,74 +3260,72 @@ jQuery(document).ready(function($) {
 	 * 
 	 * @return void
 	 */
-	function get_order_cpf_cnpj($post_id, $order_nfe) {
+	function get_order_cpf_cnpj($order, $order_nfe) {
 
-		if (!$post_id) return;
+		if (!$order) return;
 
+		// Get data
 		$nfe_doc = get_transient('cached_nfe_doc_'.$order_nfe['uuid']);
-		$cpf = get_post_meta($post_id, '_billing_cpf', true);
-		$cnpj = get_post_meta($post_id, '_billing_cnpj', true);
-		$person_type = get_post_meta($post_id, '_billing_persontype', true);
+		$cpf = $order->get_meta('_billing_cpf');
+		$cnpj = $order->get_meta('_billing_cnpj');
+		$person_type = $order->get_meta('_billing_persontype');
 		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
-		$nfe = get_post_meta($post_id, 'nfe', true);
-		$order_doc = false;
+		$nfes = $order->get_meta('nfe');
 
-		if ( !empty($nfe) && is_array($nfe)) {
-			foreach ($nfe as $item) {
-				$nfe_doc = isset($item['nfe_doc']) ? $item['nfe_doc'] : null;
-				if ($nfe_doc != $post_doc) $order_doc = true;
-			}
+		// Returns if found in cache
+		if (!empty($nfe_doc)) {
+			return $nfe_doc;
 		}
 
-		if ( empty($nfe_doc) || $order_doc == true ){
-			
-			$print = new WooCommerceNFePrint;
-			if (!empty($order_nfe['url_xml'])) {
-				$return = $print->curl_get_file_contents($order_nfe['url_xml']);
-			} else {
-				return;
-			}
-			$sxml = simplexml_load_string($return);
-			$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
-			$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
-			$doc = null;
+		// Returns whether the document was generated during the invoice issuance
+		if (!empty($order_nfe['nfe_doc'])) {
+			return $order_nfe['nfe_doc'];
+		}
 
-			if (isset($order_nfe['modelo']) && in_array($order_nfe['modelo'], ['nfse', 'lote_rps'])) {
-				$searchTag = ['IdentificacaoTomador'];	
-				$tomador = $this->searchKeyInJson($json, $searchTag);
-				$tomDoc = $this->searchKeyInJson($tomador, [], true);
-				$doc = implode('',$tomDoc);
-			} else {
-				if ($order_nfe['status'] == 'reprovado') {
-					$doc = isset($json->infNFe->dest) ? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ) : null;
-				} else {
-					$doc = isset($json->infNFe->dest) 
-					? ($json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ)
-					: ($json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ ?? null);
+		// Returns the checkout document if the XML URL does not exist.
+		if (empty($order_nfe['url_xml'])) {
+			return $post_doc;
+		}
+
+		// Searches for the document in the XML
+		$print = new WooCommerceNFePrint;
+		$return = $print->curl_get_file_contents($order_nfe['url_xml']);
+		$sxml = simplexml_load_string($return);
+		$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
+		$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
+
+		// Returns the checkout document if the API response is not a valid XML.
+		if (empty($json)) {
+			return $post_doc;
+		}
+
+		$doc = null;
+
+		if (isset($order_nfe['modelo']) && in_array($order_nfe['modelo'], ['nfse', 'lote_rps'])) {
+			$searchTag = ['IdentificacaoTomador'];	
+			$tomador = $this->searchKeyInJson($json, $searchTag);
+			$tomDoc = $this->searchKeyInJson($tomador, [], true);
+			$doc = implode('',$tomDoc);
+		} else {
+			$doc = $json->NFe->infNFe->dest->CPF ?? $json->NFe->infNFe->dest->CNPJ ?? $json->infNFe->dest->CPF ?? $json->infNFe->dest->CNPJ ?? null;
+		}
+
+		// Returns the checkout document if the CPF/CNPJ is not found in the XML.
+		if (empty($doc)) {
+			return $post_doc;
+		}
+
+		if (!empty($nfes) && is_array($nfes)) {
+			foreach($nfes as $key => $nfe) {
+				if (!empty($nfe['uuid']) && !empty($order_nfe['uuid']) && $nfe['uuid'] == $order_nfe['uuid']) {
+					$nfes[$key]['nfe_doc'] = str_replace(['.', '-', '/'], '', $doc);
 				}
 			}
-
-			if (empty($doc)) {
-				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Erro:</strong> Não foi possível gerar o Token para uma ou mais emissões deste pedido. Acesso restrito - Token (E1.3)");
-				$this->add_error($reason);
-				return;
-
-			} else {
-
-				!is_array($nfe) ? $nfe = array() ?: isset($nfe[0]) : $nfe[0] = array();
-				
-				$nfe_doc  = $doc;
-
-				set_transient( 'cached_nfe_doc_'.$order_nfe['uuid'], $nfe_doc, 24 * HOUR_IN_SECONDS );
-
-				return $nfe_doc;
-			}
-
-		} else {
-			
-			return $nfe_doc;
-
 		}
+
+		$order->update_meta_data('nfe', $nfes);
+		$order->save();
+		set_transient( 'cached_nfe_doc_'.$order_nfe['uuid'], $doc, 24 * HOUR_IN_SECONDS );
 	}
 
 	/**

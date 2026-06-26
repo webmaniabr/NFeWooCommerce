@@ -2,6 +2,11 @@
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
+
+// Security: Verify user capabilities
+if ( ! current_user_can( 'manage_woocommerce' ) ) {
+	wp_die( __( 'Você não tem permissão para acessar esta página.', 'woocommerce' ) );
+}
 ?>
 <style>
 .page-title{
@@ -126,12 +131,12 @@ a.order-action:hover{
         $order = wc_get_order($key);
 
         echo '<tr>
-            <td scope="row">#'.$key.'</td>
-            <td>'.$info["datetime"].'</td>
-            <td>'.$info["error"].'</td>
+            <td scope="row">#'.esc_html( (string) $key ).'</td>
+            <td>'.esc_html( (string) $info["datetime"] ).'</td>
+            <td>'.wp_kses_post( (string) $info["error"] ).'</td>
             <td>
-              <a href="'.$edit_link.'"  target="_blank" class="order-action view-order">Visualizar Pedido</a>
-              <button type="button" class="order-action ignore-order" data-order-id="'.$key.'">Ignorar Pedido</button>
+              <a href="'.esc_url( $edit_link ).'"  target="_blank" class="order-action view-order">Visualizar Pedido</a>
+              <button type="button" class="order-action ignore-order" data-order-id="'.esc_attr( (string) $key ).'">Ignorar Pedido</button>
             </td>
           </tr>';
 
@@ -147,7 +152,10 @@ a.order-action:hover{
 </div>
 
 
-<?php $ajax_nonce = wp_create_nonce( 'G7EZCEv3tA' ); ?>
+<?php 
+// Security: Generate proper nonce with unique action
+$ajax_nonce = wp_create_nonce( 'wmbr_remove_order_invoice_nonce_' . get_current_user_id() ); 
+?>
 <script>
 
 jQuery(document).ready(function($){
@@ -166,19 +174,23 @@ jQuery(document).ready(function($){
       $.ajax({
         method: 'POST',
         url: ajaxurl,
+        dataType: 'json',
         data:{
           action: 'wmbr_remove_order_id_auto_invoice',
-          sec_nonce: '<?php echo $ajax_nonce; ?>',
-          order_id : order_id,
+          sec_nonce: '<?php echo esc_js($ajax_nonce); ?>',
+          order_id : parseInt(order_id, 10),
         }
       }).done(function(response){
-        result = $.parseJSON(response);
-        if(typeof result.success != 'undefined'){
+        if(response && typeof response.success != 'undefined'){
           self.parents('td').append('<p class="ignore-order-response">Pedido ignorado</p>');
           self.parents('td').find('button, a').remove();
         }else{
-          self.html(original_content);
+          self.html(original_content).removeClass('disabled');
+          alert('Erro ao processar solicitação');
         }
+      }).fail(function(){
+        self.html(original_content).removeClass('disabled');
+        alert('Erro na comunicação com o servidor');
       });
     }
   });

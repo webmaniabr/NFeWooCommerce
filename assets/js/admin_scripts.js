@@ -1,9 +1,38 @@
 jQuery( function ( $ ) {
 
+    // Security: Escape HTML function
+    function escapeHtml(text) {
+        var map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    }
+
+    // Security: Validate input function
+    function validateInput(value, type) {
+        if (type === 'number') {
+            return !isNaN(value) && isFinite(value);
+        }
+        if (type === 'email') {
+            var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(value);
+        }
+        return true;
+    }
+
     load_billing = function(){
 
+        var userId = parseInt($( '#customer_user' ).val(), 10);
+        if (!userId || userId < 1) {
+            return;
+        }
+
         data = {
-            user_id:      $( '#customer_user' ).val(),
+            user_id:      userId,
             type_to_load: 'billing',
             action:       'woocommerce_get_customer_details',
             security:     woocommerce_admin_meta_boxes.get_customer_details_nonce
@@ -16,25 +45,26 @@ jQuery( function ( $ ) {
             success: function( response ) {
                 var info = response;
                 if ( info ) {
-                    $( '#_billing_persontype' ).val( info.billing_persontype ).change();
-                    $( 'input#_billing_cpf' ).val( info.billing_cpf ).change();
-                    $( 'input#_billing_cnpj' ).val( info.billing_cnpj ).change();
-                    $( 'input#_billing_ie' ).val( info.billing_ie ).change();
+                    // Security: Sanitize all values before setting
+                    $( '#_billing_persontype' ).val( escapeHtml(info.billing_persontype || '') ).change();
+                    $( 'input#_billing_cpf' ).val( escapeHtml(info.billing_cpf || '') ).change();
+                    $( 'input#_billing_cnpj' ).val( escapeHtml(info.billing_cnpj || '') ).change();
+                    $( 'input#_billing_ie' ).val( escapeHtml(info.billing_ie || '') ).change();
                     $( 'input#_billing_birthdate' ).val( '' ).change();
                     $( 'input#_billing_sex' ).val( '' ).change();
-                    $( 'input#_billing_number' ).val( info.billing_number ).change();
-                    $( 'input#_billing_neighborhood' ).val( info.billing_neighborhood ).change();
-                    $( 'input#_billing_address_1' ).val( info.billing_address_1 ).change();
-                    $( 'input#_billing_address_2' ).val( info.billing_address_2 ).change();
-                    $( 'input#_billing_first_name' ).val( info.billing_first_name ).change();
-                    $( 'input#_billing_last_name' ).val( info.billing_last_name ).change();
-                    $( 'input#_billing_city' ).val( info.billing_city ).change();
-                    $( 'input#_billing_postcode' ).val( info.billing_postcode ).change();
-                    $( '#_billing_country' ).val( info.billing_country ).change();
-                    $( '#_billing_state' ).val( info.billing_state ).change();
-                    $( 'input#_billing_email' ).val( info.billing_email ).change();
-                    $( 'input#_billing_phone' ).val( info.billing_phone ).change();
-                    $( 'input#_billing_company' ).val( info.billing_company ).change();
+                    $( 'input#_billing_number' ).val( escapeHtml(info.billing_number || '') ).change();
+                    $( 'input#_billing_neighborhood' ).val( escapeHtml(info.billing_neighborhood || '') ).change();
+                    $( 'input#_billing_address_1' ).val( escapeHtml(info.billing_address_1 || '') ).change();
+                    $( 'input#_billing_address_2' ).val( escapeHtml(info.billing_address_2 || '') ).change();
+                    $( 'input#_billing_first_name' ).val( escapeHtml(info.billing_first_name || '') ).change();
+                    $( 'input#_billing_last_name' ).val( escapeHtml(info.billing_last_name || '') ).change();
+                    $( 'input#_billing_city' ).val( escapeHtml(info.billing_city || '') ).change();
+                    $( 'input#_billing_postcode' ).val( escapeHtml(info.billing_postcode || '') ).change();
+                    $( '#_billing_country' ).val( escapeHtml(info.billing_country || '') ).change();
+                    $( '#_billing_state' ).val( escapeHtml(info.billing_state || '') ).change();
+                    $( 'input#_billing_email' ).val( escapeHtml(info.billing_email || '') ).change();
+                    $( 'input#_billing_phone' ).val( escapeHtml(info.billing_phone || '') ).change();
+                    $( 'input#_billing_company' ).val( escapeHtml(info.billing_company || '') ).change();
                 }
             }
         });
@@ -43,8 +73,13 @@ jQuery( function ( $ ) {
 
     load_shipping = function(){
 
+        var userId = parseInt($( '#customer_user' ).val(), 10);
+        if (!userId || userId < 1) {
+            return;
+        }
+
         data = {
-            user_id:      $( '#customer_user' ).val(),
+            user_id:      userId,
             type_to_load: 'shipping',
             action:       'woocommerce_get_customer_details',
             security:     woocommerce_admin_meta_boxes.get_customer_details_nonce
@@ -57,17 +92,18 @@ jQuery( function ( $ ) {
             success: function( response ) {
                 var info = response;
                 if ( info ) {
-                    $( 'input#_shipping_number' ).val( info.shipping_number ).change();
-                    $( 'input#_shipping_neighborhood' ).val( info.shipping_neighborhood ).change();
-                    $( 'input#_shipping_first_name' ).val( info.shipping_first_name ).change();
-                    $( 'input#_shipping_last_name' ).val( info.shipping_last_name ).change();
-                    $( 'input#_shipping_company' ).val( info.shipping_company ).change();
-                    $( 'input#_shipping_address_1' ).val( info.shipping_address_1 ).change();
-                    $( 'input#_shipping_address_2' ).val( info.shipping_address_2 ).change();
-                    $( 'input#_shipping_city' ).val( info.shipping_city ).change();
-                    $( 'input#_shipping_postcode' ).val( info.shipping_postcode ).change();
-                    $( '#_shipping_country' ).val( info.shipping_country ).change();
-                    $( '#_shipping_state' ).val( info.shipping_state ).change();
+                    // Security: Sanitize all values before setting
+                    $( 'input#_shipping_number' ).val( escapeHtml(info.shipping_number || '') ).change();
+                    $( 'input#_shipping_neighborhood' ).val( escapeHtml(info.shipping_neighborhood || '') ).change();
+                    $( 'input#_shipping_first_name' ).val( escapeHtml(info.shipping_first_name || '') ).change();
+                    $( 'input#_shipping_last_name' ).val( escapeHtml(info.shipping_last_name || '') ).change();
+                    $( 'input#_shipping_company' ).val( escapeHtml(info.shipping_company || '') ).change();
+                    $( 'input#_shipping_address_1' ).val( escapeHtml(info.shipping_address_1 || '') ).change();
+                    $( 'input#_shipping_address_2' ).val( escapeHtml(info.shipping_address_2 || '') ).change();
+                    $( 'input#_shipping_city' ).val( escapeHtml(info.shipping_city || '') ).change();
+                    $( 'input#_shipping_postcode' ).val( escapeHtml(info.shipping_postcode || '') ).change();
+                    $( '#_shipping_country' ).val( escapeHtml(info.shipping_country || '') ).change();
+                    $( '#_shipping_state' ).val( escapeHtml(info.shipping_state || '') ).change();
                 }
 
             }
@@ -223,8 +259,10 @@ jQuery( function ( $ ) {
     format_field_tax_class = function(element) {
 
       var new_value;
+      var inputValue = element.target.value || '';
 
-      new_value = 'REF' + element.target.value.replace(/\D|[REF]/g, '');
+      // Security: Sanitize input
+      new_value = 'REF' + inputValue.replace(/[^0-9]/g, '');
     
       $(element.target).val(new_value);
 
@@ -266,9 +304,13 @@ jQuery( function ( $ ) {
     });
     $('input[name="nfe_installments_n"]').on('change', function(){
 
-      value = $(this).val();
-      div = $('.nfe_installments.row-first');
-      total = $('.nfe_installments.row').length + 1;
+      // Security: Validate and limit input
+      var value = parseInt($(this).val(), 10);
+      if (isNaN(value) || value < 0 || value > 100) {
+          return;
+      }
+      var div = $('.nfe_installments.row-first');
+      var total = $('.nfe_installments.row').length + 1;
 
       if (value > total){
 

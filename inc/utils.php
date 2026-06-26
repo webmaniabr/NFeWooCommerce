@@ -14,17 +14,19 @@ class NFeUtils {
     // Vars
     $order = wc_get_order( $post_id );
     $data['parcelas'] = array();
-    $nfe_installments_n = ($_POST['nfe_installments_n']) ? $_POST['nfe_installments_n'] : $order->get_meta( '_nfe_installments_n' );
+    $nfe_installments_n = (isset($_POST['nfe_installments_n'])) ? (int) $_POST['nfe_installments_n'] : (int) $order->get_meta( '_nfe_installments_n' );
     $nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : 0;
-    $nfe_installments_due_date = ($_POST['nfe_installments_due_date']) ? $_POST['nfe_installments_due_date'] : $order->get_meta( '_nfe_installments_due_date' );
-    $nfe_installments_value = ($_POST['nfe_installments_value']) ? $_POST['nfe_installments_value'] : $order->get_meta( '_nfe_installments_value' );
+    $nfe_installments_due_date = (isset($_POST['nfe_installments_due_date']) && is_array($_POST['nfe_installments_due_date'])) ? array_map('sanitize_text_field', $_POST['nfe_installments_due_date']) : (array) $order->get_meta( '_nfe_installments_due_date' );
+    $nfe_installments_value = (isset($_POST['nfe_installments_value']) && is_array($_POST['nfe_installments_value'])) ? array_map('sanitize_text_field', $_POST['nfe_installments_value']) : (array) $order->get_meta( '_nfe_installments_value' );
     $order_total = 0;
 
     // Installments
     for ($i = 0; $i < $nfe_installments_n; $i++){
 
-      $invoice_date = date('Y-m-d', strtotime(str_replace("/", "-", $nfe_installments_due_date[$i])));
-      $value = number_format(str_replace(',', '.', str_replace('R$', '', $nfe_installments_value[$i])), 2, '.', '');
+      $date_src = isset($nfe_installments_due_date[$i]) ? $nfe_installments_due_date[$i] : '';
+      $value_src = isset($nfe_installments_value[$i]) ? $nfe_installments_value[$i] : '0';
+      $invoice_date = date('Y-m-d', strtotime(str_replace("/", "-", sanitize_text_field($date_src) )));
+      $value = number_format((float) str_replace(',', '.', str_replace('R$', '', $value_src)), 2, '.', '');
       $order_total += $value;
 
       $data['parcelas'][] = array(
