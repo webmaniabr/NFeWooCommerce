@@ -366,9 +366,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			foreach ($order->get_fees() as $key => $item){
 
-				if ($item['line_total'] < 0){
+				if ((float)$item['line_total'] < 0){
 
-					$discount = abs($item['line_total']);
+					$discount = abs((float)$item['line_total']);
 					$total_discount += $discount;
 
 				} else {
@@ -730,9 +730,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			foreach ($order->get_fees() as $key => $item){
 
-				if ($item['line_total'] < 0){
+				if ((float)$item['line_total'] < 0){
 
-					$discount = abs($item['line_total']);
+					$discount = abs((float)$item['line_total']);
 					$total_discount += $discount;
 
 				}
@@ -1022,11 +1022,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 		} else if($product_type == 'mix-and-match') {
 
-			$discount = abs($total_discount);
+			$discount = abs((float)$total_discount);
 
 		} else {
 
-			$discount = abs($total_bundle - $total_products);
+			$discount = abs((float)$total_bundle - (float)$total_products);
             $discount = ($total_bundle == 0 && $total_products > 0) ? 0 : $discount;
 
 		}
