@@ -366,9 +366,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			foreach ($order->get_fees() as $key => $item){
 
-				if ((float)$item['line_total'] < 0){
+				$line_total = (float)$item['line_total'];
 
-					$discount = abs((float)$item['line_total']);
+				if ($line_total < 0){
+
+					$discount = abs($line_total);
 					$total_discount += $discount;
 
 				} else {
@@ -376,8 +378,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					if ( $fee_aditional_informations != '' )
 						$fee_aditional_informations .= ' / ';
 
-					$fee_aditional_informations .= $item['name'] . ': R$' . number_format($item['line_total'], 2, ',', '');
-					$fee = $item['line_total'];
+					$fee_aditional_informations .= $item['name'] . ': R$' . number_format($line_total, 2, ',', '');
+					$fee = $line_total;
 					$total_fee += $fee;
 
 				}
