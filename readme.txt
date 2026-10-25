@@ -8,27 +8,27 @@ Stable tag: 3.4.6
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
-Issue Brazilian electronic invoices (NF-e and NFS-e) from WooCommerce using the Webmania REST API.
+Emita notas fiscais eletrônicas brasileiras (NF-e e NFS-e) pelo WooCommerce usando a REST API da Webmania.
 
 == Description ==
 
-Issue and store Brazilian electronic invoices with the Webmania REST API. The plugin connects WooCommerce orders to Webmania for NF-e and NFS-e issuance, automatic tax calculations, DANFE PDF printing and invoice delivery by email.
+Emita e armazene notas fiscais eletrônicas brasileiras com a REST API da Webmania. O plugin integra os pedidos do WooCommerce à Webmania para emitir NF-e e NFS-e, calcular impostos automaticamente, imprimir o DANFE em PDF e enviar as notas fiscais por e-mail.
 
-Install the plugin and subscribe to a [Webmania invoice service plan](https://webmania.com.br/nota-fiscal-eletronica/). An active plan and API credentials are required. Requests containing order, customer, product and fiscal data are sent to Webmania when invoices are issued or consulted. See the [Webmania terms and privacy policies](https://webmania.com.br/contratos/).
+Instale o plugin e contrate um [plano de emissão de notas fiscais da Webmania](https://webmania.com.br/nota-fiscal-eletronica/). São necessários um plano ativo e as credenciais da API. Requisições com dados de pedidos, clientes, produtos e informações fiscais são enviadas à Webmania durante a emissão ou consulta das notas fiscais. Consulte os [termos de uso e as políticas de privacidade da Webmania](https://webmania.com.br/contratos/).
 
-Brazilian Portuguese (pt_BR) is bundled. The plugin supports classic checkout, native fiscal fields in recent WooCommerce Checkout Blocks, traditional order storage and HPOS. Older WooCommerce versions keep the classic checkout flow.
+O Português do Brasil (pt_BR) está incluído. O plugin oferece suporte ao checkout clássico, aos campos fiscais nativos das versões recentes do Checkout Blocks do WooCommerce, ao armazenamento tradicional de pedidos e ao HPOS. As versões antigas do WooCommerce mantêm o fluxo de checkout clássico.
 
-= For businesses =
+= Para empresas =
 
-Connect your store to Brazilian state and municipal tax authorities through Webmania. The service provides invoice storage, reports and tax calculations for ICMS, IPI, PIS, COFINS, ISSQN and other applicable taxes.
+Conecte sua loja às Secretarias da Fazenda estaduais e às prefeituras por meio da Webmania. O serviço oferece armazenamento de notas fiscais, relatórios e cálculo de impostos como ICMS, IPI, PIS, COFINS, ISSQN e outros tributos aplicáveis.
 
-* Print several DANFEs in a single PDF.
-* Find invoices using reports, filters and searches.
-* Integrate NFC-e issuance with a point of sale through the plugin hooks.
+* Imprima vários DANFEs em um único arquivo PDF.
+* Localize notas fiscais usando relatórios, filtros e pesquisas.
+* Integre a emissão de NFC-e ao ponto de venda por meio dos hooks do plugin.
 
-= For accountants =
+= Para contadores =
 
-Manage invoices issued, canceled or voided by your clients through the Webmania dashboard. Export invoice reports as CSV, print DANFEs and download XML documents for accounting records and monthly closing.
+Gerencie as notas fiscais emitidas, canceladas ou inutilizadas pelos seus clientes no painel da Webmania. Exporte relatórios de notas fiscais em CSV, imprima DANFEs e baixe os arquivos XML para os registros contábeis e o fechamento mensal.
 
 == Installation ==
 
