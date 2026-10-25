@@ -1,0 +1,828 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Nota Fiscal Eletrônica WooCommerce 3.4.6\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/nota-fiscal-eletronica-woocommerce\n"
+"Last-Translator: Webmania <suporte@webmaniabr.com>\n"
+"Language-Team: Português do Brasil\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-23T14:15:15+00:00\n"
+"PO-Revision-Date: 2026-10-22 15:03+0000\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: nota-fiscal-eletronica-woocommerce\n"
+
+#. Description of the plugin
+#: woocommerce_nfe.php
+msgid "Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da Webmania®."
+msgstr "Emissão de Nota Fiscal Eletrônica para WooCommerce através da REST API da Webmania®."
+
+#. Author of the plugin
+#: woocommerce_nfe.php
+msgid "WebmaniaBR"
+msgstr "WebmaniaBR"
+
+#. Author URI of the plugin
+#: woocommerce_nfe.php
+msgid "https://webmaniabr.com"
+msgstr "https://webmaniabr.com"
+
+#: class-backend.php:130
+msgid "Nota Fiscal"
+msgstr "Nota Fiscal"
+
+#: class-backend.php:432
+msgid "Credenciais de Acesso (Nota Fiscal de Produto)"
+msgstr "Credenciais de Acesso (Nota Fiscal de Produto)"
+
+#: class-backend.php:437
+msgid "Consumer Key"
+msgstr "Chave do consumidor"
+
+#: class-backend.php:447
+msgid "Consumer Secret"
+msgstr "Chave secreta do consumidor"
+
+#: class-backend.php:457
+msgid "Access Token"
+msgstr "Token de acesso"
+
+#: class-backend.php:467
+msgid "Access Token Secret"
+msgstr "Token secreto de acesso"
+
+#: class-backend.php:481
+msgid "Credenciais de Acesso (Nota Fiscal de Serviço)"
+msgstr "Credenciais de Acesso (Nota Fiscal de Serviço)"
+
+#: class-backend.php:486
+msgid "Bearer Access Token"
+msgstr "Token de acesso Bearer"
+
+#: class-backend.php:500
+msgid "Ambiente de emissão"
+msgstr "Ambiente de emissão"
+
+#: class-backend.php:505
+msgid "Ambiente"
+msgstr "Ambiente"
+
+#: class-backend.php:516
+msgid "Configuração Padrão"
+msgstr "Configuração Padrão"
+
+#: class-backend.php:521
+msgid "Emissão automática"
+msgstr "Emissão automática"
+
+#: class-backend.php:532
+msgid "Envio automático de E-mail"
+msgstr "Envio automático de E-mail"
+
+#: class-backend.php:539
+msgid "Emissão com Data do Pedido"
+msgstr "Emissão com Data do Pedido"
+
+#: class-backend.php:546
+msgid "Notificação de erros"
+msgstr "Notificação de erros"
+
+#: class-backend.php:558
+msgid "Configurações (Nota Fiscal de Serviço)"
+msgstr "Configurações (Nota Fiscal de Serviço)"
+
+#: class-backend.php:563
+msgid "Classe de Imposto (NFS-e)"
+msgstr "Classe de Imposto (NFS-e)"
+
+#: class-backend.php:568
+msgid "Tipo de desconto"
+msgstr "Tipo de desconto"
+
+#: class-backend.php:579
+msgid "Incluir taxas no valor do serviço"
+msgstr "Incluir taxas no valor do serviço"
+
+#: class-backend.php:582
+msgid "Incluir o valor das taxas do pedido no valor do serviço da NFS-e"
+msgstr "Incluir o valor das taxas do pedido no valor do serviço da NFS-e"
+
+#: class-backend.php:590
+msgid "Configurações (Nota Fiscal de Produto)"
+msgstr "Configurações (Nota Fiscal de Produto)"
+
+#: class-backend.php:595
+msgid "Natureza da Operação"
+msgstr "Natureza da Operação"
+
+#: class-backend.php:601
+msgid "Classe de Imposto (NF-e)"
+msgstr "Classe de Imposto (NF-e)"
+
+#: class-backend.php:606
+msgid "Código NCM"
+msgstr "Código NCM"
+
+#: class-backend.php:611
+msgid "Código CEST"
+msgstr "Código CEST"
+
+#: class-backend.php:616
+msgid "Origem dos Produtos"
+msgstr "Origem dos Produtos"
+
+#: class-backend.php:638
+msgid "Indicativo de Intermediador"
+msgstr "Indicativo de Intermediador"
+
+#: class-backend.php:643
+msgid "Intermediador da operação"
+msgstr "Intermediador da operação"
+
+#: class-backend.php:653
+msgid "CNPJ do Intermediador"
+msgstr "CNPJ do Intermediador"
+
+#: class-backend.php:659
+msgid "ID do intermediador"
+msgstr "ID do intermediador"
+
+#: class-backend.php:669
+msgid "Informações Complementares (Opcional)"
+msgstr "Informações Complementares (Opcional)"
+
+#: class-backend.php:674
+msgid "Informações ao Fisco"
+msgstr "Informações ao Fisco"
+
+#: class-backend.php:680
+msgid "Informações Complementares ao Consumidor"
+msgstr "Informações Complementares ao Consumidor"
+
+#: class-backend.php:686
+msgid "Descrição Complementar do Serviço"
+msgstr "Descrição Complementar do Serviço"
+
+#: class-backend.php:696
+msgid "Gateways de Pagamento"
+msgstr "Gateways de Pagamento"
+
+#: class-backend.php:701
+msgid "Emitir pagamento parcelado como duplicata na Nota Fiscal"
+msgstr "Emitir pagamento parcelado como duplicata na Nota Fiscal"
+
+#: class-backend.php:703
+msgid "Pagamento parcelado como duplicata na Nota Fiscal"
+msgstr "Pagamento parcelado como duplicata na Nota Fiscal"
+
+#: class-backend.php:712
+msgid "Campos Personalizados no Checkout"
+msgstr "Campos Personalizados no Checkout"
+
+#: class-backend.php:717
+msgid "Exibir Tipo de Pessoa"
+msgstr "Exibir Tipo de Pessoa"
+
+#: class-backend.php:719
+msgid "Caso esteja marcado exibe os campos de Tipo de Pessoa, CPF, CNPJ e Empresa nas informações de cobrança."
+msgstr "Caso esteja marcado exibe os campos de Tipo de Pessoa, CPF, CNPJ e Empresa nas informações de cobrança."
+
+#: class-backend.php:724
+msgid "Habilitar Máscara de Campos"
+msgstr "Habilitar Máscara de Campos"
+
+#: class-backend.php:726
+msgid "Caso esteja marcado adiciona máscaras de preenchimento para os campos de CPF e CNPJ."
+msgstr "Caso esteja marcado adiciona máscaras de preenchimento para os campos de CPF e CNPJ."
+
+#: class-backend.php:731
+msgid "Preenchimento automático do endereço"
+msgstr "Preenchimento automático do endereço"
+
+#: class-backend.php:733
+msgid "Caso esteja marcado, o endereço será automaticamente preenchido quando o usuário informar o CEP."
+msgstr "Caso esteja marcado, o endereço será automaticamente preenchido quando o usuário informar o CEP."
+
+#: class-backend.php:738
+msgid "Bairro obrigatório"
+msgstr "Bairro obrigatório"
+
+#: class-backend.php:740
+msgid "Caso esteja marcado, o campo do endereço Bairro será obrigatório o preenchimento."
+msgstr "Caso esteja marcado, o campo do endereço Bairro será obrigatório o preenchimento."
+
+#: class-backend.php:1269
+#: class-backend.php:1293
+#: class-backend.php:1664
+#: class-backend.php:2095
+msgid "Selecionar"
+msgstr "Selecionar"
+
+#: class-backend.php:1270
+msgid "Contribuinte ICMS"
+msgstr "Contribuinte ICMS"
+
+#: class-backend.php:1271
+msgid "Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS"
+msgstr "Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS"
+
+#: class-backend.php:1272
+msgid "Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS"
+msgstr "Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS"
+
+#: class-backend.php:1280
+msgid "Contratação do Frete por conta do Remetente (CIF)"
+msgstr "Contratação do Frete por conta do Remetente (CIF)"
+
+#: class-backend.php:1281
+msgid "Contratação do Frete por conta do Destinatário (FOB)"
+msgstr "Contratação do Frete por conta do Destinatário (FOB)"
+
+#: class-backend.php:1282
+msgid "Contratação do Frete por conta de Terceiros"
+msgstr "Contratação do Frete por conta de Terceiros"
+
+#: class-backend.php:1283
+msgid "Transporte Próprio por conta do Remetente"
+msgstr "Transporte Próprio por conta do Remetente"
+
+#: class-backend.php:1284
+msgid "Transporte Próprio por conta do Destinatário"
+msgstr "Transporte Próprio por conta do Destinatário"
+
+#: class-backend.php:1285
+msgid "Sem Ocorrência de Transporte"
+msgstr "Sem Ocorrência de Transporte"
+
+#: class-backend.php:1294
+msgid "Nenhum"
+msgstr "Nenhum"
+
+#: class-backend.php:1295
+msgid "Desconto incondicional"
+msgstr "Desconto incondicional"
+
+#: class-backend.php:1296
+msgid "Desconto condicional"
+msgstr "Desconto condicional"
+
+#: class-backend.php:1618
+msgid "Selecionar Origem do Produto"
+msgstr "Selecionar Origem do Produto"
+
+#: class-backend.php:1619
+msgid "0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8"
+msgstr "0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8"
+
+#: class-backend.php:1620
+msgid "1 - Estrangeira - Importação direta, exceto a indicada no código 6"
+msgstr "1 - Estrangeira - Importação direta, exceto a indicada no código 6"
+
+#: class-backend.php:1621
+msgid "2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7"
+msgstr "2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7"
+
+#: class-backend.php:1622
+msgid "3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%"
+msgstr "3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%"
+
+#: class-backend.php:1623
+msgid "4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes"
+msgstr "4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes"
+
+#: class-backend.php:1624
+msgid "5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%"
+msgstr "5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%"
+
+#: class-backend.php:1625
+msgid "6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural"
+msgstr "6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural"
+
+#: class-backend.php:1626
+msgid "7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural"
+msgstr "7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural"
+
+#: class-backend.php:1627
+msgid "8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%"
+msgstr "8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%"
+
+#: class-backend.php:1665
+msgid "S - Produzido em Escala Relevante"
+msgstr "S - Produzido em Escala Relevante"
+
+#: class-backend.php:1666
+msgid "N - Produzido em Escala NÃO Relevante"
+msgstr "N - Produzido em Escala NÃO Relevante"
+
+#: class-backend.php:1886
+msgid "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível validar a ação. Atualize a página e tente novamente."
+msgstr "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível validar a ação. Atualize a página e tente novamente."
+
+#: class-backend.php:1976
+msgid "Endereço de Cobrança"
+msgstr "Endereço de Cobrança"
+
+#: class-backend.php:1980
+#: class-backend.php:2102
+#: class-backend.php:2251
+#: class-backend.php:2830
+#: class-frontend.php:126
+#: class-frontend.php:340
+#: class-frontend.php:350
+msgid "CPF"
+msgstr "CPF"
+
+#: class-backend.php:1984
+#: class-backend.php:2106
+#: class-backend.php:2255
+#: class-backend.php:2833
+#: class-frontend.php:132
+#: class-frontend.php:369
+#: class-frontend.php:385
+msgid "CNPJ"
+msgstr "CNPJ"
+
+#: class-backend.php:1989
+#: class-backend.php:2110
+#: class-backend.php:2259
+#: class-frontend.php:138
+msgid "Inscrição Estadual"
+msgstr "Inscrição Estadual"
+
+#: class-backend.php:1993
+#: class-backend.php:2117
+#: class-frontend.php:163
+msgid "Nascimento"
+msgstr "Nascimento"
+
+#: class-backend.php:1997
+#: class-backend.php:2121
+#: class-backend.php:2842
+#: class-frontend.php:170
+msgid "Sexo"
+msgstr "Sexo"
+
+#: class-backend.php:2002
+#: class-backend.php:2030
+#: class-backend.php:2129
+#: class-backend.php:2197
+#: class-frontend.php:212
+#: class-frontend.php:299
+msgid "Número"
+msgstr "Número"
+
+#: class-backend.php:2007
+#: class-backend.php:2035
+#: class-backend.php:2137
+#: class-backend.php:2205
+#: class-frontend.php:200
+#: class-frontend.php:287
+#: class-frontend.php:415
+#: inc/class-blocks.php:25
+msgid "Bairro"
+msgstr "Bairro"
+
+#: class-backend.php:2017
+#: class-backend.php:2165
+#: class-frontend.php:230
+msgid "Celular"
+msgstr "Celular"
+
+#: class-backend.php:2024
+msgid "Customer Shipping Address"
+msgstr "Customer Shipping Address"
+
+#: class-backend.php:2084
+#: class-backend.php:2185
+#: class-frontend.php:150
+#: class-frontend.php:254
+msgid "Nome"
+msgstr "Nome"
+
+#: class-backend.php:2088
+#: class-backend.php:2189
+#: class-frontend.php:156
+#: class-frontend.php:260
+msgid "Sobrenome"
+msgstr "Sobrenome"
+
+#: class-backend.php:2093
+#: class-backend.php:2242
+#: class-frontend.php:117
+msgid "Tipo Pessoa"
+msgstr "Tipo Pessoa"
+
+#: class-backend.php:2096
+#: class-backend.php:2245
+#: class-frontend.php:121
+msgid "Pessoa Física"
+msgstr "Pessoa Física"
+
+#: class-backend.php:2097
+#: class-backend.php:2246
+#: class-frontend.php:122
+msgid "Pessoa Jurídica"
+msgstr "Pessoa Jurídica"
+
+#: class-backend.php:2114
+msgid "Empresa"
+msgstr "Empresa"
+
+#: class-backend.php:2125
+#: class-backend.php:2193
+#: class-backend.php:2821
+#: class-backend.php:2873
+#: class-frontend.php:206
+#: class-frontend.php:293
+msgid "Endereço"
+msgstr "Endereço"
+
+#: class-backend.php:2133
+#: class-backend.php:2201
+#: class-frontend.php:218
+#: class-frontend.php:305
+msgid "Complemento"
+msgstr "Complemento"
+
+#: class-backend.php:2141
+#: class-backend.php:2209
+#: class-frontend.php:194
+#: class-frontend.php:281
+msgid "Cidade"
+msgstr "Cidade"
+
+#: class-backend.php:2145
+#: class-backend.php:2213
+#: class-frontend.php:187
+#: class-frontend.php:274
+msgid "Estado"
+msgstr "Estado"
+
+#: class-backend.php:2149
+#: class-backend.php:2217
+msgid "País"
+msgstr "País"
+
+#: class-backend.php:2153
+#: class-backend.php:2221
+msgid "Selecione um País&hellip;"
+msgstr "Selecione um País&hellip;"
+
+#: class-backend.php:2157
+#: class-backend.php:2225
+#: class-frontend.php:180
+#: class-frontend.php:267
+msgid "CEP"
+msgstr "CEP"
+
+#: class-backend.php:2161
+#: class-frontend.php:224
+msgid "Telefone Fixo"
+msgstr "Telefone Fixo"
+
+#: class-backend.php:2169
+#: class-frontend.php:236
+msgid "E-mail"
+msgstr "E-mail"
+
+#: class-backend.php:2244
+msgid "Utilizar dados de cobrança"
+msgstr "Utilizar dados de cobrança"
+
+#: class-backend.php:2821
+msgid "Nenhum endereço de cobrança definido."
+msgstr "Nenhum endereço de cobrança definido."
+
+#: class-backend.php:2827
+msgid "Informações do cliente"
+msgstr "Informações do cliente"
+
+#: class-backend.php:2832
+#: class-frontend.php:144
+#: class-frontend.php:375
+msgid "Razão Social"
+msgstr "Razão Social"
+
+#: class-backend.php:2835
+msgid "I.E"
+msgstr "I.E"
+
+#: class-backend.php:2840
+msgid "Data de nascimento"
+msgstr "Data de nascimento"
+
+#: class-backend.php:2844
+msgid "Telefone"
+msgstr "Telefone"
+
+#: class-backend.php:2847
+msgid "Telefone Cel."
+msgstr "Telefone Cel."
+
+#: class-backend.php:2849
+msgid "Email"
+msgstr "Email"
+
+#: class-backend.php:2873
+msgid "Nenhum endereço de envio definido."
+msgstr "Nenhum endereço de envio definido."
+
+#: class-backend.php:2880
+msgid "Nota do cliente"
+msgstr "Nota do cliente"
+
+#: class-backend.php:2994
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando."
+
+#: class-frontend.php:127
+msgctxt "placeholder"
+msgid "CPF"
+msgstr "CPF"
+
+#: class-frontend.php:133
+msgctxt "placeholder"
+msgid "CNPJ"
+msgstr "CNPJ"
+
+#: class-frontend.php:139
+msgctxt "placeholder"
+msgid "Inscrição Estadual"
+msgstr "Inscrição Estadual"
+
+#: class-frontend.php:145
+msgctxt "placeholder"
+msgid "Razão Social"
+msgstr "Razão Social"
+
+#: class-frontend.php:151
+#: class-frontend.php:255
+msgctxt "placeholder"
+msgid "Nome"
+msgstr "Nome"
+
+#: class-frontend.php:157
+#: class-frontend.php:261
+msgctxt "placeholder"
+msgid "Sobrenome"
+msgstr "Sobrenome"
+
+#: class-frontend.php:164
+msgctxt "placeholder"
+msgid "Nascimento"
+msgstr "Nascimento"
+
+#: class-frontend.php:175
+msgid "Feminino"
+msgstr "Feminino"
+
+#: class-frontend.php:176
+msgid "Masculino"
+msgstr "Masculino"
+
+#: class-frontend.php:181
+#: class-frontend.php:268
+msgctxt "placeholder"
+msgid "CEP"
+msgstr "CEP"
+
+#: class-frontend.php:188
+#: class-frontend.php:275
+msgctxt "placeholder"
+msgid "Estado"
+msgstr "Estado"
+
+#: class-frontend.php:195
+#: class-frontend.php:282
+msgctxt "placeholder"
+msgid "Cidade"
+msgstr "Cidade"
+
+#: class-frontend.php:201
+#: class-frontend.php:288
+msgctxt "placeholder"
+msgid "Bairro"
+msgstr "Bairro"
+
+#: class-frontend.php:207
+#: class-frontend.php:294
+msgctxt "placeholder"
+msgid "Endereço"
+msgstr "Endereço"
+
+#: class-frontend.php:213
+#: class-frontend.php:300
+msgctxt "placeholder"
+msgid "Número"
+msgstr "Número"
+
+#: class-frontend.php:219
+#: class-frontend.php:306
+msgctxt "placeholder"
+msgid "Complemento"
+msgstr "Complemento"
+
+#: class-frontend.php:225
+msgctxt "placeholder"
+msgid "Telefone Fixo"
+msgstr "Telefone Fixo"
+
+#: class-frontend.php:231
+msgctxt "placeholder"
+msgid "Celular"
+msgstr "Celular"
+
+#: class-frontend.php:237
+msgctxt "placeholder"
+msgid "E-mail"
+msgstr "E-mail"
+
+#: class-frontend.php:340
+#: class-frontend.php:369
+#: class-frontend.php:375
+#: class-frontend.php:415
+msgid "é um campo obrigatório"
+msgstr "é um campo obrigatório"
+
+#: class-frontend.php:351
+#: class-frontend.php:386
+msgid "informado não é válido"
+msgstr "informado não é válido"
+
+#: class-issue.php:111
+#: class-issue.php:232
+msgid "Erro desconhecido."
+msgstr "Erro desconhecido."
+
+#: init-class.php:89
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce."
+
+#: init-class.php:99
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Atualize o WooCommerce para a versão 3.0.0 ou superior."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Atualize o WooCommerce para a versão 3.0.0 ou superior."
+
+#: init-class.php:105
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor."
+
+#: init-class.php:148
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal."
+
+#: init-class.php:161
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal."
+
+#: init-class.php:170
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Classe de Imposto do serviço em WooCommerce > Configurações > Nota Fiscal."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Classe de Imposto do serviço em WooCommerce > Configurações > Nota Fiscal."
+
+#: inc/class-blocks.php:13
+msgid "CPF ou CNPJ"
+msgstr "CPF ou CNPJ"
+
+#: inc/class-blocks.php:18
+msgid "Razão social (preencha para CNPJ)"
+msgstr "Razão social (preencha para CNPJ)"
+
+#: inc/class-blocks.php:18
+msgid "Inscrição estadual"
+msgstr "Inscrição estadual"
+
+#: inc/class-blocks.php:25
+msgid "Número do endereço"
+msgstr "Número do endereço"
+
+#: inc/class-blocks.php:43
+msgid "Informe um CPF ou CNPJ válido."
+msgstr "Informe um CPF ou CNPJ válido."
+
+#: inc/class-blocks.php:49
+msgid "Informe a razão social para o CNPJ."
+msgstr "Informe a razão social para o CNPJ."
+
+#. Plugin URI of the plugin
+#: woocommerce_nfe.php
+msgid "https://webmania.com.br/nota-fiscal-eletronica/"
+msgstr "https://webmania.com.br/nota-fiscal-eletronica/"
+
+#: class-backend.php:534
+msgid "Enviar e-mail para o cliente após a emissão da Nota Fiscal"
+msgstr "Enviar e-mail para o cliente após a emissão da Nota Fiscal"
+
+#: class-backend.php:541
+msgid "Emissão de Nota Fiscal com a data do pedido (retroativa)"
+msgstr "Emissão de Nota Fiscal com a data do pedido (retroativa)"
+
+#. translators: %s: URL of the automatic invoice error report.
+#: class-backend.php:549
+#, php-format
+msgid "Informe um e-mail para notificações de erros na emissão ou <a target=\"_blank\" href=\"%s\">visualize as notificações</a>."
+msgstr "Informe um e-mail para notificações de erros na emissão ou <a target=\"_blank\" href=\"%s\">visualize as notificações</a>."
+
+#: class-backend.php:1000
+#: class-backend.php:2719
+#: class-backend.php:2763
+#: class-backend.php:3048
+#: inc/class-security.php:517
+msgid "Security check failed"
+msgstr "Falha na verificação de segurança"
+
+#: class-backend.php:1699
+msgid "Status Fiscal"
+msgstr "Status Fiscal"
+
+#: class-backend.php:1775
+#: class-backend.php:1799
+msgid "Emitir Nota Fiscal"
+msgstr "Emitir Nota Fiscal"
+
+#: class-backend.php:1800
+msgid "Imprimir Danfe"
+msgstr "Imprimir Danfe"
+
+#: class-backend.php:1801
+msgid "Imprimir Danfe Simples"
+msgstr "Imprimir Danfe Simples"
+
+#: class-backend.php:1802
+msgid "Imprimir Danfe Etiqueta"
+msgstr "Imprimir Danfe Etiqueta"
+
+#: class-backend.php:1899
+msgid "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação."
+msgstr "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação."
+
+#. translators: 1: Order ID, 2: translated order status.
+#: class-backend.php:1923
+#, php-format
+msgid "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível executar esta ação. O pedido <strong>%1$d</strong> encontra-se <strong>%2$s</strong>"
+msgstr "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível executar esta ação. O pedido <strong>%1$d</strong> encontra-se <strong>%2$s</strong>"
+
+#. translators: %s: URL of the orders with invoice errors.
+#: class-backend.php:2659
+#, php-format
+msgid "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href=\"%s\">Visualizar Pedidos</a>"
+msgstr "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href=\"%s\">Visualizar Pedidos</a>"
+
+#: class-backend.php:2724
+#: class-backend.php:2768
+#: class-backend.php:3053
+#: inc/class-security.php:523
+msgid "Insufficient permissions"
+msgstr "Permissões insuficientes"
+
+#. translators: %s: credential validation error message.
+#: class-backend.php:2926
+#, php-format
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> %s"
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> %s"
+
+#. translators: %d: number of days before the A1 digital certificate expires.
+#: class-backend.php:2989
+#, php-format
+msgid "<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital A1 - vencerá em %d dias."
+msgstr "<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital A1 - vencerá em %d dias."
+
+#: class-backend.php:3059
+msgid "Não foi possível consultar o Certificado Digital A1."
+msgstr "Não foi possível consultar o Certificado Digital A1."
+
+#: class-frontend.php:66
+msgid "optional"
+msgstr "opcional"
+
+#: class-frontend.php:67
+msgid "required"
+msgstr "obrigatório"
+
+#: class-issue.php:544
+msgid "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Um ou mais produtos deste pedido estão <strong>indisponíveis ou foram excluídos permanentemente</strong> impossibilitando a emissão da nota fiscal."
+msgstr "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Um ou mais produtos deste pedido estão <strong>indisponíveis ou foram excluídos permanentemente</strong> impossibilitando a emissão da nota fiscal."
+
+#: inc/class-security.php:529
+msgid "Too many requests. Please try again later."
+msgstr "Muitas solicitações. Tente novamente mais tarde."
+
+#: inc/gateways/pagseguro.php:74
+msgid "Payment type"
+msgstr "Tipo de pagamento"
+
+#: init-class.php:430
+msgid "Visualizar Configurações"
+msgstr "Visualizar Configurações"
+
+#: init-class.php:430
+msgid "Configurações"
+msgstr "Configurações"
+
+#: templates/page-reports.php:8
+msgid "Você não tem permissão para acessar esta página."
+msgstr "Você não tem permissão para acessar esta página."
+
+#. Plugin Name of the plugin
+#: woocommerce_nfe.php
+msgid "Nota Fiscal Eletrônica Webmania"
+msgstr "Nota Fiscal Eletrônica Webmania"

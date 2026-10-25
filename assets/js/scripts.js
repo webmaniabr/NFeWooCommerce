@@ -3,7 +3,7 @@ jQuery(function($){
     if (WooCommerceNFe.maskedinput) {
 
         $('#billing_cpf').mask('999.999.999-99');
-        $('#billing_cnpj').mask('99.999.999/9999-99');
+        $('#billing_cnpj').mask('**.***.***/****-99');
         $('#billing_postcode').mask('99999-999');
         $('#shipping_postcode').mask('99999-999');
         $('#billing_birthdate').mask('99/99/9999');

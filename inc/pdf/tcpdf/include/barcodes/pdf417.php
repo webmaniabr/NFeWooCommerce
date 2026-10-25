@@ -1,13 +1,15 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //============================================================+
 // File name   : pdf417.php
 // Version     : 1.0.005
 // Begin       : 2010-06-03
 // Last Update : 2014-04-25
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2010-2013  Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2010-2013 2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -22,7 +24,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TCPDF.  If not, see <http://www.gnu.org/licenses/>.
+// along with TCPDF.  If not, see <https://www.gnu.org/licenses/>.
 //
 // See LICENSE.TXT file for more information.
 // -------------------------------------------------------------------
@@ -54,29 +56,29 @@
  */
 
 // definitions
-if (!defined('PDF417DEFS')) {
+if (!defined('WOOCOMMERCE_NFE_PDF_PDF417DEFS')) {
 
 	/**
 	 * Indicate that definitions for this class are set
 	 */
-	define('PDF417DEFS', true);
+	define('WOOCOMMERCE_NFE_PDF_PDF417DEFS', true);
 
 	// -----------------------------------------------------
 
 	/**
 	 * Row height respect X dimension of single module
 	 */
-	define('ROWHEIGHT', 4);
+	define('WOOCOMMERCE_NFE_PDF_ROWHEIGHT', 4);
 
 	/**
 	 * Horizontal quiet zone in modules
 	 */
-	define('QUIETH', 2);
+	define('WOOCOMMERCE_NFE_PDF_QUIETH', 2);
 
 	/**
 	 * Vertical quiet zone in modules
 	 */
-	define('QUIETV', 2);
+	define('WOOCOMMERCE_NFE_PDF_QUIETV', 2);
 
 } // end of definitions
 
@@ -89,8 +91,9 @@ if (!defined('PDF417DEFS')) {
  * @package com.tecnick.tcpdf
  * @author Nicola Asuni
  * @version 1.0.003
+ * @deprecated TCPDF is deprecated: migrate to tecnickcom/tc-lib-pdf.
  */
-class PDF417 {
+class WooCommerceNFe_PDF_PDF417 {
 
 	/**
 	 * Barcode array to be returned which is readable by TCPDF.
@@ -523,10 +526,10 @@ class PDF417 {
 	/**
 	 * This is the class constructor.
 	 * Creates a PDF417 object
-	 * @param $code (string) code to represent using PDF417
-	 * @param $ecl (int) error correction level (0-8); default -1 = automatic correction level
-	 * @param $aspectratio (float) the width to height of the symbol (excluding quiet zones)
-	 * @param $macro (array) information for macro block
+	 * @param string $code code to represent using PDF417
+	 * @param int $ecl error correction level (0-8); default -1 = automatic correction level
+	 * @param float $aspectratio the width to height of the symbol (excluding quiet zones)
+	 * @param array $macro information for macro block
 	 * @public
 	 */
 	public function __construct($code, $ecl=-1, $aspectratio=2, $macro=array()) {
@@ -591,7 +594,7 @@ class PDF417 {
 		$errsize = (2 << $ecl);
 		// calculate number of columns (number of codewords per row) and rows
 		$nce = ($numcw + $errsize + 1);
-		$cols = round((sqrt(4761 + (68 * $aspectratio * ROWHEIGHT * $nce)) - 69) / 34);
+		$cols = round((sqrt(4761 + (68 * $aspectratio * WOOCOMMERCE_NFE_PDF_ROWHEIGHT * $nce)) - 69) / 34);
 		// adjust cols
 		if ($cols < 1) {
 			$cols = 1;
@@ -645,15 +648,15 @@ class PDF417 {
 		// add error correction codewords
 		$codewords = array_merge($codewords, $ecw);
 		// add horizontal quiet zones to start and stop patterns
-		$pstart = str_repeat('0', QUIETH).$this->start_pattern;
-		$pstop = $this->stop_pattern.str_repeat('0', QUIETH);
-		$barcode_array['num_rows'] = ($rows * ROWHEIGHT) + (2 * QUIETV);
-		$barcode_array['num_cols'] = (($cols + 2) * 17) + 35 + (2 * QUIETH);
+		$pstart = str_repeat('0', WOOCOMMERCE_NFE_PDF_QUIETH).$this->start_pattern;
+		$pstop = $this->stop_pattern.str_repeat('0', WOOCOMMERCE_NFE_PDF_QUIETH);
+		$barcode_array['num_rows'] = ($rows * WOOCOMMERCE_NFE_PDF_ROWHEIGHT) + (2 * WOOCOMMERCE_NFE_PDF_QUIETV);
+		$barcode_array['num_cols'] = (($cols + 2) * 17) + 35 + (2 * WOOCOMMERCE_NFE_PDF_QUIETH);
 		$barcode_array['bcode'] = array();
 		// build rows for vertical quiet zone
-		if (QUIETV > 0) {
+		if (WOOCOMMERCE_NFE_PDF_QUIETV > 0) {
 			$empty_row = array_fill(0, $barcode_array['num_cols'], 0);
-			for ($i = 0; $i < QUIETV; ++$i) {
+			for ($i = 0; $i < WOOCOMMERCE_NFE_PDF_QUIETV; ++$i) {
 				// add vertical quiet rows
 				$barcode_array['bcode'][] = $empty_row;
 			}
@@ -706,7 +709,7 @@ class PDF417 {
 			// convert the string to array
 			$arow = preg_split('//', $row, -1, PREG_SPLIT_NO_EMPTY);
 			// duplicate row to get the desired height
-			for ($h = 0; $h < ROWHEIGHT; ++$h) {
+			for ($h = 0; $h < WOOCOMMERCE_NFE_PDF_ROWHEIGHT; ++$h) {
 				$barcode_array['bcode'][] = $arow;
 			}
 			++$cid;
@@ -714,8 +717,8 @@ class PDF417 {
 				$cid = 0;
 			}
 		}
-		if (QUIETV > 0) {
-			for ($i = 0; $i < QUIETV; ++$i) {
+		if (WOOCOMMERCE_NFE_PDF_QUIETV > 0) {
+			for ($i = 0; $i < WOOCOMMERCE_NFE_PDF_QUIETV; ++$i) {
 				// add vertical quiet rows
 				$barcode_array['bcode'][] = $empty_row;
 			}
@@ -734,22 +737,13 @@ class PDF417 {
 
 	/**
 	 * Returns the error correction level (0-8) to be used
-	 * @param $ecl (int) error correction level
-	 * @param $numcw (int) number of data codewords
+	 * @param int $ecl error correction level
+	 * @param int $numcw number of data codewords
 	 * @return int error correction level
 	 * @protected
 	 */
 	protected function getErrorCorrectionLevel($ecl, $numcw) {
-		// get maximum correction level
 		$maxecl = 8; // starting error level
-		$maxerrsize = (928 - $numcw); // available codewords for error
-		while ($maxecl > 0) {
-			$errsize = (2 << $ecl);
-			if ($maxerrsize >= $errsize) {
-				break;
-			}
-			--$maxecl;
-		}
 		// check for automatic levels
 		if (($ecl < 0) OR ($ecl > 8)) {
 			if ($numcw < 41) {
@@ -764,6 +758,15 @@ class PDF417 {
 				$ecl = $maxecl;
 			}
 		}
+		// get maximum correction level
+		$maxerrsize = (928 - $numcw); // available codewords for error
+		while ($maxecl > 0) {
+			$errsize = (2 << $ecl);
+			if ($maxerrsize >= $errsize) {
+				break;
+			}
+			--$maxecl;
+		}
 		if ($ecl > $maxecl) {
 			$ecl = $maxecl;
 		}
@@ -772,8 +775,8 @@ class PDF417 {
 
 	/**
 	 * Returns the error correction codewords
-	 * @param $cw (array) array of codewords including Symbol Length Descriptor and pad
-	 * @param $ecl (int) error correction level 0-8
+	 * @param array $cw array of codewords including Symbol Length Descriptor and pad
+	 * @param int $ecl error correction level 0-8
 	 * @return array of error correction codewords
 	 * @protected
 	 */
@@ -809,8 +812,8 @@ class PDF417 {
 
 	/**
 	 * Create array of sequences from input
-	 * @param $code (string) code
-	 * @return bidimensional array containing characters and classification
+	 * @param string $code code
+	 * @return array bi-dimensional array containing characters and classification
 	 * @protected
 	 */
 	protected function getInputSequences($code) {
@@ -864,9 +867,9 @@ class PDF417 {
 
 	/**
 	 * Compact data by mode.
-	 * @param $mode (int) compaction mode number
-	 * @param $code (string) data to compact
-	 * @param $addmode (boolean) if true add the mode codeword at first position
+	 * @param int $mode compaction mode number
+	 * @param string $code data to compact
+	 * @param boolean $addmode if true add the mode codeword at first position
 	 * @return array of codewords
 	 * @protected
 	 */
@@ -943,8 +946,8 @@ class PDF417 {
 						// tmp array for the 6 bytes block
 						$cw6 = array();
 						do {
-							$d = bcmod($t, '900');
-							$t = bcdiv($t, '900');
+							$d = bcmod($t, '900', 0);
+							$t = bcdiv($t, '900', 0);
 							// prepend the value to the beginning of the array
 							array_unshift($cw6, $d);
 						} while ($t != '0');
@@ -969,8 +972,8 @@ class PDF417 {
 					}
 					$t = '1'.$code;
 					do {
-						$d = bcmod($t, '900');
-						$t = bcdiv($t, '900');
+						$d = bcmod($t, '900', 0);
+						$t = bcdiv($t, '900', 0);
 						array_unshift($cw, $d);
 					} while ($t != '0');
 					$code = $rest;

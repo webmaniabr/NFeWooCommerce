@@ -5,9 +5,9 @@
 // Begin       : 2002-08-03
 // Last Update : 2014-11-15
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2002-2014 Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2002-2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -48,13 +48,16 @@
  * @brief PHP class for generating PDF documents without requiring external extensions.
  * @version 1.0.005
  * @author Nicola Asuni - info@tecnick.com
+ * @deprecated TCPDF is deprecated: migrate to tecnickcom/tc-lib-pdf.
  */
-class TCPDF_IMAGES {
+class WooCommerceNFe_PDF_TCPDF_IMAGES {
 
 	/**
 	 * Array of hinheritable SVG properties.
 	 * @since 5.0.000 (2010-05-02)
 	 * @public static
+	 * 
+	 * @var string[]
 	 */
 	public static $svginheritprop = array('clip-rule', 'color', 'color-interpolation', 'color-interpolation-filters', 'color-profile', 'color-rendering', 'cursor', 'direction', 'display', 'fill', 'fill-opacity', 'fill-rule', 'font', 'font-family', 'font-size', 'font-size-adjust', 'font-stretch', 'font-style', 'font-variant', 'font-weight', 'glyph-orientation-horizontal', 'glyph-orientation-vertical', 'image-rendering', 'kerning', 'letter-spacing', 'marker', 'marker-end', 'marker-mid', 'marker-start', 'pointer-events', 'shape-rendering', 'stroke', 'stroke-dasharray', 'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'stroke-opacity', 'stroke-width', 'text-anchor', 'text-rendering', 'visibility', 'word-spacing', 'writing-mode');
 
@@ -62,8 +65,8 @@ class TCPDF_IMAGES {
 
 	/**
 	 * Return the image type given the file name or array returned by getimagesize() function.
-	 * @param $imgfile (string) image file name
-	 * @param $iminfo (array) array of image information returned by getimagesize() function.
+	 * @param string $imgfile image file name
+	 * @param array $iminfo array of image information returned by getimagesize() function.
 	 * @return string image type
 	 * @since 4.8.017 (2009-11-27)
 	 * @public static
@@ -77,10 +80,7 @@ class TCPDF_IMAGES {
 			}
 		}
 		if (empty($type)) {
-			$fileinfo = pathinfo($imgfile);
-			if (isset($fileinfo['extension']) AND (!TCPDF_STATIC::empty_string($fileinfo['extension']))) {
-				$type = strtolower(trim($fileinfo['extension']));
-			}
+            $type = strtolower(trim(pathinfo(wp_parse_url($imgfile, PHP_URL_PATH), PATHINFO_EXTENSION)));
 		}
 		if ($type == 'jpg') {
 			$type = 'jpeg';
@@ -90,9 +90,9 @@ class TCPDF_IMAGES {
 
 	/**
 	 * Set the transparency for the given GD image.
-	 * @param $new_image (image) GD image object
-	 * @param $image (image) GD image object.
-	 * return GD image object.
+	 * @param resource $new_image GD image object
+	 * @param resource $image GD image object.
+	 * @return resource GD image object $new_image
 	 * @since 4.9.016 (2010-04-20)
 	 * @public static
 	 */
@@ -115,8 +115,8 @@ class TCPDF_IMAGES {
 	/**
 	 * Convert the loaded image to a PNG and then return a structure for the PDF creator.
 	 * This function requires GD library and write access to the directory defined on K_PATH_CACHE constant.
-	 * @param $image (image) Image object.
-	 * @param $tempfile (string) Temporary file name.
+	 * @param resource $image Image object.
+	 * @param string $tempfile Temporary file name.
 	 * return image PNG image object.
 	 * @since 4.9.016 (2010-04-20)
 	 * @public static
@@ -127,46 +127,46 @@ class TCPDF_IMAGES {
 		// create temporary PNG image
 		imagepng($image, $tempfile);
 		// remove image from memory
-		imagedestroy($image);
+		if (PHP_VERSION_ID < 80000) {
+			imagedestroy($image);
+		}
 		// get PNG image data
 		$retvars = self::_parsepng($tempfile);
 		// tidy up by removing temporary image
-		unlink($tempfile);
+		wp_delete_file($tempfile);
 		return $retvars;
 	}
 
 	/**
 	 * Convert the loaded image to a JPEG and then return a structure for the PDF creator.
 	 * This function requires GD library and write access to the directory defined on K_PATH_CACHE constant.
-	 * @param $image (image) Image object.
-	 * @param $quality (int) JPEG quality.
-	 * @param $tempfile (string) Temporary file name.
-	 * return image JPEG image object.
+	 * @param resource $image Image object.
+	 * @param int $quality JPEG quality.
+	 * @param string $tempfile Temporary file name.
+	 * return array|false image JPEG image object.
 	 * @public static
 	 */
 	public static function _toJPEG($image, $quality, $tempfile) {
 		imagejpeg($image, $tempfile, $quality);
-		imagedestroy($image);
+		if (PHP_VERSION_ID < 80000) {
+			imagedestroy($image);
+		}
 		$retvars = self::_parsejpeg($tempfile);
 		// tidy up by removing temporary image
-		unlink($tempfile);
+		wp_delete_file($tempfile);
 		return $retvars;
 	}
 
 	/**
 	 * Extract info from a JPEG file without using the GD library.
-	 * @param $file (string) image file to parse
-	 * @return array structure containing the image data
+	 * @param string $file image file to parse
+	 * @return array|false structure containing the image data
 	 * @public static
 	 */
 	public static function _parsejpeg($file) {
 		// check if is a local file
-		if (!@file_exists($file)) {
-			// try to encode spaces on filename
-			$tfile = str_replace(' ', '%20', $file);
-			if (@file_exists($tfile)) {
-				$file = $tfile;
-			}
+		if (!@WooCommerceNFe_PDF_TCPDF_STATIC::file_exists($file)) {
+			return false;
 		}
 		$a = getimagesize($file);
 		if (empty($a)) {
@@ -212,7 +212,7 @@ class TCPDF_IMAGES {
 		$offset = 0;
 		while (($pos = strpos($data, "ICC_PROFILE\0", $offset)) !== false) {
 			// get ICC sequence length
-			$length = (TCPDF_STATIC::_getUSHORT($data, ($pos - 2)) - 16);
+			$length = (WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($data, ($pos - 2)) - 16);
 			// marker sequence number
 			$msn = max(1, ord($data[($pos + 12)]));
 			// number of markers (total of APP2 used)
@@ -238,31 +238,32 @@ class TCPDF_IMAGES {
 
 	/**
 	 * Extract info from a PNG file without using the GD library.
-	 * @param $file (string) image file to parse
-	 * @return array structure containing the image data
+	 * @param string $file image file to parse
+	 * @return array|false structure containing the image data
 	 * @public static
 	 */
 	public static function _parsepng($file) {
-		$f = @fopen($file, 'rb');
+		$f = @WooCommerceNFe_PDF_IO::open($file, 'rb');
 		if ($f === false) {
 			// Can't open image file
 			return false;
 		}
+		try {
 		//Check signature
-		if (fread($f, 8) != chr(137).'PNG'.chr(13).chr(10).chr(26).chr(10)) {
+		if (WooCommerceNFe_PDF_IO::read($f, 8) != chr(137).'PNG'.chr(13).chr(10).chr(26).chr(10)) {
 			// Not a PNG file
 			return false;
 		}
 		//Read header chunk
-		fread($f, 4);
-		if (fread($f, 4) != 'IHDR') {
+		WooCommerceNFe_PDF_IO::read($f, 4);
+		if (WooCommerceNFe_PDF_IO::read($f, 4) != 'IHDR') {
 			//Incorrect PNG file
 			return false;
 		}
-		$w = TCPDF_STATIC::_freadint($f);
-		$h = TCPDF_STATIC::_freadint($f);
-		$bpc = ord(fread($f, 1));
-		$ct = ord(fread($f, 1));
+		$w = WooCommerceNFe_PDF_TCPDF_STATIC::_freadint($f);
+		$h = WooCommerceNFe_PDF_TCPDF_STATIC::_freadint($f);
+		$bpc = ord(WooCommerceNFe_PDF_IO::read($f, 1));
+		$ct = ord(WooCommerceNFe_PDF_IO::read($f, 1));
 		if ($ct == 0) {
 			$colspace = 'DeviceGray';
 		} elseif ($ct == 2) {
@@ -271,25 +272,25 @@ class TCPDF_IMAGES {
 			$colspace = 'Indexed';
 		} else {
 			// alpha channel
-			fclose($f);
+			WooCommerceNFe_PDF_IO::close($f);
 			return 'pngalpha';
 		}
-		if (ord(fread($f, 1)) != 0) {
-			// Unknown compression method
-			fclose($f);
+		if (ord(WooCommerceNFe_PDF_IO::read($f, 1)) != 0) {
+			// Unknownn compression method
+			WooCommerceNFe_PDF_IO::close($f);
 			return false;
 		}
-		if (ord(fread($f, 1)) != 0) {
-			// Unknown filter method
-			fclose($f);
+		if (ord(WooCommerceNFe_PDF_IO::read($f, 1)) != 0) {
+			// Unknownn filter method
+			WooCommerceNFe_PDF_IO::close($f);
 			return false;
 		}
-		if (ord(fread($f, 1)) != 0) {
+		if (ord(WooCommerceNFe_PDF_IO::read($f, 1)) != 0) {
 			// Interlacing not supported
-			fclose($f);
+			WooCommerceNFe_PDF_IO::close($f);
 			return false;
 		}
-		fread($f, 4);
+		WooCommerceNFe_PDF_IO::read($f, 4);
 		$channels = ($ct == 2 ? 3 : 1);
 		$parms = '/DecodeParms << /Predictor 15 /Colors '.$channels.' /BitsPerComponent '.$bpc.' /Columns '.$w.' >>';
 		//Scan chunks looking for palette, transparency and image data
@@ -297,16 +298,16 @@ class TCPDF_IMAGES {
 		$trns = '';
 		$data = '';
 		$icc = false;
-		$n = TCPDF_STATIC::_freadint($f);
+		$n = WooCommerceNFe_PDF_TCPDF_STATIC::_freadint($f);
 		do {
-			$type = fread($f, 4);
+			$type = WooCommerceNFe_PDF_IO::read($f, 4);
 			if ($type == 'PLTE') {
 				// read palette
-				$pal = TCPDF_STATIC::rfread($f, $n);
-				fread($f, 4);
+				$pal = WooCommerceNFe_PDF_TCPDF_STATIC::rfread($f, $n);
+				WooCommerceNFe_PDF_IO::read($f, 4);
 			} elseif ($type == 'tRNS') {
 				// read transparency info
-				$t = TCPDF_STATIC::rfread($f, $n);
+				$t = WooCommerceNFe_PDF_TCPDF_STATIC::rfread($f, $n);
 				if ($ct == 0) { // DeviceGray
 					$trns = array(ord($t[1]));
 				} elseif ($ct == 2) { // DeviceRGB
@@ -319,42 +320,46 @@ class TCPDF_IMAGES {
 						}
 					}
 				}
-				fread($f, 4);
+				WooCommerceNFe_PDF_IO::read($f, 4);
 			} elseif ($type == 'IDAT') {
 				// read image data block
-				$data .= TCPDF_STATIC::rfread($f, $n);
-				fread($f, 4);
+				$data .= WooCommerceNFe_PDF_TCPDF_STATIC::rfread($f, $n);
+				WooCommerceNFe_PDF_IO::read($f, 4);
 			} elseif ($type == 'iCCP') {
 				// skip profile name
 				$len = 0;
-				while ((ord(fread($f, 1)) != 0) AND ($len < 80)) {
+				while ((ord(WooCommerceNFe_PDF_IO::read($f, 1)) != 0) AND ($len < 80)) {
 					++$len;
 				}
 				// get compression method
-				if (ord(fread($f, 1)) != 0) {
-					// Unknown filter method
-					fclose($f);
+				if (ord(WooCommerceNFe_PDF_IO::read($f, 1)) != 0) {
+					// Unknownn filter method
+					WooCommerceNFe_PDF_IO::close($f);
 					return false;
 				}
 				// read ICC Color Profile
-				$icc = TCPDF_STATIC::rfread($f, ($n - $len - 2));
+				$icc = WooCommerceNFe_PDF_TCPDF_STATIC::rfread($f, ($n - $len - 2));
 				// decompress profile
 				$icc = gzuncompress($icc);
-				fread($f, 4);
+				WooCommerceNFe_PDF_IO::read($f, 4);
 			} elseif ($type == 'IEND') {
 				break;
 			} else {
-				TCPDF_STATIC::rfread($f, $n + 4);
+				WooCommerceNFe_PDF_TCPDF_STATIC::rfread($f, $n + 4);
 			}
-			$n = TCPDF_STATIC::_freadint($f);
+			$n = WooCommerceNFe_PDF_TCPDF_STATIC::_freadint($f);
 		} while ($n);
 		if (($colspace == 'Indexed') AND (empty($pal))) {
 			// Missing palette
-			fclose($f);
+			WooCommerceNFe_PDF_IO::close($f);
 			return false;
 		}
-		fclose($f);
+		WooCommerceNFe_PDF_IO::close($f);
 		return array('w' => $w, 'h' => $h, 'ch' => $channels, 'icc' => $icc, 'cs' => $colspace, 'bpc' => $bpc, 'f' => 'FlateDecode', 'parms' => $parms, 'pal' => $pal, 'trns' => $trns, 'data' => $data);
+		} finally {
+			WooCommerceNFe_PDF_IO::close($f);
+		}
+
 	}
 
 } // END OF TCPDF_IMAGES CLASS

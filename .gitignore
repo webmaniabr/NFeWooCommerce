@@ -1,0 +1,7 @@
+# Keep local review documents and validation artifacts out of Git submissions.
+*.[mM][dD]
+/tests/
+*.log
+*.logs
+.logs/
+logs/

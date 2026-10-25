@@ -6,8 +6,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WooCommerceNFe {
 
-	public string $domain = 'WooCommerceNFe';
-	public string $version = '3.4.4';
+	public string $domain = 'nota-fiscal-eletronica-woocommerce';
+	public string $version = '3.4.6';
 	public array $settings = [];
 	protected static ?WooCommerceNFe $_instance = null;
 
@@ -32,17 +32,19 @@ class WooCommerceNFe {
 		
 		// Security: Log potential security attempt without exposing user input
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			error_log( 'WooCommerceNFe: Attempted access to restricted property' );
+			if ( function_exists( 'woocommerce_nfe_security_log' ) ) { woocommerce_nfe_security_log( 'restricted_property' ); }
 		}
 		return null;
 	}
 
 	function __construct(){
 
-		global $domain, $woocommerce;
+		global $woocommerce;
 
 		// Load hook message
 		add_action( 'admin_notices', [ $this, 'display_messages' ] );
+
+		$this->load_plugin_text_domain();
 
 		// Validate plugin before Load
 		if (!$this->validate_plugin()){
@@ -50,11 +52,10 @@ class WooCommerceNFe {
 		}
 
 		// Globals
-		$GLOBALS['version_woonfe'] = $this->version;
+		$GLOBALS['woocommercenfe_version'] = $this->version;
 
 		// Load plugin
 		$this->includes();
-		$this->load_plugin_text_domain();
 		$this->validate_plugin_config();
 		$this->hooks();
 
@@ -68,8 +69,8 @@ class WooCommerceNFe {
 	function hooks(){
 
 		add_filter( 'woocommercenfe_plugins_url', array($this, 'default_plugin_url') );
-		add_action( 'transition_post_status', array($this, 'issue_automatic_invoice'), 10, 4 );
-		add_filter( "plugin_action_links_".plugin_basename( __FILE__ ), array($this, 'plugin_add_settings_link') );
+		add_action( 'woocommerce_order_status_changed', array($this, 'issue_automatic_wc_invoice'), 10, 4 );
+		add_filter( "plugin_action_links_".plugin_basename( __DIR__ . '/woocommerce_nfe.php' ), array($this, 'plugin_add_settings_link') );
 		do_action( 'woocommercenfe_loaded' );
 
 	}
@@ -85,7 +86,7 @@ class WooCommerceNFe {
 
 		// WooCommerce Plugin
 		if ( !class_exists( 'WooCommerce' ) ) {
-			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', $this->domain) );
+			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Para a emissão de Nota Fiscal Eletrônica é necessário ativar o plugin WooCommerce.', 'nota-fiscal-eletronica-woocommerce') );
 			return false;
 		}
 
@@ -95,13 +96,13 @@ class WooCommerceNFe {
 			: (function_exists('WC') ? WC()->version : '0.0.0');
 
 		if (version_compare($wc_version, '3.0.0', '<')){
-			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Atualize o WooCommerce para a versão 3.0.0 ou superior.', $this->domain) );
+			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Atualize o WooCommerce para a versão 3.0.0 ou superior.', 'nota-fiscal-eletronica-woocommerce') );
 			return false;
 		}
 
 		// cURL function
 		if (!function_exists('curl_version')){
-			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', $this->domain) );
+			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Necessário instalar o comando cURL no servidor, entre em contato com a sua hospedagem ou administrador do servidor.', 'nota-fiscal-eletronica-woocommerce') );
 			return false;
 		}
 
@@ -144,7 +145,7 @@ class WooCommerceNFe {
 				$hasAPI2Credentials = true;
 			}
 			if (!$hasAPI1Credentials && !$hasAPI2Credentials) {
-				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
+				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe as credenciais de acesso da aplicação em WooCommerce > Configurações > Nota Fiscal.', 'nota-fiscal-eletronica-woocommerce') );
 				return false;
 			}
 
@@ -157,7 +158,7 @@ class WooCommerceNFe {
 				get_option('wc_settings_woocommercenfe_origem') == 'null'
 			)) {
 
-				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
+				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Natureza da Operação, Classe de Imposto, Código NCM e Origem do produto em WooCommerce > Configurações > Nota Fiscal.', 'nota-fiscal-eletronica-woocommerce') );
 					return false;
 
 			}
@@ -166,7 +167,7 @@ class WooCommerceNFe {
 			if ($hasAPI2Credentials && (
 				!get_option('wc_settings_woocommercenfe_imposto_nfse')
 			)) {
-				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Classe de Imposto do serviço em WooCommerce > Configurações > Nota Fiscal.', $this->domain) );
+				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Informe a Classe de Imposto do serviço em WooCommerce > Configurações > Nota Fiscal.', 'nota-fiscal-eletronica-woocommerce') );
 				return false;
 			}
 
@@ -183,6 +184,8 @@ class WooCommerceNFe {
 	function includes(){
 
 		include_once( 'inc/class-security.php' ); // Security helper class
+		include_once( 'inc/class-http.php' );
+		include_once( 'inc/class-callback.php' );
 		include_once( 'inc/sdk/NFe.php' );
 		include_once( 'inc/sdk/NFSe.php' );
 		include_once( 'inc/utils.php' );
@@ -206,7 +209,15 @@ class WooCommerceNFe {
 	 */
 	function load_plugin_text_domain(){
 
-		load_plugin_textdomain( $this->domain, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		$domain = 'nota-fiscal-eletronica-woocommerce';
+		$locale = function_exists( 'determine_locale' ) ? determine_locale() : ( is_admin() ? get_user_locale() : get_locale() );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Official WordPress core locale filter, shared with installed language packs.
+		$locale = apply_filters( 'plugin_locale', $locale, $domain );
+		if ( ! is_string( $locale ) || ! preg_match( '/^[A-Za-z0-9_@-]+$/D', $locale ) ) { return; }
+		$language_pack = WP_LANG_DIR . '/plugins/' . $domain . '-' . $locale . '.mo';
+		if ( is_readable( $language_pack ) && load_textdomain( $domain, $language_pack ) ) { return; }
+		$bundled = __DIR__ . '/languages/' . $domain . '-' . $locale . '.mo';
+		if ( is_readable( $bundled ) ) { load_textdomain( $domain, $bundled ); }
 
 	}
 
@@ -216,16 +227,21 @@ class WooCommerceNFe {
 	 * @return array
 	 */
 	function get_credentials( $order_id = 0 ){
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
+        $settings = apply_filters('nfe_settings', array(
+            'oauth_access_token' => get_option('wc_settings_woocommercenfe_access_token', ''),
+            'oauth_access_token_secret' => get_option('wc_settings_woocommercenfe_access_token_secret', ''),
+            'consumer_key' => get_option('wc_settings_woocommercenfe_consumer_key', ''),
+            'consumer_secret' => get_option('wc_settings_woocommercenfe_consumer_secret', ''),
+            'bearer_access_token' => get_option('wc_settings_woocommercenfe_bearer_access_token', ''),
+        ), $order_id);
+        $this->settings = is_array($settings) ? $settings : array();
+        foreach (array('oauth_access_token', 'oauth_access_token_secret', 'consumer_key', 'consumer_secret', 'bearer_access_token') as $field) {
+            $value = $this->settings[$field] ?? '';
+            $this->settings[$field] = is_scalar($value) ? (string) $value : '';
+        }
 
-		$this->settings = apply_filters( 'nfe_settings', array(
-			'oauth_access_token' => get_option('wc_settings_woocommercenfe_access_token'),
-			'oauth_access_token_secret' => get_option('wc_settings_woocommercenfe_access_token_secret'),
-			'consumer_key' => get_option('wc_settings_woocommercenfe_consumer_key'),
-			'consumer_secret' => get_option('wc_settings_woocommercenfe_consumer_secret'),
-			'bearer_access_token' => get_option('wc_settings_woocommercenfe_bearer_access_token'),
-		), $order_id );
-
-	}
+}
 
 	/**
 	 * Add error
@@ -280,12 +296,20 @@ class WooCommerceNFe {
 	 *
 	 * @return void
 	 */
+	function issue_automatic_wc_invoice( $order_id, $from, $to, $order ) {
+		if ( ! $order || $order->get_type() !== 'shop_order' ) { return; }
+		$this->issue_automatic_invoice( 'wc-' . $to, 'wc-' . $from, (object) array( 'ID' => $order_id, 'post_type' => 'shop_order' ) );
+	}
+
 	function issue_automatic_invoice( $to, $from, $post ) {
 		
+		// Unchanged status saves must not trigger another fiscal request.
+		if ( $to === $from ) { return; }
 		// Validations
-		if (get_post_type($post) != 'shop_order')
+		if ( ( $post->post_type ?? '' ) !== 'shop_order' )
 			return;
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 		$option = apply_filters( 'nfe_issue_automatic', get_option('wc_settings_woocommercenfe_emissao_automatica') );
 		if ( !$option ){
 			return;
@@ -294,6 +318,7 @@ class WooCommerceNFe {
 		// Vars
 		$order_id = $post->ID;
 		$order = wc_get_order( $order_id );
+		if ( ! $order ) { return; }
 
 		// Process
 		if (
@@ -321,6 +346,7 @@ class WooCommerceNFe {
 		}
 
 		if (!empty($response)) {
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			do_action( 'nfe_issued_automatic', $order_id, $to, $response );
 	   	}
 
@@ -340,7 +366,7 @@ class WooCommerceNFe {
 		// Security: Validate email address
 		if (!is_email($email)) {
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log('WooCommerceNFe: Invalid email address for notifications');
+				if ( function_exists( 'woocommerce_nfe_security_log' ) ) { woocommerce_nfe_security_log( 'invalid_notification_email' ); }
 			}
 			return;
 		}
@@ -401,7 +427,7 @@ class WooCommerceNFe {
 	    // Security: Escape URL and add nonce
 	    $settings_url = esc_url( admin_url( 'admin.php?page=wc-settings&tab=woocommercenfe_tab' ) );
 	    $action_links = array(
-	      'settings' => '<a href="' . $settings_url . '" aria-label="' . esc_attr__( 'Visualizar Configurações', 'woocommerce' ) . '">' . esc_html__( 'Configurações', 'woocommerce' ) . '</a>',
+	      'settings' => '<a href="' . $settings_url . '" aria-label="' . esc_attr__( 'Visualizar Configurações', 'nota-fiscal-eletronica-woocommerce' ) . '">' . esc_html__( 'Configurações', 'nota-fiscal-eletronica-woocommerce' ) . '</a>',
 		);
 
 	    return array_merge( $action_links, $links );
@@ -468,6 +494,7 @@ class WooCommerceNFe {
 	 * @return void
 	 */
 	public function display_messages(): void {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { return; }
 
 		$error_messages = get_option('woocommercenfe_error_messages');
 		if ( $error_messages && is_array( $error_messages ) ) {
