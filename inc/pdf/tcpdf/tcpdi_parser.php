@@ -1,4 +1,6 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //============================================================+
 // File name   : tcpdi_parser.php
 // Version     : 1.0
@@ -50,41 +52,41 @@
 /**
  * Exception for handling issues on pdf parsing.
  */
-class TCPdiParserException extends Exception {};
+class WooCommerceNFe_PDF_TCPdiParserException extends Exception {};
 
 // include class for decoding filters
 require_once(dirname(__FILE__).'/include/tcpdf_filters.php');
 
-if (!defined ('PDF_TYPE_NULL'))
-    define ('PDF_TYPE_NULL', 0);
-if (!defined ('PDF_TYPE_NUMERIC'))
-    define ('PDF_TYPE_NUMERIC', 1);
-if (!defined ('PDF_TYPE_TOKEN'))
-    define ('PDF_TYPE_TOKEN', 2);
-if (!defined ('PDF_TYPE_HEX'))
-    define ('PDF_TYPE_HEX', 3);
-if (!defined ('PDF_TYPE_STRING'))
-    define ('PDF_TYPE_STRING', 4);
-if (!defined ('PDF_TYPE_DICTIONARY'))
-    define ('PDF_TYPE_DICTIONARY', 5);
-if (!defined ('PDF_TYPE_ARRAY'))
-    define ('PDF_TYPE_ARRAY', 6);
-if (!defined ('PDF_TYPE_OBJDEC'))
-    define ('PDF_TYPE_OBJDEC', 7);
-if (!defined ('PDF_TYPE_OBJREF'))
-    define ('PDF_TYPE_OBJREF', 8);
-if (!defined ('PDF_TYPE_OBJECT'))
-    define ('PDF_TYPE_OBJECT', 9);
-if (!defined ('PDF_TYPE_STREAM'))
-    define ('PDF_TYPE_STREAM', 10);
-if (!defined ('PDF_TYPE_BOOLEAN'))
-    define ('PDF_TYPE_BOOLEAN', 11);
-if (!defined ('PDF_TYPE_REAL'))
-    define ('PDF_TYPE_REAL', 12);
-if (!defined ('PDF_PARSER_ERROR_HANDLER_PHP_DIE'))
-    define('PDF_PARSER_ERROR_HANDLER_PHP_DIE', 'php_die');
-if (!defined ('PDF_PARSER_ERROR_HANDLER_EXCEPTION'))
-    define('PDF_PARSER_ERROR_HANDLER_EXCEPTION', 'exception');
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_NULL'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_NULL', 0);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC', 1);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN', 2);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX', 3);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_STRING'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_STRING', 4);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY', 5);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY', 6);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJDEC'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJDEC', 7);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF', 8);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT', 9);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM', 10);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_BOOLEAN'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_BOOLEAN', 11);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_REAL'))
+    define ('WOOCOMMERCE_NFE_PDF_PDF_TYPE_REAL', 12);
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_PHP_DIE'))
+    define('WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_PHP_DIE', 'php_die');
+if (!defined ('WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_EXCEPTION'))
+    define('WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_EXCEPTION', 'exception');
 
 /**
  * @class tcpdi_parser
@@ -95,7 +97,7 @@ if (!defined ('PDF_PARSER_ERROR_HANDLER_EXCEPTION'))
  * @author Paul Nicholls - github.com/pauln
  * @author Nicola Asuni - info@tecnick.com
  */
-class tcpdi_parser {
+class WooCommerceNFe_PDF_tcpdi_parser {
     /**
      * Unique parser ID
      * @public
@@ -197,7 +199,7 @@ class tcpdi_parser {
      * @public
      * @since 1.0.000 (2011-05-24)
      */
-    public function __construct($data, $uniqueid, $errorHandler = PDF_PARSER_ERROR_HANDLER_PHP_DIE) {
+    public function __construct($data, $uniqueid, $errorHandler = WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_PHP_DIE) {
         $this->errorHandler = $errorHandler;
         if (empty($data)) {
             $this->Error('Empty PDF data.');
@@ -207,7 +209,7 @@ class tcpdi_parser {
         // get length
         $pdflen = strlen($this->pdfdata);
         // initialize class for decoding filters
-        $this->FilterDecoders = new TCPDF_FILTERS();
+        $this->FilterDecoders = new WooCommerceNFe_PDF_TCPDF_FILTERS();
         // get xref and trailer data
         $this->xref = $this->getXrefData();
         $this->findObjectOffsets();
@@ -279,25 +281,25 @@ class tcpdi_parser {
                 break;
             }
         }
-        if ($objref == null || $objref[0] !== PDF_TYPE_OBJREF) {
+        if ($objref == null || $objref[0] !== WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
             // Offset not found.
             return;
         }
 
         $dict = $this->getObjectVal($objref);
-        if ($dict[0] == PDF_TYPE_OBJECT && $dict[1][0] == PDF_TYPE_DICTIONARY) {
+        if ($dict[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT && $dict[1][0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY) {
             // Dict wrapped in an object
             $dict = $dict[1];
         }
 
-        if ($dict[0] !== PDF_TYPE_DICTIONARY) {
+        if ($dict[0] !== WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY) {
             return;
         }
 
         $this->pages = array();
         if (isset($dict[1]['/Kids'])) {
             $v = $dict[1]['/Kids'];
-            if ($v[0] == PDF_TYPE_ARRAY) {
+            if ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
                 foreach ($v[1] as $ref) {
                     $page = $this->getObjectVal($ref);
                     $this->readPage($page);
@@ -427,25 +429,25 @@ class tcpdi_parser {
             if (!isset($xref['trailer']) OR empty($xref['trailer'])) {
                 // get only the last updated version
                 $xref['trailer'] = array();
-                $xref['trailer'][0] = PDF_TYPE_DICTIONARY;
+                $xref['trailer'][0] = WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY;
                 $xref['trailer'][1] = array();
                 // parse trailer_data
                 if (preg_match('/Size[\s]+([0-9]+)/i', $trailer_data, $matches) > 0) {
-                    $xref['trailer'][1]['/Size'] = array(PDF_TYPE_NUMERIC, intval($matches[1]));
+                    $xref['trailer'][1]['/Size'] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC, intval($matches[1]));
                 }
                 if (preg_match('/Root[\s]+([0-9]+)[\s]+([0-9]+)[\s]+R/i', $trailer_data, $matches) > 0) {
-                    $xref['trailer'][1]['/Root'] = array(PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
+                    $xref['trailer'][1]['/Root'] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
                 }
                 if (preg_match('/Encrypt[\s]+([0-9]+)[\s]+([0-9]+)[\s]+R/i', $trailer_data, $matches) > 0) {
-                    $xref['trailer'][1]['/Encrypt'] = array(PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
+                    $xref['trailer'][1]['/Encrypt'] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
                 }
                 if (preg_match('/Info[\s]+([0-9]+)[\s]+([0-9]+)[\s]+R/i', $trailer_data, $matches) > 0) {
-                    $xref['trailer'][1]['/Info'] = array(PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
+                    $xref['trailer'][1]['/Info'] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF, intval($matches[1]), intval($matches[2]));
                 }
                 if (preg_match('/ID[\s]*[\[][\s]*[<]([^>]*)[>][\s]*[<]([^>]*)[>]/i', $trailer_data, $matches) > 0) {
-                    $xref['trailer'][1]['/ID'] = array(PDF_TYPE_ARRAY, array());
-                    $xref['trailer'][1]['/ID'][1][0] = array(PDF_TYPE_HEX, $matches[1]);
-                    $xref['trailer'][1]['/ID'][1][1] = array(PDF_TYPE_HEX, $matches[2]);
+                    $xref['trailer'][1]['/ID'] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY, array());
+                    $xref['trailer'][1]['/ID'][1][0] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX, $matches[1]);
+                    $xref['trailer'][1]['/ID'][1][1] = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX, $matches[2]);
                 }
             }
             if (preg_match('/Prev[\s]+([0-9]+)/i', $trailer_data, $matches) > 0) {
@@ -485,7 +487,7 @@ class tcpdi_parser {
         if (!isset($xref['trailer']) OR empty($xref['trailer'])) {
             // get only the last updated version
             $xref['trailer'] = array();
-            $xref['trailer'][0] = PDF_TYPE_DICTIONARY;
+            $xref['trailer'][0] = WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY;
             $xref['trailer'][1] = array();
             $filltrailer = true;
         } else {
@@ -498,28 +500,28 @@ class tcpdi_parser {
         $predictor = 1; // Default as per PDF 32000-1:2008.
         foreach ($keys as $k=>$key) {
             $v = $sarr[$key];
-            if (($key == '/Type') AND ($v[0] == PDF_TYPE_TOKEN AND ($v[1] == 'XRef'))) {
+            if (($key == '/Type') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN AND ($v[1] == 'XRef'))) {
                 $valid_crs = true;
-            } elseif (($key == '/Index') AND ($v[0] == PDF_TYPE_ARRAY AND count($v[1] >= 2))) {
+            } elseif (($key == '/Index') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY AND count($v[1] >= 2))) {
                 // first object number in the subsection
                 $index_first = intval($v[1][0][1]);
                 // number of entries in the subsection
                 $index_entries = intval($v[1][1][1]);
-            } elseif (($key == '/Prev') AND ($v[0] == PDF_TYPE_NUMERIC)) {
+            } elseif (($key == '/Prev') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC)) {
                 // get previous xref offset
                 $prevxref = intval($v[1]);
-            } elseif (($key == '/W') AND ($v[0] == PDF_TYPE_ARRAY)) {
+            } elseif (($key == '/W') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY)) {
                 // number of bytes (in the decoded stream) of the corresponding field
                 $wb = array();
                 $wb[0] = intval($v[1][0][1]);
                 $wb[1] = intval($v[1][1][1]);
                 $wb[2] = intval($v[1][2][1]);
-            } elseif (($key == '/DecodeParms') AND ($v[0] == PDF_TYPE_DICTIONARY)) {
+            } elseif (($key == '/DecodeParms') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY)) {
                 $decpar = $v[1];
                 foreach ($decpar as $kdc => $vdc) {
-                    if (($kdc == '/Columns') AND ($vdc[0] == PDF_TYPE_NUMERIC)) {
+                    if (($kdc == '/Columns') AND ($vdc[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC)) {
                         $columns = intval($vdc[1]);
-                    } elseif (($kdc == '/Predictor') AND ($vdc[0] == PDF_TYPE_NUMERIC)) {
+                    } elseif (($kdc == '/Predictor') AND ($vdc[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC)) {
                         $predictor = intval($vdc[1]);
                     }
                 }
@@ -702,7 +704,7 @@ class tcpdi_parser {
         $offset += strspn($this->pdfdata, "\r\n", $offset);
 
         $obj = array();
-        $obj[] = PDF_TYPE_STREAM;
+        $obj[] = WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM;
         $obj[] = substr($this->pdfdata, $offset, $length);
 
         return array($obj, $offset+$length);
@@ -741,7 +743,7 @@ class tcpdi_parser {
             }
             case '/': { // \x2F SOLIDUS
                 // name object
-                $objtype = PDF_TYPE_TOKEN;
+                $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN;
                 ++$offset;
                 $length = strcspn($data, "\x00\x09\x0a\x0c\x0d\x20\x28\x29\x3c\x3e\x5b\x5d\x7b\x7d\x2f\x25", $offset);
                 $objval = substr($data, $offset, $length);
@@ -751,7 +753,7 @@ class tcpdi_parser {
             case '(':   // \x28 LEFT PARENTHESIS
             case ')': { // \x29 RIGHT PARENTHESIS
                 // literal string object
-                $objtype = PDF_TYPE_STRING;
+                $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_STRING;
                 ++$offset;
                 $strpos = $offset;
                 if ($char == '(') {
@@ -786,7 +788,7 @@ class tcpdi_parser {
             case '[':   // \x5B LEFT SQUARE BRACKET
             case ']': { // \x5D RIGHT SQUARE BRACKET
                 // array object
-                $objtype = PDF_TYPE_ARRAY;
+                $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY;
                 ++$offset;
                 if ($char == '[') {
                     // get array content
@@ -807,7 +809,7 @@ class tcpdi_parser {
             case '>': { // \x3E GREATER-THAN SIGN
                 if (isset($data[($offset + 1)]) AND ($data[($offset + 1)] == $char)) {
                     // dictionary object
-                    $objtype = PDF_TYPE_DICTIONARY;
+                    $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY;
                     if ($char == '<') {
                         list ($objval, $offset) = $this->getDictValue($offset, $data);
                     } else {
@@ -816,7 +818,7 @@ class tcpdi_parser {
                     }
                 } else {
                     // hexadecimal string object
-                    $objtype = PDF_TYPE_HEX;
+                    $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX;
                     ++$offset;
                     // The "Panose" entry in the FontDescriptor Style dict seems to have hex bytes separated by spaces.
                     if (($char == '<') AND (preg_match('/^([0-9A-Fa-f ]+)[>]/iU', substr($data, $offset), $matches) == 1)) {
@@ -840,19 +842,19 @@ class tcpdi_parser {
                         // If we get here, treat it as a null object as something has gone wrong.
                     case 'null':
                         // null object
-                        $objtype = PDF_TYPE_NULL;
+                        $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_NULL;
                         $offset += 4;
                         $objval = 'null';
                         break;
                     case 'true':
                         // boolean true object
-                        $objtype = PDF_TYPE_BOOLEAN;
+                        $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_BOOLEAN;
                         $offset += 4;
                         $objval = true;
                         break;
                     case 'fals':
                         // boolean false object
-                        $objtype = PDF_TYPE_BOOLEAN;
+                        $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_BOOLEAN;
                         $offset += 5;
                         $objval = false;
                         break;
@@ -865,19 +867,19 @@ class tcpdi_parser {
                         if (preg_match('/^([0-9]+)[\s]+([0-9]+)[\s]+([Robj]{1,3})/i', substr($data, $offset, 33), $matches) == 1) {
                             if ($matches[3] == 'R') {
                                 // indirect object reference
-                                $objtype = PDF_TYPE_OBJREF;
+                                $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF;
                                 $offset += strlen($matches[0]);
                                 $objval = array(intval($matches[1]), intval($matches[2]));
                             } elseif ($matches[3] == 'obj') {
                                 // object start
-                                $objtype = PDF_TYPE_OBJECT;
+                                $objtype = WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT;
                                 $objval = intval($matches[1]).'_'.intval($matches[2]);
                                 $offset += strlen ($matches[0]);
                             }
                         } elseif (($numlen = strspn($data, '+-.0123456789', $offset)) > 0) {
                             // numeric object
                             $objval = substr($data, $offset, $numlen);
-                            $objtype = (intval($objval) != $objval) ? PDF_TYPE_REAL : PDF_TYPE_NUMERIC;
+                            $objtype = (intval($objval) != $objval) ? WOOCOMMERCE_NFE_PDF_PDF_TYPE_REAL : WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC;
                             $offset += $numlen;
                         }
                         unset($matches);
@@ -888,7 +890,7 @@ class tcpdi_parser {
         }
         $obj = array();
         $obj[] = $objtype;
-        if ($objtype == PDF_TYPE_OBJREF && is_array($objval)) {
+        if ($objtype == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF && is_array($objval)) {
             foreach ($objval as $val) {
                 $obj[] = $val;
             }
@@ -963,12 +965,12 @@ class tcpdi_parser {
         $objdata = array();
         $i = 0; // object main index
         do {
-            if (($i > 0) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == PDF_TYPE_DICTIONARY) AND array_key_exists('/Length', $objdata[($i - 1)][1])) {
+            if (($i > 0) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY) AND array_key_exists('/Length', $objdata[($i - 1)][1])) {
                 // Stream - get using /Length in stream's dict
                 $lengthobj = $objdata[($i-1)][1]['/Length'];
-                if ($lengthobj[0] === PDF_TYPE_OBJREF) {
+                if ($lengthobj[0] === WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
                     $lengthobj = $this->getObjectVal($lengthobj);
-                    if ($lengthobj[0] === PDF_TYPE_OBJECT) {
+                    if ($lengthobj[0] === WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT) {
                         $lengthobj = $lengthobj[1];
                     }
                 }
@@ -979,7 +981,7 @@ class tcpdi_parser {
                 list($element, $offset) = $this->getRawObject($offset);
             }
             // decode stream using stream's dictionary information
-            if ($decoding AND ($element[0] == PDF_TYPE_STREAM) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == PDF_TYPE_DICTIONARY)) {
+            if ($decoding AND ($element[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM) AND (isset($objdata[($i - 1)][0])) AND ($objdata[($i - 1)][0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY)) {
                 $element[3] = $this->decodeStream($objdata[($i - 1)][1], $element[1]);
             }
             $objdata[$i] = $element;
@@ -999,14 +1001,14 @@ class tcpdi_parser {
      * @since 1.0.000 (2011-06-26)
      */
     public function getObjectVal($obj) {
-        if ($obj[0] == PDF_TYPE_OBJREF) {
+        if ($obj[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
             if (strpos($obj[1], '_') !== false) {
                 $key = explode('_', $obj[1]);
             } else {
                 $key = array($obj[1], $obj[2]);
             }
 
-            $ret = array(0=>PDF_TYPE_OBJECT, 'obj'=>$key[0], 'gen'=>$key[1]);
+            $ret = array(0=>WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT, 'obj'=>$key[0], 'gen'=>$key[1]);
 
             // reference to indirect object
             $object = null;
@@ -1024,7 +1026,7 @@ class tcpdi_parser {
                 if (!isset($this->objstreams[$objs[0]][$objs[1]])) {
                     // Fetch and decode object stream
                     $offset = $this->findObjectOffset($objs);;
-                    $objstream = $this->getObjectVal(array(PDF_TYPE_OBJREF, $objs[0], $objs[1]));
+                    $objstream = $this->getObjectVal(array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF, $objs[0], $objs[1]));
                     $decoded = $this->decodeStream($objstream[1][1], $objstream[2][1]);
                     $this->objstreams[$objs[0]][$objs[1]] = $decoded[0]; // Store just the data, in case we need more from this objstream
                     // Free memory
@@ -1036,8 +1038,8 @@ class tcpdi_parser {
             }
             if (!is_null($object)) {
                 $ret[1] = $object[0];
-                if (isset($object[1][0]) && $object[1][0] == PDF_TYPE_STREAM) {
-                    $ret[0] = PDF_TYPE_STREAM;
+                if (isset($object[1][0]) && $object[1][0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM) {
+                    $ret[0] = WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM;
                     $ret[2] = $object[1];
                 }
                 return $ret;
@@ -1051,9 +1053,9 @@ class tcpdi_parser {
      *
      */
     function extractObjectStream($key) {
-        $objref = array(PDF_TYPE_OBJREF, $key[0], $key[1]);
+        $objref = array(WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF, $key[0], $key[1]);
         $obj = $this->getObjectVal($objref);
-        if ($obj[0] !== PDF_TYPE_STREAM || !isset($obj[1][1]['/First'][1])) {
+        if ($obj[0] !== WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM || !isset($obj[1][1]['/First'][1])) {
             // Not a valid object stream dictionary - skip it.
             return;
         }
@@ -1142,8 +1144,8 @@ class tcpdi_parser {
         }
         $filters = array();
         foreach ($sdic as $k => $v) {
-            if ($v[0] == PDF_TYPE_TOKEN) {
-                if (($k == '/Length') AND ($v[0] == PDF_TYPE_NUMERIC)) {
+            if ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN) {
+                if (($k == '/Length') AND ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC)) {
                     // get declared stream lenght
                     $declength = intval($v[1]);
                     if ($declength < $slength) {
@@ -1151,13 +1153,13 @@ class tcpdi_parser {
                         $slength = $declength;
                     }
                 } elseif ($k == '/Filter') {
-                    if ($v[0] == PDF_TYPE_TOKEN) {
+                    if ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN) {
                         // single filter
                         $filters[] = $v[1];
-                    } elseif ($v[0] == PDF_TYPE_ARRAY) {
+                    } elseif ($v[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
                         // array of filters
                         foreach ($v[1] as $flt) {
-                            if ($flt[0] == PDF_TYPE_TOKEN) {
+                            if ($flt[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN) {
                                 $filters[] = $flt[1];
                             }
                         }
@@ -1217,7 +1219,7 @@ class tcpdi_parser {
         // parent object.
         if (isset ($obj[1][1]['/Resources'])) {
             $res = $obj[1][1]['/Resources'];
-            if ($res[0] == PDF_TYPE_OBJECT)
+            if ($res[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT)
                 return $res[1];
             return $res;
         } else {
@@ -1225,7 +1227,7 @@ class tcpdi_parser {
                 return false;
             } else {
                 $res = $this->_getPageResources($obj[1][1]['/Parent']);
-                if ($res[0] == PDF_TYPE_OBJECT)
+                if ($res[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT)
                     return $res[1];
                 return $res;
             }
@@ -1263,14 +1265,14 @@ class tcpdi_parser {
     private function _getPageContent($content_ref) {
         $contents = array();
 
-        if ($content_ref[0] == PDF_TYPE_OBJREF) {
+        if ($content_ref[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
             $content = $this->getObjectVal($content_ref);
-            if ($content[1][0] == PDF_TYPE_ARRAY) {
+            if ($content[1][0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
                 $contents = $this->_getPageContent($content[1]);
             } else {
                 $contents[] = $content;
             }
-        } elseif ($content_ref[0] == PDF_TYPE_ARRAY) {
+        } elseif ($content_ref[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
             foreach ($content_ref[1] AS $tmp_content_ref) {
                 $contents = array_merge($contents,$this->_getPageContent($tmp_content_ref));
             }
@@ -1292,14 +1294,14 @@ class tcpdi_parser {
         if (isset($obj[1][1]['/Filter'])) {
             $_filter = $obj[1][1]['/Filter'];
 
-            if ($_filter[0] == PDF_TYPE_OBJREF) {
+            if ($_filter[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
                 $tmpFilter = $this->getObjectVal($_filter);
                 $_filter = $tmpFilter[1];
             }
 
-            if ($_filter[0] == PDF_TYPE_TOKEN) {
+            if ($_filter[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN) {
                 $filters[] = $_filter;
-            } elseif ($_filter[0] == PDF_TYPE_ARRAY) {
+            } elseif ($_filter[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
                 $filters = $_filter[1];
             }
         }
@@ -1329,12 +1331,12 @@ class tcpdi_parser {
         if (isset($page[1][1][$box_index]))
             $box =& $page[1][1][$box_index];
 
-        if (!is_null($box) && $box[0] == PDF_TYPE_OBJREF) {
+        if (!is_null($box) && $box[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF) {
             $tmp_box = $this->getObjectVal($box);
             $box = $tmp_box[1];
         }
 
-        if (!is_null($box) && $box[0] == PDF_TYPE_ARRAY) {
+        if (!is_null($box) && $box[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY) {
             $b =& $box[1];
             return array('x' => $b[0][1] / $k,
                          'y' => $b[1][1] / $k,
@@ -1395,7 +1397,7 @@ class tcpdi_parser {
         $obj = $this->getObjectVal($obj);
         if (isset ($obj[1][1]['/Rotate'])) {
             $res = $this->getObjectVal($obj[1][1]['/Rotate']);
-            if ($res[0] == PDF_TYPE_OBJECT)
+            if ($res[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT)
                 return $res[1];
             return $res;
         } else {
@@ -1403,7 +1405,7 @@ class tcpdi_parser {
                 return false;
             } else {
                 $res = $this->_getPageRotation($obj[1][1]['/Parent']);
-                if ($res && $res[0] == PDF_TYPE_OBJECT)
+                if ($res && $res[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJECT)
                     return $res[1];
                 return $res;
             }
@@ -1418,14 +1420,14 @@ class tcpdi_parser {
      */
     public function Error($msg) {
         // exit program and print error.
-        if ($this->errorHandler == PDF_PARSER_ERROR_HANDLER_PHP_DIE) {
-          die("<strong>TCPDI_PARSER ERROR [{$this->uniqueid}]: </strong>".$msg);
+        if ($this->errorHandler == WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_PHP_DIE) {
+          die( '<strong>TCPDI_PARSER ERROR: </strong>' . esc_html( $msg ) );
         }
-        elseif ($this->errorHandler == PDF_PARSER_ERROR_HANDLER_EXCEPTION) {
-          throw new TCPdiParserException($msg);
+        elseif ($this->errorHandler == WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_EXCEPTION) {
+          throw new WooCommerceNFe_PDF_TCPdiParserException( esc_html( $msg ) );
         }
         else {
-          die("<strong>TCPDI_PARSER ERROR [{$this->uniqueid}]: </strong>".$msg);
+          die( '<strong>TCPDI_PARSER ERROR: </strong>' . esc_html( $msg ) );
         }
     }
 

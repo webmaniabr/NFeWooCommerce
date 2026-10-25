@@ -1,259 +1,111 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit; // Exit if accessed directly
-}
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 class WooCommerceNFePrint extends WooCommerceNFe {
-
-	//Files folder path
 	private $files_folder;
 
-	/**
-	 * Constructor
-	 * 
-	 * @return void
-	 */
-	public function __construct(){
-
-		//If Temp directory is not defined, create a folder to save the files
-		if (defined('WP_TEMP_DIR')) {
-			
-			$this->files_folder = WP_TEMP_DIR;
-
-		}
-		else {
-
-			$this->files_folder = dirname(__FILE__) . '/danfes_pdf';
-			wp_mkdir_p($this->files_folder);
-
-		}
-
-		
-
+	public function __construct() {
+		$this->files_folder = WooCommerceNFe_Security::private_directory();
 	}
 
-	/**
-	 * Print nfe pdf
-	 * 
-	 * @param array $order_ids
-	 * @param string $type Danfe type (normal, simplificada, etiqueta)
-	 *
-	 * @return boolean
-	 */
-	public function print( $order_ids = array(), $type = 'normal' ){
-
+	public function print( $order_ids = array(), $type = 'normal' ) {
+		if ( ! current_user_can( 'manage_woocommerce' ) || ! $this->files_folder || ! in_array( $type, array( 'normal', 'simplificada', 'etiqueta' ), true ) ) { return false; }
 		$data = array();
-
-		foreach ($order_ids as $order_id) {
-
-			//Get order nfe data
+		foreach ( array_unique( array_filter( array_map( array( 'WooCommerceNFe_Security', 'validate_order_id' ), (array) $order_ids ) ) ) as $order_id ) {
 			$order = wc_get_order( $order_id );
-			$order_nfe_data = $order->get_meta('nfe');
-
-			if(!$order_nfe_data){
-				continue;
-			} 
-
-			//Use the last nfe issued
-			$nf = end($order_nfe_data);
-			if ($nf['modelo'] == 'lote_rps' || ($nf['modelo'] == 'nfse' && ($type != 'normal' || empty($nf['pdf_rps'])))) continue;
-
-			//Set Danfe's url 
-			$item = array('chave' => $nf['chave_acesso']);
-			if ((isset($nf['url_danfe']) || trim($nf['url_danfe']) == '') && $nf['chave_acesso']) {
-				$nf['url_danfe'] = 'https://nfe.webmaniabr.com/danfe/'.$nf['chave_acesso'].'/';
+			if ( ! $order || ! current_user_can( 'edit_shop_order', $order_id ) ) { return false; }
+			$invoices = $order->get_meta( 'nfe' );
+			if ( ! is_array( $invoices ) || ! $invoices ) { continue; }
+			$nf = WooCommerceNFe_Security::sanitize_invoice( end( $invoices ) );
+			$model = $nf['modelo'] ?? 'nfe';
+			if ( $model === 'lote_rps' || ( $model === 'nfse' && ( $type !== 'normal' || empty( $nf['pdf_rps'] ) ) ) ) { continue; }
+			$base = $nf['url_danfe'] ?? '';
+			if ( ! $base && preg_match( '/^[0-9]{6}[A-Z0-9]{12}[0-9]{26}$/D', $nf['chave_acesso'] ?? '' ) ) { $base = 'https://nfe.webmania.com.br/danfe/' . $nf['chave_acesso'] . '/'; }
+			if ( $type === 'normal' ) {
+				$url = $model === 'nfse' ? $nf['pdf_rps'] : $base;
+			} elseif ( $type === 'simplificada' ) {
+				$url = ! empty( $nf['url_danfe_simplificada'] ) ? $nf['url_danfe_simplificada'] : str_replace( '/danfe/', '/danfe/simples/', $base );
+			} else {
+				$url = ! empty( $nf['url_danfe_etiqueta'] ) ? $nf['url_danfe_etiqueta'] : str_replace( '/danfe/', '/danfe/etiqueta/', $base );
 			}
-			if ($type == 'normal') {
-				$item['url'] = ($nf['modelo'] == 'nfse') ? $nf['pdf_rps'] : $nf['url_danfe'];
-			}
-			else if ($type == 'simplificada') {
-				$item['url'] = ($nf['url_danfe_simplificada']) ? $nf['url_danfe_simplificada'] : str_replace('/danfe/', '/danfe/simples/', $nf['url_danfe']);
-			}
-			else if ($type == 'etiqueta') {
-				$item['url'] = ($nf['url_danfe_etiqueta']) ? $nf['url_danfe_etiqueta'] : str_replace('/danfe/', '/danfe/etiqueta/', $nf['url_danfe']);
-			}
-			
-			$data[] = $item;
-
-		}		
-
-		//Creates pdf of selected orders nfe
-		$result = (!empty($data)) ? $this->createPDF($data) : false;
-
-		if ($result["result"] == true){
-
-			$abs_path = str_replace(['\\', '/'], '/', ABSPATH);
-			$file_folder = str_replace(['\\', '/'], '/', $this->files_folder);
-			$temp_dir = str_replace($abs_path, '', $file_folder);
-			$link_pdf = trailingslashit(get_site_url()) . trim($temp_dir, '/') . '/' . $result["file"] . ".pdf";
-			
-			$this->add_success( "Arquivo de impressão gerado com sucesso. <a href='$link_pdf' target='_blank'>Clique aqui</a> para acessá-lo." );
-
+			$data[] = array( 'url' => $url, 'order_id' => $order_id );
+		}
+		$result = $data ? $this->createPDF( $data ) : false;
+		if ( ! empty( $result['result'] ) ) {
+			$link = wp_nonce_url( add_query_arg( array( 'action' => 'wmbr_download_pdf', 'file' => $result['file'] ), admin_url( 'admin-post.php' ) ), 'wmbr_pdf_' . $result['file'] );
+			$this->add_success( 'Arquivo de impressão gerado. <a href="' . esc_url( $link ) . '" target="_blank" rel="noopener noreferrer">Baixar PDF</a> (disponível por 10 minutos).' );
 		} else {
-
-			$this->add_error( "Erro ao gerar arquivo de impressão." );
-
+			$this->add_error( 'Erro ao gerar arquivo de impressão. Verifique os documentos selecionados.' );
 		}
-
 		return $result;
-
 	}
 
-	/**
-	 * Create pdf with DANFEs
-	 * 
-	 * @param array $data Danfe urls
-	 *
-	 * @return array Result of merging files (bool) and pdf's url
-	 */
-	private function createPDF($data){
-
-		$pdf = new PDFMerger();
-
-		foreach ($data as $item) {
-
-			try {
-				// Security: Validate chave to prevent path traversal
-				$chave = preg_replace('/[^a-zA-Z0-9]/', '', $item['chave']);
-				if (empty($chave) || strlen($chave) > 44) {
-					continue; // Invalid NFe key format
-				}
-
-				// Security: Validate URL to prevent SSRF
-				if (!$this->validate_danfe_url($item['url'])) {
-					continue;
-				}
-
-				$content = $this->curl_get_file_contents($item['url']);
-				if ($content && (strpos($content, '%PDF-') !== false && strpos($content, '%%EOF') !== false)) {
-					$safe_filename = $this->files_folder . DIRECTORY_SEPARATOR . $chave . '.pdf';
-					
-					// Security: Additional path traversal check
-					if (strpos(realpath(dirname($safe_filename)), realpath($this->files_folder)) !== 0) {
-						continue;
-					}
-					
-					file_put_contents($safe_filename, $content);
-					$pdf->addPDF($safe_filename, 'all');
-				}
-			} catch (Exception $e) {
-				error_log('WooCommerceNFe: Error processing PDF: ' . $e->getMessage());
-				continue;
-			}
-
-		}
-
-		$filename = time()."-".random_int(1, 10000000000);
-
+	private function createPDF( $data ) {
+		// Hosts often disable set_time_limit(); on PHP 8 calling it is then a fatal Error (not silenceable).
+		if ( function_exists( 'wc_set_time_limit' ) ) { wc_set_time_limit( 300 ); }
+		$files = array();
+		$output = false;
 		try {
-			$result = $pdf->merge('file', "{$this->files_folder}/{$filename}.pdf");
-			return array("result" => $result, "file" => $filename);
-		} catch (Exception $e) {
-			return array("result" => false, "file" => $filename);
-		}
-	}
-
-	/**
-	 * Validate DANFE URL to prevent SSRF attacks
-	 * 
-	 * @param string $url
-	 * @return boolean
-	 */
-	private function validate_danfe_url($url) {
-		
-		// Security: Only allow WebmaniaBR domains
-		$allowed_domains = [
-			'nfe.webmaniabr.com',
-			'webmaniabr.com'
-		];
-		
-		$parsed_url = parse_url($url);
-		if (!$parsed_url || !isset($parsed_url['host'])) {
-			return false;
-		}
-		
-		// Check if domain is allowed
-		$host = strtolower($parsed_url['host']);
-		foreach ($allowed_domains as $allowed_domain) {
-			if ($host === $allowed_domain || substr($host, -strlen('.' . $allowed_domain)) === '.' . $allowed_domain) {
-				return true;
+			$pdf = new WooCommerceNFe_PDFMerger;
+			foreach ( $data as $item ) {
+				$content = self::curl_get_file_contents( $item['url'], $item['order_id'] );
+				if ( ! is_string( $content ) || strpos( $content, '%PDF-' ) !== 0 || strpos( $content, '%%EOF' ) === false ) { throw new RuntimeException( 'Invalid PDF' ); }
+				$file = tempnam( $this->files_folder, 'source-' );
+				if ( ! $file ) { throw new RuntimeException( 'Temporary file unavailable' ); }
+				$files[] = $file;
+				if ( ! WooCommerceNFe_Security::filesystem()->chmod( $file, 0600 ) ) { throw new RuntimeException( 'Private file permissions unavailable' ); }
+				if ( file_put_contents( $file, $content, LOCK_EX ) !== strlen( $content ) ) { throw new RuntimeException( 'Incomplete write' ); }
+				$pdf->addPDF( $file, 'all' );
 			}
+			$output = tempnam( $this->files_folder, 'print-' );
+			if ( ! $output ) { throw new RuntimeException( 'Temporary file unavailable' ); }
+			if ( ! WooCommerceNFe_Security::filesystem()->chmod( $output, 0600 ) ) { throw new RuntimeException( 'Private file permissions unavailable' ); }
+			$pdf->merge( 'file', $output );
+			$token = bin2hex( random_bytes( 32 ) );
+			set_transient( 'wmbr_pdf_' . $token, array( 'path' => $output, 'user_id' => get_current_user_id(), 'orders' => array_column( $data, 'order_id' ) ), 600 );
+			wp_schedule_single_event( time() + 600, 'wmbr_remove_private_pdf', array( basename( $output ) ) );
+			return array( 'result' => true, 'file' => $token );
+		} catch ( Throwable $error ) {
+			if ( $output && is_file( $output ) ) { wp_delete_file( $output ); }
+			return array( 'result' => false );
+		} finally {
+			foreach ( $files as $file ) { if ( is_file( $file ) ) { wp_delete_file( $file ); } }
 		}
-		
-		return false;
 	}
 
-	/**
-	 * Get file content from URL using curl (secure version)
-	 * 
-	 * @param string $url
-	 * @return mixed
-	 */
-	public static function curl_get_file_contents($url) {
+	public static function download() {
+		$token = isset( $_GET['file'] ) && is_string( $_GET['file'] ) ? sanitize_text_field( wp_unslash( $_GET['file'] ) ) : '';
+		$nonce = isset( $_GET['_wpnonce'] ) && is_string( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
+		if ( ! current_user_can( 'manage_woocommerce' ) || ! is_string( $token ) || ! preg_match( '/^[a-f0-9]{64}$/D', $token ) || ! is_string( $nonce ) || ! wp_verify_nonce( $nonce, 'wmbr_pdf_' . $token ) ) { wp_die( 'Acesso não autorizado.', '', array( 'response' => 403 ) ); }
+		$record = get_transient( 'wmbr_pdf_' . $token );
+		$directory = WooCommerceNFe_Security::private_directory();
+		if ( ! is_array( $record ) || (int) $record['user_id'] !== get_current_user_id() || ! $directory || ! is_file( $record['path'] ) || is_link( $record['path'] ) || realpath( dirname( $record['path'] ) ) !== realpath( $directory ) ) { wp_die( 'Arquivo indisponível ou expirado.', '', array( 'response' => 404 ) ); }
+		foreach ( $record['orders'] as $id ) { if ( ! current_user_can( 'edit_shop_order', $id ) ) { wp_die( 'Acesso não autorizado.', '', array( 'response' => 403 ) ); } }
+		nocache_headers();
+		header( 'Content-Type: application/pdf' );
+		header( 'Content-Disposition: attachment; filename="notas-fiscais.pdf"' );
+		header( 'X-Content-Type-Options: nosniff' );
+		header( 'Content-Length: ' . filesize( $record['path'] ) );
+		// Stream PDF bytes without HTML escaping or loading a batch into memory; path, user, orders and nonce are checked above.
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- WP_Filesystem has no binary streaming method.
+		readfile( $record['path'] );
+		exit;
+	}
 
-		// Security: Build headers securely
-		$headers = [];
-		$bearer_token = get_option('wc_settings_woocommercenfe_bearer_access_token');
-		$access_token = get_option('wc_settings_woocommercenfe_access_token');
-		$access_token_secret = get_option('wc_settings_woocommercenfe_access_token_secret');
-		$consumer_key = get_option('wc_settings_woocommercenfe_consumer_key');
-		$consumer_secret = get_option('wc_settings_woocommercenfe_consumer_secret');
+	public static function cleanup( $filename ) {
+		$directory = WooCommerceNFe_Security::private_directory();
+		if ( $directory && is_string( $filename ) && preg_match( '/^print-[a-zA-Z0-9]+$/D', $filename ) && is_file( $directory . '/' . $filename ) && ! is_link( $directory . '/' . $filename ) ) { wp_delete_file( $directory . '/' . $filename ); }
+	}
 
-		if ($bearer_token) {
-			$headers[] = 'Authorization: Bearer ' . $bearer_token;
-		}
-		if ($access_token) {
-			$headers[] = 'X-Access-Token: ' . $access_token;
-		}
-		if ($access_token_secret) {
-			$headers[] = 'X-Access-Token-Secret: ' . $access_token_secret;
-		}
-		if ($consumer_key) {
-			$headers[] = 'X-Consumer-Key: ' . $consumer_key;
-		}
-		if ($consumer_secret) {
-			$headers[] = 'X-Consumer-Secret: ' . $consumer_secret;
-		}
-
-		$c = curl_init();
-
-		// Security: Secure cURL options
-		curl_setopt($c, CURLOPT_URL, $url);
-		curl_setopt($c, CURLOPT_HTTPGET, true);
-		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($c, CURLOPT_HTTPHEADER, $headers);
-		curl_setopt($c, CURLOPT_TIMEOUT, 30); // Prevent hanging
-		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 10);
-		curl_setopt($c, CURLOPT_MAXREDIRS, 3); // Limit redirects
-		curl_setopt($c, CURLOPT_FOLLOWLOCATION, true);
-		curl_setopt($c, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS); // Only HTTPS
-		curl_setopt($c, CURLOPT_SSL_VERIFYPEER, true); // Verify SSL
-		curl_setopt($c, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt($c, CURLOPT_USERAGENT, 'WooCommerce-NFe-Plugin/' . WC_NFe()->version);
-
-		$contents = curl_exec($c);
-		$http_code = curl_getinfo($c, CURLINFO_HTTP_CODE);
-		$curl_error = curl_error($c);
-		
-		curl_close($c);
-
-		// Security: Validate response
-		if ($curl_error || $http_code !== 200) {
-			error_log('WooCommerceNFe: cURL error - ' . $curl_error . ' HTTP: ' . $http_code);
-			return false;
-		}
-
-		if (!$contents || strpos($contents, 'error') !== false) {
-			return false;
-		}
-
-		// Security: Limit file size to prevent memory exhaustion
-		if (strlen($contents) > 10 * 1024 * 1024) { // 10MB limit
-			error_log('WooCommerceNFe: File too large');
-			return false;
-		}
-
-		return $contents;
+	public static function curl_get_file_contents( $url, $order_id = 0 ) {
+		// Validation is at the sink, including callers reading XML or legacy metadata.
+		if ( ! WooCommerceNFe_HTTP::valid_url( $url, 'document' ) ) { return false; }
+		$config = new WooCommerceNFeIssue;
+		$config->get_credentials( $order_id );
+		$content = WooCommerceNFe_HTTP::request( 'GET', $url, array(), $config->settings, 'document' );
+		return is_wp_error( $content ) ? false : $content;
 	}
 }
+
+add_action( 'wmbr_remove_private_pdf', array( 'WooCommerceNFePrint', 'cleanup' ) );

@@ -1,4 +1,6 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //
 //  FPDF_TPL - Version 1.2.3
 //
@@ -17,7 +19,7 @@
 //  limitations under the License.
 //
 
-class FPDF_TPL extends FPDF {
+class WooCommerceNFe_PDF_FPDF_TPL extends WooCommerceNFe_PDF_FPDF {
     /**
      * Array of Tpl-Data
      * @var array
@@ -74,7 +76,7 @@ class FPDF_TPL extends FPDF {
      * @return int The ID of new created Template
      */
     function beginTemplate($x = null, $y = null, $w = null, $h = null) {
-    	if (is_subclass_of($this, 'TCPDF')) {
+    	if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
     		$this->Error('This method is only usable with FPDF. Use TCPDF methods startTemplate() instead.');
     		return;
     	}
@@ -143,9 +145,9 @@ class FPDF_TPL extends FPDF {
      * @return mixed If a template is opened, the ID is returned. If not a false is returned.
      */
     function endTemplate() {
-    	if (is_subclass_of($this, 'TCPDF')) {
+    	if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-        	return call_user_func_array(array($this, 'TCPDF::endTemplate'), $args);
+        	return parent::endTemplate(...$args);
         }
         
         if ($this->_intpl) {
@@ -273,9 +275,9 @@ class FPDF_TPL extends FPDF {
      * See FPDF/TCPDF-Documentation ;-)
      */
     public function SetFont($family, $style = '', $size = 0, $fontfile='', $subset='default', $out=true) {
-        if (is_subclass_of($this, 'TCPDF')) {
+        if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-        	return call_user_func_array(array($this, 'TCPDF::SetFont'), $args);
+        	return parent::SetFont(...$args);
         }
         
         parent::SetFont($family, $style, $size);
@@ -297,9 +299,9 @@ class FPDF_TPL extends FPDF {
 		$dpi = 300, $palign = '', $ismask = false, $imgmask = false, $border = 0, $fitbox = false,
 		$hidden = false, $fitonpage = false, $alt = false, $altimgs = array()
     ) {
-        if (is_subclass_of($this, 'TCPDF')) {
+        if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-			return call_user_func_array(array($this, 'TCPDF::Image'), $args);
+			return parent::Image(...$args);
         }
         
         $ret = parent::Image($file, $x, $y, $w, $h, $type, $link);
@@ -318,9 +320,9 @@ class FPDF_TPL extends FPDF {
      * AddPage is not available when you're "in" a template.
      */
     function AddPage($orientation = '', $format = '', $keepmargins = false, $tocpage = false) {
-    	if (is_subclass_of($this, 'TCPDF')) {
+    	if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-        	return call_user_func_array(array($this, 'TCPDF::AddPage'), $args);
+        	return parent::AddPage(...$args);
         }
         
         if ($this->_intpl)
@@ -333,9 +335,9 @@ class FPDF_TPL extends FPDF {
      * Preserve adding Links in Templates ...won't work
      */
     function Link($x, $y, $w, $h, $link, $spaces = 0) {
-        if (is_subclass_of($this, 'TCPDF')) {
+        if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-			return call_user_func_array(array($this, 'TCPDF::Link'), $args);
+			return parent::Link(...$args);
         }
         
         if ($this->_intpl)
@@ -345,9 +347,9 @@ class FPDF_TPL extends FPDF {
     }
     
     function AddLink() {
-    	if (is_subclass_of($this, 'TCPDF')) {
+    	if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-			return call_user_func_array(array($this, 'TCPDF::AddLink'), $args);
+			return parent::AddLink(...$args);
         }
         
         if ($this->_intpl)
@@ -356,9 +358,9 @@ class FPDF_TPL extends FPDF {
     }
     
     function SetLink($link, $y = 0, $page = -1) {
-    	if (is_subclass_of($this, 'TCPDF')) {
+    	if (is_subclass_of($this, 'WooCommerceNFe_PDF_TCPDF')) {
         	$args = func_get_args();
-			return call_user_func_array(array($this, 'TCPDF::SetLink'), $args);
+			return parent::SetLink(...$args);
         }
         
         if ($this->_intpl)

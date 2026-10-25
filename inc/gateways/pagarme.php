@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+
 class NFeGatewayPagarme extends WooCommerceNFe {
 
   /**
@@ -41,10 +45,10 @@ class NFeGatewayPagarme extends WooCommerceNFe {
     if (
 			NFeGatewayPagarme::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-      $order->payment_method == 'pagarme-credit-card'
+      $order->get_payment_method() == 'pagarme-credit-card'
 		) {
       
-			$installments = $pagarme_transaction_data['installments'];
+			$installments = is_array( $pagarme_transaction_data ) ? ( $pagarme_transaction_data['installments'] ?? 0 ) : 0;
 			$installments = ($installments) ? $installments : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
 
@@ -69,15 +73,15 @@ class NFeGatewayPagarme extends WooCommerceNFe {
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 
     // Set payment type
-    if ( $order->payment_method == 'pagarme-banking-ticket' ){
+    if ( $order->get_payment_method() == 'pagarme-banking-ticket' ){
 
       $data['pedido']['forma_pagamento'] = ['15']; // 15 - Boleto Bancário
 
-    } elseif ( $order->payment_method == 'pagarme-credit-card' && $origem_state == 'BR:SC'){
+    } elseif ( $order->get_payment_method() == 'pagarme-credit-card' && $origem_state == 'BR:SC'){
 
       $data['pedido']['forma_pagamento'] = ['99']; // 99 - Outros
 
-    } elseif ( $order->payment_method == 'pagarme-credit-card' ){
+    } elseif ( $order->get_payment_method() == 'pagarme-credit-card' ){
 
       $data['pedido']['forma_pagamento'] = ['03']; // 03 - Cartão de crédito
 

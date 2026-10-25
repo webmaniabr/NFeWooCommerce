@@ -1,4 +1,7 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+return ( static function () {
 $type = 'cidfont0';
 $name = 'KozGoPro-Medium-Acro';
 $displayname = 'Kozuka Gothic Pro (Japanese Sans-Serif)';
@@ -63,3 +66,6 @@ foreach($_cr as $_r) {
 	}
 }
 // --- EOF ---
+
+return get_defined_vars();
+} )();

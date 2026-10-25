@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Security: Verify user capabilities
 if ( ! current_user_can( 'manage_woocommerce' ) ) {
-	wp_die( __( 'Você não tem permissão para acessar esta página.', 'woocommerce' ) );
+	wp_die( esc_html__( 'Você não tem permissão para acessar esta página.', 'nota-fiscal-eletronica-woocommerce' ) );
 }
 ?>
 <style>
@@ -125,18 +125,20 @@ a.order-action:hover{
         </thead>
         <tbody class="the-list">';
 
-      foreach( $ids_db as $key => $info ){
+      foreach( $ids_db as $woocommercenfe_key => $woocommercenfe_info ){
 
-        $edit_link = get_edit_post_link($key);
-        $order = wc_get_order($key);
+        // get_edit_post_link() returns null for deleted orders; esc_url(null) is deprecated on PHP 8.1+.
+        $woocommercenfe_edit_link = (string) get_edit_post_link($woocommercenfe_key);
+        $order = wc_get_order($woocommercenfe_key);
+        $woocommercenfe_info = is_array( $woocommercenfe_info ) ? $woocommercenfe_info : array();
 
         echo '<tr>
-            <td scope="row">#'.esc_html( (string) $key ).'</td>
-            <td>'.esc_html( (string) $info["datetime"] ).'</td>
-            <td>'.wp_kses_post( (string) $info["error"] ).'</td>
+            <td scope="row">#'.esc_html( (string) $woocommercenfe_key ).'</td>
+            <td>'.esc_html( (string) ( $woocommercenfe_info["datetime"] ?? '' ) ).'</td>
+            <td>'.wp_kses_post( (string) ( $woocommercenfe_info["error"] ?? '' ) ).'</td>
             <td>
-              <a href="'.esc_url( $edit_link ).'"  target="_blank" class="order-action view-order">Visualizar Pedido</a>
-              <button type="button" class="order-action ignore-order" data-order-id="'.esc_attr( (string) $key ).'">Ignorar Pedido</button>
+              <a href="'.esc_url( $woocommercenfe_edit_link ).'"  target="_blank" class="order-action view-order">Visualizar Pedido</a>
+              <button type="button" class="order-action ignore-order" data-order-id="'.esc_attr( (string) $woocommercenfe_key ).'">Ignorar Pedido</button>
             </td>
           </tr>';
 
@@ -154,7 +156,7 @@ a.order-action:hover{
 
 <?php 
 // Security: Generate proper nonce with unique action
-$ajax_nonce = wp_create_nonce( 'wmbr_remove_order_invoice_nonce_' . get_current_user_id() ); 
+$woocommercenfe_ajax_nonce = wp_create_nonce( 'wmbr_remove_order_invoice_nonce_' . get_current_user_id() ); 
 ?>
 <script>
 
@@ -177,7 +179,7 @@ jQuery(document).ready(function($){
         dataType: 'json',
         data:{
           action: 'wmbr_remove_order_id_auto_invoice',
-          sec_nonce: '<?php echo esc_js($ajax_nonce); ?>',
+          sec_nonce: '<?php echo esc_js($woocommercenfe_ajax_nonce); ?>',
           order_id : parseInt(order_id, 10),
         }
       }).done(function(response){

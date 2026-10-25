@@ -1,13 +1,13 @@
 <?php
 //============================================================+
 // File name   : tcpdf_fonts.php
-// Version     : 1.1.0
+// Version     : 1.1.1
 // Begin       : 2008-01-01
-// Last Update : 2014-12-10
+// Last Update : 2024-12-23
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2008-2014 Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2008-2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -22,7 +22,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TCPDF.  If not, see <http://www.gnu.org/licenses/>.
+// along with TCPDF.  If not, see <https://www.gnu.org/licenses/>.
 //
 // See LICENSE.TXT file for more information.
 // -------------------------------------------------------------------
@@ -42,10 +42,11 @@
  * @class TCPDF_FONTS
  * Font methods for TCPDF library.
  * @package com.tecnick.tcpdf
- * @version 1.1.0
+ * @version 1.1.1
  * @author Nicola Asuni - info@tecnick.com
+ * @deprecated TCPDF is deprecated: migrate to tecnickcom/tc-lib-pdf.
  */
-class TCPDF_FONTS {
+class WooCommerceNFe_PDF_TCPDF_FONTS {
 
 	/**
 	 * Static cache used for speed up uniord performances
@@ -55,22 +56,22 @@ class TCPDF_FONTS {
 
 	/**
 	 * Convert and add the selected TrueType or Type1 font to the fonts folder (that must be writeable).
-	 * @param $fontfile (string) Font file (full path).
-	 * @param $fonttype (string) Font type. Leave empty for autodetect mode. Valid values are: TrueTypeUnicode, TrueType, Type1, CID0JP = CID-0 Japanese, CID0KR = CID-0 Korean, CID0CS = CID-0 Chinese Simplified, CID0CT = CID-0 Chinese Traditional.
-	 * @param $enc (string) Name of the encoding table to use. Leave empty for default mode. Omit this parameter for TrueType Unicode and symbolic fonts like Symbol or ZapfDingBats.
-	 * @param $flags (int) Unsigned 32-bit integer containing flags specifying various characteristics of the font (PDF32000:2008 - 9.8.2 Font Descriptor Flags): +1 for fixed font; +4 for symbol or +32 for non-symbol; +64 for italic. Fixed and Italic mode are generally autodetected so you have to set it to 32 = non-symbolic font (default) or 4 = symbolic font.
-	 * @param $outpath (string) Output path for generated font files (must be writeable by the web server). Leave empty for default font folder.
-	 * @param $platid (int) Platform ID for CMAP table to extract (when building a Unicode font for Windows this value should be 3, for Macintosh should be 1).
-	 * @param $encid (int) Encoding ID for CMAP table to extract (when building a Unicode font for Windows this value should be 1, for Macintosh should be 0). When Platform ID is 3, legal values for Encoding ID are: 0=Symbol, 1=Unicode, 2=ShiftJIS, 3=PRC, 4=Big5, 5=Wansung, 6=Johab, 7=Reserved, 8=Reserved, 9=Reserved, 10=UCS-4.
-	 * @param $addcbbox (boolean) If true includes the character bounding box information on the php font file.
-	 * @param $link (boolean) If true link to system font instead of copying the font data (not transportable) - Note: do not work with Type1 fonts.
-	 * @return (string) TCPDF font name or boolean false in case of error.
+	 * @param string $fontfile Font file (full path).
+	 * @param string $fonttype Font type. Leave empty for autodetect mode. Valid values are: TrueTypeUnicode, TrueType, Type1, CID0JP = CID-0 Japanese, CID0KR = CID-0 Korean, CID0CS = CID-0 Chinese Simplified, CID0CT = CID-0 Chinese Traditional.
+	 * @param string $enc Name of the encoding table to use. Leave empty for default mode. Omit this parameter for TrueType Unicode and symbolic fonts like Symbol or ZapfDingBats.
+	 * @param int $flags Unsigned 32-bit integer containing flags specifying various characteristics of the font (PDF32000:2008 - 9.8.2 Font Descriptor Flags): +1 for fixed font; +4 for symbol or +32 for non-symbol; +64 for italic. Fixed and Italic mode are generally autodetected so you have to set it to 32 = non-symbolic font (default) or 4 = symbolic font.
+	 * @param string $outpath Output path for generated font files (must be writeable by the web server). Leave empty for default font folder.
+	 * @param int $platid Platform ID for CMAP table to extract (when building a Unicode font for Windows this value should be 3, for Macintosh should be 1).
+	 * @param int $encid Encoding ID for CMAP table to extract (when building a Unicode font for Windows this value should be 1, for Macintosh should be 0). When Platform ID is 3, legal values for Encoding ID are: 0=Symbol, 1=Unicode, 2=ShiftJIS, 3=PRC, 4=Big5, 5=Wansung, 6=Johab, 7=Reserved, 8=Reserved, 9=Reserved, 10=UCS-4.
+	 * @param boolean $addcbbox If true includes the character bounding box information on the php font file.
+	 * @param boolean $link If true link to system font instead of copying the font data (not transportable) - Note: do not work with Type1 fonts.
+	 * @return string|false TCPDF font name or boolean false in case of error.
 	 * @author Nicola Asuni
 	 * @since 5.9.123 (2010-09-30)
 	 * @public static
 	 */
 	public static function addTTFfont($fontfile, $fonttype='', $enc='', $flags=32, $outpath='', $platid=3, $encid=1, $addcbbox=false, $link=false) {
-		if (!file_exists($fontfile)) {
+		if (!WooCommerceNFe_PDF_TCPDF_STATIC::file_exists($fontfile)) {
 			// Could not find file
 			return false;
 		}
@@ -95,7 +96,7 @@ class TCPDF_FONTS {
 			$outpath = self::_getfontpath();
 		}
 		// check if this font already exist
-		if (@file_exists($outpath.$font_name.'.php')) {
+		if (@WooCommerceNFe_PDF_TCPDF_STATIC::file_exists($outpath.$font_name.'.php')) {
 			// this font already exist (delete it from fonts folder to rebuild it)
 			return $font_name;
 		}
@@ -106,7 +107,7 @@ class TCPDF_FONTS {
 		$fmetric['originalsize'] = strlen($font);
 		// autodetect font type
 		if (empty($fonttype)) {
-			if (TCPDF_STATIC::_getULONG($font, 0) == 0x10000) {
+			if (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, 0) == 0x10000) {
 				// True Type (Unicode or not)
 				$fonttype = 'TrueTypeUnicode';
 			} elseif (substr($font, 0, 4) == 'OTTO') {
@@ -148,10 +149,10 @@ class TCPDF_FONTS {
 		$fmetric['enc'] = preg_replace('/[^A-Za-z0-9_\-]/', '', $enc);
 		$fmetric['diff'] = '';
 		if (($fmetric['type'] == 'TrueType') OR ($fmetric['type'] == 'Type1')) {
-			if (!empty($enc) AND ($enc != 'cp1252') AND isset(TCPDF_FONT_DATA::$encmap[$enc])) {
+			if (!empty($enc) AND ($enc != 'cp1252') AND isset(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$encmap[$enc])) {
 				// build differences from reference encoding
-				$enc_ref = TCPDF_FONT_DATA::$encmap['cp1252'];
-				$enc_target = TCPDF_FONT_DATA::$encmap[$enc];
+				$enc_ref = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$encmap['cp1252'];
+				$enc_target = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$encmap[$enc];
 				$last = 0;
 				for ($i = 32; $i <= 255; ++$i) {
 					if ($enc_target[$i] != $enc_ref[$i]) {
@@ -186,34 +187,35 @@ class TCPDF_FONTS {
 			$data .= $encrypted;
 			// store compressed font
 			$fmetric['file'] .= '.z';
-			$fp = TCPDF_STATIC::fopenLocal($outpath.$fmetric['file'], 'wb');
-			fwrite($fp, gzcompress($data));
-			fclose($fp);
+			$fp = WooCommerceNFe_PDF_TCPDF_STATIC::fopenLocal($outpath.$fmetric['file'], 'wb');
+			WooCommerceNFe_PDF_IO::write($fp, gzcompress($data));
+			WooCommerceNFe_PDF_IO::close($fp);
 			// get font info
 			$fmetric['Flags'] = $flags;
-			preg_match ('#/FullName[\s]*\(([^\)]*)#', $font, $matches);
+			preg_match ('#/FullName[\s]*+\(([^\)]*+)#', $font, $matches);
 			$fmetric['name'] = preg_replace('/[^a-zA-Z0-9_\-]/', '', $matches[1]);
-			preg_match('#/FontBBox[\s]*{([^}]*)#', $font, $matches);
-			$fmetric['bbox'] = trim($matches[1]);
-			$bv = explode(' ', $fmetric['bbox']);
-			$fmetric['Ascent'] = intval($bv[3]);
-			$fmetric['Descent'] = intval($bv[1]);
-			preg_match('#/ItalicAngle[\s]*([0-9\+\-]*)#', $font, $matches);
+			preg_match('#/FontBBox[\s]*+{([^}]*+)#', $font, $matches);
+			$rawbvl = explode(' ', trim($matches[1]));
+			$bvl = [(int) $rawbvl[0], (int) $rawbvl[1], (int) $rawbvl[2], (int) $rawbvl[3]];
+			$fmetric['bbox'] = implode(' ', $bvl);
+			$fmetric['Ascent'] = $bvl[3];
+			$fmetric['Descent'] = $bvl[1];
+			preg_match('#/ItalicAngle[\s]*+([0-9\+\-]*+)#', $font, $matches);
 			$fmetric['italicAngle'] = intval($matches[1]);
 			if ($fmetric['italicAngle'] != 0) {
 				$fmetric['Flags'] |= 64;
 			}
-			preg_match('#/UnderlinePosition[\s]*([0-9\+\-]*)#', $font, $matches);
+			preg_match('#/UnderlinePosition[\s]*+([0-9\+\-]*+)#', $font, $matches);
 			$fmetric['underlinePosition'] = intval($matches[1]);
-			preg_match('#/UnderlineThickness[\s]*([0-9\+\-]*)#', $font, $matches);
+			preg_match('#/UnderlineThickness[\s]*+([0-9\+\-]*+)#', $font, $matches);
 			$fmetric['underlineThickness'] = intval($matches[1]);
-			preg_match('#/isFixedPitch[\s]*([^\s]*)#', $font, $matches);
+			preg_match('#/isFixedPitch[\s]*+([^\s]*+)#', $font, $matches);
 			if ($matches[1] == 'true') {
 				$fmetric['Flags'] |= 1;
 			}
 			// get internal map
 			$imap = array();
-			if (preg_match_all('#dup[\s]([0-9]+)[\s]*/([^\s]*)[\s]put#sU', $font, $fmap, PREG_SET_ORDER) > 0) {
+			if (preg_match_all('#dup[\s]([0-9]+)[\s]*+/([^\s]*+)[\s]put#sU', $font, $fmap, PREG_SET_ORDER) > 0) {
 				foreach ($fmap as $v) {
 					$imap[$v[2]] = $v[1];
 				}
@@ -229,22 +231,22 @@ class TCPDF_FONTS {
 				$eplain .= chr($chr ^ ($r >> 8));
 				$r = ((($chr + $r) * $c1 + $c2) % 65536);
 			}
-			if (preg_match('#/ForceBold[\s]*([^\s]*)#', $eplain, $matches) > 0) {
+			if (preg_match('#/ForceBold[\s]*+([^\s]*+)#', $eplain, $matches) > 0) {
 				if ($matches[1] == 'true') {
 					$fmetric['Flags'] |= 0x40000;
 				}
 			}
-			if (preg_match('#/StdVW[\s]*\[([^\]]*)#', $eplain, $matches) > 0) {
+			if (preg_match('#/StdVW[\s]*+\[([^\]]*+)#', $eplain, $matches) > 0) {
 				$fmetric['StemV'] = intval($matches[1]);
 			} else {
 				$fmetric['StemV'] = 70;
 			}
-			if (preg_match('#/StdHW[\s]*\[([^\]]*)#', $eplain, $matches) > 0) {
+			if (preg_match('#/StdHW[\s]*+\[([^\]]*+)#', $eplain, $matches) > 0) {
 				$fmetric['StemH'] = intval($matches[1]);
 			} else {
 				$fmetric['StemH'] = 30;
 			}
-			if (preg_match('#/BlueValues[\s]*\[([^\]]*)#', $eplain, $matches) > 0) {
+			if (preg_match('#/BlueValues[\s]*+\[([^\]]*+)#', $eplain, $matches) > 0) {
 				$bv = explode(' ', $matches[1]);
 				if (count($bv) >= 6) {
 					$v1 = intval($bv[2]);
@@ -265,7 +267,7 @@ class TCPDF_FONTS {
 				$fmetric['CapHeight'] = 700;
 			}
 			// get the number of random bytes at the beginning of charstrings
-			if (preg_match('#/lenIV[\s]*([0-9]*)#', $eplain, $matches) > 0) {
+			if (preg_match('#/lenIV[\s]*+([\d]*+)#', $eplain, $matches) > 0) {
 				$lenIV = intval($matches[1]);
 			} else {
 				$lenIV = 4;
@@ -273,9 +275,9 @@ class TCPDF_FONTS {
 			$fmetric['Leading'] = 0;
 			// get charstring data
 			$eplain = substr($eplain, (strpos($eplain, '/CharStrings') + 1));
-			preg_match_all('#/([A-Za-z0-9\.]*)[\s][0-9]+[\s]RD[\s](.*)[\s]ND#sU', $eplain, $matches, PREG_SET_ORDER);
-			if (!empty($enc) AND isset(TCPDF_FONT_DATA::$encmap[$enc])) {
-				$enc_map = TCPDF_FONT_DATA::$encmap[$enc];
+			preg_match_all('#/([A-Za-z0-9\.]*+)[\s][0-9]+[\s]RD[\s](.*)[\s]ND#sU', $eplain, $matches, PREG_SET_ORDER);
+			if (!empty($enc) AND isset(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$encmap[$enc])) {
+				$enc_map = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$encmap[$enc];
 			} else {
 				$enc_map = false;
 			}
@@ -355,7 +357,7 @@ class TCPDF_FONTS {
 		} else {
 			// ---------- TRUE TYPE ----------
 			$offset = 0; // offset position of the font data
-			if (TCPDF_STATIC::_getULONG($font, $offset) != 0x10000) {
+			if (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset) != 0x10000) {
 				// sfnt version must be 0x00010000 for TrueType version 1.0.
 				return false;
 			}
@@ -366,14 +368,14 @@ class TCPDF_FONTS {
 				} else {
 					// store compressed font
 					$fmetric['file'] .= '.z';
-					$fp = TCPDF_STATIC::fopenLocal($outpath.$fmetric['file'], 'wb');
-					fwrite($fp, gzcompress($font));
-					fclose($fp);
+					$fp = WooCommerceNFe_PDF_TCPDF_STATIC::fopenLocal($outpath.$fmetric['file'], 'wb');
+					WooCommerceNFe_PDF_IO::write($fp, gzcompress($font));
+					WooCommerceNFe_PDF_IO::close($fp);
 				}
 			}
 			$offset += 4;
 			// get number of tables
-			$numTables = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$numTables = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			// skip searchRange, entrySelector and rangeShift
 			$offset += 6;
@@ -385,37 +387,37 @@ class TCPDF_FONTS {
 				$tag = substr($font, $offset, 4);
 				$offset += 4;
 				$table[$tag] = array();
-				$table[$tag]['checkSum'] = TCPDF_STATIC::_getULONG($font, $offset);
+				$table[$tag]['checkSum'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 				$offset += 4;
-				$table[$tag]['offset'] = TCPDF_STATIC::_getULONG($font, $offset);
+				$table[$tag]['offset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 				$offset += 4;
-				$table[$tag]['length'] = TCPDF_STATIC::_getULONG($font, $offset);
+				$table[$tag]['length'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 				$offset += 4;
 			}
 			// check magicNumber
 			$offset = $table['head']['offset'] + 12;
-			if (TCPDF_STATIC::_getULONG($font, $offset) != 0x5F0F3CF5) {
+			if (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset) != 0x5F0F3CF5) {
 				// magicNumber must be 0x5F0F3CF5
 				return false;
 			}
 			$offset += 4;
 			$offset += 2; // skip flags
 			// get FUnits
-			$fmetric['unitsPerEm'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$fmetric['unitsPerEm'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			// units ratio constant
 			$urk = (1000 / $fmetric['unitsPerEm']);
 			$offset += 16; // skip created, modified
-			$xMin = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$xMin = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
-			$yMin = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$yMin = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
-			$xMax = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$xMax = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
-			$yMax = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$yMax = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
 			$fmetric['bbox'] = ''.$xMin.' '.$yMin.' '.$xMax.' '.$yMax.'';
-			$macStyle = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$macStyle = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			// PDF font flags
 			$fmetric['Flags'] = $flags;
@@ -425,7 +427,7 @@ class TCPDF_FONTS {
 			}
 			// get offset mode (indexToLocFormat : 0 = short, 1 = long)
 			$offset = $table['head']['offset'] + 50;
-			$short_offset = (TCPDF_STATIC::_getSHORT($font, $offset) == 0);
+			$short_offset = (WooCommerceNFe_PDF_TCPDF_STATIC::_getSHORT($font, $offset) == 0);
 			$offset += 2;
 			// get the offsets to the locations of the glyphs in the font, relative to the beginning of the glyphData table
 			$indexToLoc = array();
@@ -434,7 +436,7 @@ class TCPDF_FONTS {
 				// short version
 				$tot_num_glyphs = floor($table['loca']['length'] / 2); // numGlyphs + 1
 				for ($i = 0; $i < $tot_num_glyphs; ++$i) {
-					$indexToLoc[$i] = TCPDF_STATIC::_getUSHORT($font, $offset) * 2;
+					$indexToLoc[$i] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) * 2;
 					if (isset($indexToLoc[($i - 1)]) && ($indexToLoc[$i] == $indexToLoc[($i - 1)])) {
 						// the last glyph didn't have an outline
 						unset($indexToLoc[($i - 1)]);
@@ -445,7 +447,7 @@ class TCPDF_FONTS {
 				// long version
 				$tot_num_glyphs = floor($table['loca']['length'] / 4); // numGlyphs + 1
 				for ($i = 0; $i < $tot_num_glyphs; ++$i) {
-					$indexToLoc[$i] = TCPDF_STATIC::_getULONG($font, $offset);
+					$indexToLoc[$i] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 					if (isset($indexToLoc[($i - 1)]) && ($indexToLoc[$i] == $indexToLoc[($i - 1)])) {
 						// the last glyph didn't have an outline
 						unset($indexToLoc[($i - 1)]);
@@ -455,31 +457,31 @@ class TCPDF_FONTS {
 			}
 			// get glyphs indexes of chars from cmap table
 			$offset = $table['cmap']['offset'] + 2;
-			$numEncodingTables = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$numEncodingTables = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			$encodingTables = array();
 			for ($i = 0; $i < $numEncodingTables; ++$i) {
-				$encodingTables[$i]['platformID'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+				$encodingTables[$i]['platformID'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 				$offset += 2;
-				$encodingTables[$i]['encodingID'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+				$encodingTables[$i]['encodingID'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 				$offset += 2;
-				$encodingTables[$i]['offset'] = TCPDF_STATIC::_getULONG($font, $offset);
+				$encodingTables[$i]['offset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 				$offset += 4;
 			}
 			// ---------- get os/2 metrics ----------
 			$offset = $table['OS/2']['offset'];
 			$offset += 2; // skip version
 			// xAvgCharWidth
-			$fmetric['AvgWidth'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['AvgWidth'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
 			// usWeightClass
-			$usWeightClass = round(TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
+			$usWeightClass = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
 			// estimate StemV and StemH (400 = usWeightClass for Normal - Regular font)
 			$fmetric['StemV'] = round((70 * $usWeightClass) / 400);
 			$fmetric['StemH'] = round((30 * $usWeightClass) / 400);
 			$offset += 2;
 			$offset += 2; // usWidthClass
-			$fsType = TCPDF_STATIC::_getSHORT($font, $offset);
+			$fsType = WooCommerceNFe_PDF_TCPDF_STATIC::_getSHORT($font, $offset);
 			$offset += 2;
 			if ($fsType == 2) {
 				// This Font cannot be modified, embedded or exchanged in any manner without first obtaining permission of the legal owner.
@@ -490,22 +492,22 @@ class TCPDF_FONTS {
 			$offset = $table['name']['offset'];
 			$offset += 2; // skip Format selector (=0).
 			// Number of NameRecords that follow n.
-			$numNameRecords = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$numNameRecords = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			// Offset to start of string storage (from start of table).
-			$stringStorageOffset = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$stringStorageOffset = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			for ($i = 0; $i < $numNameRecords; ++$i) {
 				$offset += 6; // skip Platform ID, Platform-specific encoding ID, Language ID.
 				// Name ID.
-				$nameID = TCPDF_STATIC::_getUSHORT($font, $offset);
+				$nameID = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 				$offset += 2;
 				if ($nameID == 6) {
 					// String length (in bytes).
-					$stringLength = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$stringLength = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
 					// String offset from start of storage area (in bytes).
-					$stringOffset = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$stringOffset = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
 					$offset = ($table['name']['offset'] + $stringStorageOffset + $stringOffset);
 					$fmetric['name'] = substr($font, $offset, $stringLength);
@@ -521,13 +523,13 @@ class TCPDF_FONTS {
 			// ---------- get post data ----------
 			$offset = $table['post']['offset'];
 			$offset += 4; // skip Format Type
-			$fmetric['italicAngle'] = TCPDF_STATIC::_getFIXED($font, $offset);
+			$fmetric['italicAngle'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getFIXED($font, $offset);
 			$offset += 4;
-			$fmetric['underlinePosition'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['underlinePosition'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
-			$fmetric['underlineThickness'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['underlineThickness'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
-			$isFixedPitch = (TCPDF_STATIC::_getULONG($font, $offset) == 0) ? false : true;
+			$isFixedPitch = (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset) == 0) ? false : true;
 			$offset += 2;
 			if ($isFixedPitch) {
 				$fmetric['Flags'] |= 1;
@@ -536,38 +538,39 @@ class TCPDF_FONTS {
 			$offset = $table['hhea']['offset'];
 			$offset += 4; // skip Table version number
 			// Ascender
-			$fmetric['Ascent'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['Ascent'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
 			// Descender
-			$fmetric['Descent'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['Descent'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
 			// LineGap
-			$fmetric['Leading'] = round(TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
+			$fmetric['Leading'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset) * $urk);
 			$offset += 2;
 			// advanceWidthMax
-			$fmetric['MaxWidth'] = round(TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
+			$fmetric['MaxWidth'] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
 			$offset += 2;
 			$offset += 22; // skip some values
 			// get the number of hMetric entries in hmtx table
-			$numberOfHMetrics = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$numberOfHMetrics = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			// ---------- get maxp data ----------
 			$offset = $table['maxp']['offset'];
 			$offset += 4; // skip Table version number
 			// get the the number of glyphs in the font.
-			$numGlyphs = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$numGlyphs = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			// ---------- get CIDToGIDMap ----------
 			$ctg = array();
+			$c = 0;
 			foreach ($encodingTables as $enctable) {
 				// get only specified Platform ID and Encoding ID
 				if (($enctable['platformID'] == $platid) AND ($enctable['encodingID'] == $encid)) {
 					$offset = $table['cmap']['offset'] + $enctable['offset'];
-					$format = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$format = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
 					switch ($format) {
 						case 0: { // Format 0: Byte encoding table
 							$offset += 4; // skip length and version/language
 							for ($c = 0; $c < 256; ++$c) {
-								$g = TCPDF_STATIC::_getBYTE($font, $offset);
+								$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getBYTE($font, $offset);
 								$ctg[$c] = $g;
 								++$offset;
 							}
@@ -578,7 +581,7 @@ class TCPDF_FONTS {
 							$numSubHeaders = 0;
 							for ($i = 0; $i < 256; ++$i) {
 								// Array that maps high bytes to subHeaders: value is subHeader index * 8.
-								$subHeaderKeys[$i] = (TCPDF_STATIC::_getUSHORT($font, $offset) / 8);
+								$subHeaderKeys[$i] = (WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) / 8);
 								$offset += 2;
 								if ($numSubHeaders < $subHeaderKeys[$i]) {
 									$numSubHeaders = $subHeaderKeys[$i];
@@ -590,20 +593,20 @@ class TCPDF_FONTS {
 							$subHeaders = array();
 							$numGlyphIndexArray = 0;
 							for ($k = 0; $k < $numSubHeaders; ++$k) {
-								$subHeaders[$k]['firstCode'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$subHeaders[$k]['firstCode'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
-								$subHeaders[$k]['entryCount'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$subHeaders[$k]['entryCount'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
-								$subHeaders[$k]['idDelta'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$subHeaders[$k]['idDelta'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
-								$subHeaders[$k]['idRangeOffset'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$subHeaders[$k]['idRangeOffset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 								$subHeaders[$k]['idRangeOffset'] -= (2 + (($numSubHeaders - $k - 1) * 8));
 								$subHeaders[$k]['idRangeOffset'] /= 2;
 								$numGlyphIndexArray += $subHeaders[$k]['entryCount'];
 							}
 							for ($k = 0; $k < $numGlyphIndexArray; ++$k) {
-								$glyphIndexArray[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$glyphIndexArray[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
 							for ($i = 0; $i < 256; ++$i) {
@@ -632,40 +635,40 @@ class TCPDF_FONTS {
 							break;
 						}
 						case 4: { // Format 4: Segment mapping to delta values
-							$length = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$length = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$offset += 2;
 							$offset += 2; // skip version/language
-							$segCount = floor(TCPDF_STATIC::_getUSHORT($font, $offset) / 2);
+							$segCount = floor(WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) / 2);
 							$offset += 2;
 							$offset += 6; // skip searchRange, entrySelector, rangeShift
 							$endCount = array(); // array of end character codes for each segment
 							for ($k = 0; $k < $segCount; ++$k) {
-								$endCount[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$endCount[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
 							$offset += 2; // skip reservedPad
 							$startCount = array(); // array of start character codes for each segment
 							for ($k = 0; $k < $segCount; ++$k) {
-								$startCount[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$startCount[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
 							$idDelta = array(); // delta for all character codes in segment
 							for ($k = 0; $k < $segCount; ++$k) {
-								$idDelta[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$idDelta[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
 							$idRangeOffset = array(); // Offsets into glyphIdArray or 0
 							for ($k = 0; $k < $segCount; ++$k) {
-								$idRangeOffset[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$idRangeOffset[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
 							$gidlen = (floor($length / 2) - 8 - (4 * $segCount));
 							$glyphIdArray = array(); // glyph index array
 							for ($k = 0; $k < $gidlen; ++$k) {
-								$glyphIdArray[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$glyphIdArray[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 							}
-							for ($k = 0; $k < $segCount; ++$k) {
+							for ($k = 0; $k < $segCount - 1; ++$k) {
 								for ($c = $startCount[$k]; $c <= $endCount[$k]; ++$c) {
 									if ($idRangeOffset[$k] == 0) {
 										$g = ($idDelta[$k] + $c) % 65536;
@@ -683,13 +686,13 @@ class TCPDF_FONTS {
 						}
 						case 6: { // Format 6: Trimmed table mapping
 							$offset += 4; // skip length and version/language
-							$firstCode = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$firstCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$offset += 2;
-							$entryCount = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$entryCount = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$offset += 2;
 							for ($k = 0; $k < $entryCount; ++$k) {
 								$c = ($k + $firstCode);
-								$g = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$offset += 2;
 								$ctg[$c] = $g;
 							}
@@ -698,17 +701,17 @@ class TCPDF_FONTS {
 						case 8: { // Format 8: Mixed 16-bit and 32-bit coverage
 							$offset += 10; // skip reserved, length and version/language
 							for ($k = 0; $k < 8192; ++$k) {
-								$is32[$k] = TCPDF_STATIC::_getBYTE($font, $offset);
+								$is32[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getBYTE($font, $offset);
 								++$offset;
 							}
-							$nGroups = TCPDF_STATIC::_getULONG($font, $offset);
+							$nGroups = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 							$offset += 4;
 							for ($i = 0; $i < $nGroups; ++$i) {
-								$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+								$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
-								$endCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+								$endCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
-								$startGlyphID = TCPDF_STATIC::_getULONG($font, $offset);
+								$startGlyphID = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
 								for ($k = $startCharCode; $k <= $endCharCode; ++$k) {
 									$is32idx = floor($c / 8);
@@ -729,13 +732,13 @@ class TCPDF_FONTS {
 						}
 						case 10: { // Format 10: Trimmed array
 							$offset += 10; // skip reserved, length and version/language
-							$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+							$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 							$offset += 4;
-							$numChars = TCPDF_STATIC::_getULONG($font, $offset);
+							$numChars = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 							$offset += 4;
 							for ($k = 0; $k < $numChars; ++$k) {
 								$c = ($k + $startCharCode);
-								$g = TCPDF_STATIC::_getUSHORT($font, $offset);
+								$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 								$ctg[$c] = $g;
 								$offset += 2;
 							}
@@ -743,14 +746,14 @@ class TCPDF_FONTS {
 						}
 						case 12: { // Format 12: Segmented coverage
 							$offset += 10; // skip length and version/language
-							$nGroups = TCPDF_STATIC::_getULONG($font, $offset);
+							$nGroups = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 							$offset += 4;
 							for ($k = 0; $k < $nGroups; ++$k) {
-								$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+								$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
-								$endCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+								$endCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
-								$startGlyphCode = TCPDF_STATIC::_getULONG($font, $offset);
+								$startGlyphCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 								$offset += 4;
 								for ($c = $startCharCode; $c <= $endCharCode; ++$c) {
 									$ctg[$c] = $startGlyphCode;
@@ -775,23 +778,23 @@ class TCPDF_FONTS {
 			}
 			// get xHeight (height of x)
 			$offset = ($table['glyf']['offset'] + $indexToLoc[$ctg[120]] + 4);
-			$yMin = TCPDF_STATIC::_getFWORD($font, $offset);
+			$yMin = WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset);
 			$offset += 4;
-			$yMax = TCPDF_STATIC::_getFWORD($font, $offset);
+			$yMax = WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset);
 			$offset += 2;
 			$fmetric['XHeight'] = round(($yMax - $yMin) * $urk);
 			// get CapHeight (height of H)
 			$offset = ($table['glyf']['offset'] + $indexToLoc[$ctg[72]] + 4);
-			$yMin = TCPDF_STATIC::_getFWORD($font, $offset);
+			$yMin = WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset);
 			$offset += 4;
-			$yMax = TCPDF_STATIC::_getFWORD($font, $offset);
+			$yMax = WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset);
 			$offset += 2;
 			$fmetric['CapHeight'] = round(($yMax - $yMin) * $urk);
 			// ceate widths array
 			$cw = array();
 			$offset = $table['hmtx']['offset'];
 			for ($i = 0 ; $i < $numberOfHMetrics; ++$i) {
-				$cw[$i] = round(TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
+				$cw[$i] = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getUFWORD($font, $offset) * $urk);
 				$offset += 4; // skip lsb
 			}
 			if ($numberOfHMetrics < $numGlyphs) {
@@ -808,10 +811,10 @@ class TCPDF_FONTS {
 					}
 					if ($addcbbox AND isset($indexToLoc[$ctg[$cid]])) {
 						$offset = ($table['glyf']['offset'] + $indexToLoc[$ctg[$cid]]);
-						$xMin = round(TCPDF_STATIC::_getFWORD($font, $offset + 2) * $urk);
-						$yMin = round(TCPDF_STATIC::_getFWORD($font, $offset + 4) * $urk);
-						$xMax = round(TCPDF_STATIC::_getFWORD($font, $offset + 6) * $urk);
-						$yMax = round(TCPDF_STATIC::_getFWORD($font, $offset + 8) * $urk);
+						$xMin = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset + 2) * $urk);
+						$yMin = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset + 4) * $urk);
+						$xMax = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset + 6) * $urk);
+						$yMax = round(WooCommerceNFe_PDF_TCPDF_STATIC::_getFWORD($font, $offset + 8) * $urk);
 						$fmetric['cbbox'] .= ','.$cid.'=>array('.$xMin.','.$yMin.','.$xMax.','.$yMax.')';
 					}
 				}
@@ -848,21 +851,21 @@ class TCPDF_FONTS {
 						$pfile .= '// Japanese'."\n";
 						$pfile .= '$enc=\'UniJIS-UTF16-H\';'."\n";
 						$pfile .= '$cidinfo=array(\'Registry\'=>\'Adobe\', \'Ordering\'=>\'Japan1\',\'Supplement\'=>5);'."\n";
-						$pfile .= 'include(dirname(__FILE__).\'/uni2cid_aj16.php\');'."\n";
+						$pfile .= '$cidinfo[\'uni2cid\'] = include(dirname(__FILE__).\'/uni2cid_aj16.php\');'."\n";
 						break;
 					}
 					case 'CID0KR': {
 						$pfile .= '// Korean'."\n";
 						$pfile .= '$enc=\'UniKS-UTF16-H\';'."\n";
 						$pfile .= '$cidinfo=array(\'Registry\'=>\'Adobe\', \'Ordering\'=>\'Korea1\',\'Supplement\'=>0);'."\n";
-						$pfile .= 'include(dirname(__FILE__).\'/uni2cid_ak12.php\');'."\n";
+						$pfile .= '$cidinfo[\'uni2cid\'] = include(dirname(__FILE__).\'/uni2cid_ak12.php\');'."\n";
 						break;
 					}
 					case 'CID0CS': {
 						$pfile .= '// Chinese Simplified'."\n";
 						$pfile .= '$enc=\'UniGB-UTF16-H\';'."\n";
 						$pfile .= '$cidinfo=array(\'Registry\'=>\'Adobe\', \'Ordering\'=>\'GB1\',\'Supplement\'=>2);'."\n";
-						$pfile .= 'include(dirname(__FILE__).\'/uni2cid_ag15.php\');'."\n";
+						$pfile .= '$cidinfo[\'uni2cid\'] = include(dirname(__FILE__).\'/uni2cid_ag15.php\');'."\n";
 						break;
 					}
 					case 'CID0CT':
@@ -870,7 +873,7 @@ class TCPDF_FONTS {
 						$pfile .= '// Chinese Traditional'."\n";
 						$pfile .= '$enc=\'UniCNS-UTF16-H\';'."\n";
 						$pfile .= '$cidinfo=array(\'Registry\'=>\'Adobe\', \'Ordering\'=>\'CNS1\',\'Supplement\'=>0);'."\n";
-						$pfile .= 'include(dirname(__FILE__).\'/uni2cid_aj16.php\');'."\n";
+						$pfile .= '$cidinfo[\'uni2cid\'] = include(dirname(__FILE__).\'/uni2cid_aj16.php\');'."\n";
 						break;
 					}
 				}
@@ -885,9 +888,9 @@ class TCPDF_FONTS {
 					$cidtogidmap = self::updateCIDtoGIDmap($cidtogidmap, $cid, $ctg[$cid]);
 				}
 				// store compressed CIDToGIDMap
-				$fp = TCPDF_STATIC::fopenLocal($outpath.$fmetric['ctg'], 'wb');
-				fwrite($fp, gzcompress($cidtogidmap));
-				fclose($fp);
+				$fp = WooCommerceNFe_PDF_TCPDF_STATIC::fopenLocal($outpath.$fmetric['ctg'], 'wb');
+				WooCommerceNFe_PDF_IO::write($fp, gzcompress($cidtogidmap));
+				WooCommerceNFe_PDF_IO::close($fp);
 			}
 		}
 		$pfile .= '$desc=array(';
@@ -911,17 +914,18 @@ class TCPDF_FONTS {
 		$pfile .= '$cw=array('.substr($fmetric['cw'], 1).');'."\n";
 		$pfile .= '// --- EOF ---'."\n";
 		// store file
-		$fp = TCPDF_STATIC::fopenLocal($outpath.$font_name.'.php', 'w');
-		fwrite($fp, $pfile);
-		fclose($fp);
+		$pfile = str_replace('<?php', "<?php\nif (!defined('ABSPATH')) { exit; }\nreturn (static function () {", $pfile) . "\nreturn get_defined_vars();\n})();\n";
+		$fp = WooCommerceNFe_PDF_TCPDF_STATIC::fopenLocal($outpath.$font_name.'.php', 'w');
+		WooCommerceNFe_PDF_IO::write($fp, $pfile);
+		WooCommerceNFe_PDF_IO::close($fp);
 		// return TCPDF font name
 		return $font_name;
 	}
 
 	/**
 	 * Returs the checksum of a TTF table.
-	 * @param $table (string) table to check
-	 * @param $length (int) length of table in bytes
+	 * @param string $table table to check
+	 * @param int $length length of table in bytes
 	 * @return int checksum
 	 * @author Nicola Asuni
 	 * @since 5.2.000 (2010-06-02)
@@ -942,9 +946,9 @@ class TCPDF_FONTS {
 
 	/**
 	 * Returns a subset of the TrueType font data without the unused glyphs.
-	 * @param $font (string) TrueType font data.
-	 * @param $subsetchars (array) Array of used characters (the glyphs to keep).
-	 * @return (string) A subset of TrueType font data without the unused glyphs.
+	 * @param string $font TrueType font data.
+	 * @param array $subsetchars Array of used characters (the glyphs to keep).
+	 * @return string A subset of TrueType font data without the unused glyphs.
 	 * @author Nicola Asuni
 	 * @since 5.2.000 (2010-06-02)
 	 * @public static
@@ -952,13 +956,14 @@ class TCPDF_FONTS {
 	public static function _getTrueTypeFontSubset($font, $subsetchars) {
 		ksort($subsetchars);
 		$offset = 0; // offset position of the font data
-		if (TCPDF_STATIC::_getULONG($font, $offset) != 0x10000) {
+		if (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset) != 0x10000) {
 			// sfnt version must be 0x00010000 for TrueType version 1.0.
 			return $font;
 		}
+		$c = 0;
 		$offset += 4;
 		// get number of tables
-		$numTables = TCPDF_STATIC::_getUSHORT($font, $offset);
+		$numTables = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 		$offset += 2;
 		// skip searchRange, entrySelector and rangeShift
 		$offset += 6;
@@ -970,23 +975,23 @@ class TCPDF_FONTS {
 			$tag = substr($font, $offset, 4);
 			$offset += 4;
 			$table[$tag] = array();
-			$table[$tag]['checkSum'] = TCPDF_STATIC::_getULONG($font, $offset);
+			$table[$tag]['checkSum'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 			$offset += 4;
-			$table[$tag]['offset'] = TCPDF_STATIC::_getULONG($font, $offset);
+			$table[$tag]['offset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 			$offset += 4;
-			$table[$tag]['length'] = TCPDF_STATIC::_getULONG($font, $offset);
+			$table[$tag]['length'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 			$offset += 4;
 		}
 		// check magicNumber
 		$offset = $table['head']['offset'] + 12;
-		if (TCPDF_STATIC::_getULONG($font, $offset) != 0x5F0F3CF5) {
+		if (WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset) != 0x5F0F3CF5) {
 			// magicNumber must be 0x5F0F3CF5
 			return $font;
 		}
 		$offset += 4;
 		// get offset mode (indexToLocFormat : 0 = short, 1 = long)
 		$offset = $table['head']['offset'] + 50;
-		$short_offset = (TCPDF_STATIC::_getSHORT($font, $offset) == 0);
+		$short_offset = (WooCommerceNFe_PDF_TCPDF_STATIC::_getSHORT($font, $offset) == 0);
 		$offset += 2;
 		// get the offsets to the locations of the glyphs in the font, relative to the beginning of the glyphData table
 		$indexToLoc = array();
@@ -995,14 +1000,14 @@ class TCPDF_FONTS {
 			// short version
 			$tot_num_glyphs = floor($table['loca']['length'] / 2); // numGlyphs + 1
 			for ($i = 0; $i < $tot_num_glyphs; ++$i) {
-				$indexToLoc[$i] = TCPDF_STATIC::_getUSHORT($font, $offset) * 2;
+				$indexToLoc[$i] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) * 2;
 				$offset += 2;
 			}
 		} else {
 			// long version
 			$tot_num_glyphs = ($table['loca']['length'] / 4); // numGlyphs + 1
 			for ($i = 0; $i < $tot_num_glyphs; ++$i) {
-				$indexToLoc[$i] = TCPDF_STATIC::_getULONG($font, $offset);
+				$indexToLoc[$i] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 				$offset += 4;
 			}
 		}
@@ -1010,28 +1015,28 @@ class TCPDF_FONTS {
 		$subsetglyphs = array(); // glyph IDs on key
 		$subsetglyphs[0] = true; // character codes that do not correspond to any glyph in the font should be mapped to glyph index 0
 		$offset = $table['cmap']['offset'] + 2;
-		$numEncodingTables = TCPDF_STATIC::_getUSHORT($font, $offset);
+		$numEncodingTables = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 		$offset += 2;
 		$encodingTables = array();
 		for ($i = 0; $i < $numEncodingTables; ++$i) {
-			$encodingTables[$i]['platformID'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$encodingTables[$i]['platformID'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
-			$encodingTables[$i]['encodingID'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$encodingTables[$i]['encodingID'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
-			$encodingTables[$i]['offset'] = TCPDF_STATIC::_getULONG($font, $offset);
+			$encodingTables[$i]['offset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 			$offset += 4;
 		}
 		foreach ($encodingTables as $enctable) {
 			// get all platforms and encodings
 			$offset = $table['cmap']['offset'] + $enctable['offset'];
-			$format = TCPDF_STATIC::_getUSHORT($font, $offset);
+			$format = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 			$offset += 2;
 			switch ($format) {
 				case 0: { // Format 0: Byte encoding table
 					$offset += 4; // skip length and version/language
 					for ($c = 0; $c < 256; ++$c) {
 						if (isset($subsetchars[$c])) {
-							$g = TCPDF_STATIC::_getBYTE($font, $offset);
+							$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getBYTE($font, $offset);
 							$subsetglyphs[$g] = true;
 						}
 						++$offset;
@@ -1043,7 +1048,7 @@ class TCPDF_FONTS {
 					$numSubHeaders = 0;
 					for ($i = 0; $i < 256; ++$i) {
 						// Array that maps high bytes to subHeaders: value is subHeader index * 8.
-						$subHeaderKeys[$i] = (TCPDF_STATIC::_getUSHORT($font, $offset) / 8);
+						$subHeaderKeys[$i] = (WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) / 8);
 						$offset += 2;
 						if ($numSubHeaders < $subHeaderKeys[$i]) {
 							$numSubHeaders = $subHeaderKeys[$i];
@@ -1055,20 +1060,20 @@ class TCPDF_FONTS {
 					$subHeaders = array();
 					$numGlyphIndexArray = 0;
 					for ($k = 0; $k < $numSubHeaders; ++$k) {
-						$subHeaders[$k]['firstCode'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$subHeaders[$k]['firstCode'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
-						$subHeaders[$k]['entryCount'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$subHeaders[$k]['entryCount'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
-						$subHeaders[$k]['idDelta'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$subHeaders[$k]['idDelta'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
-						$subHeaders[$k]['idRangeOffset'] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$subHeaders[$k]['idRangeOffset'] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 						$subHeaders[$k]['idRangeOffset'] -= (2 + (($numSubHeaders - $k - 1) * 8));
 						$subHeaders[$k]['idRangeOffset'] /= 2;
 						$numGlyphIndexArray += $subHeaders[$k]['entryCount'];
 					}
 					for ($k = 0; $k < $numGlyphIndexArray; ++$k) {
-						$glyphIndexArray[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$glyphIndexArray[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					for ($i = 0; $i < 256; ++$i) {
@@ -1101,37 +1106,37 @@ class TCPDF_FONTS {
 					break;
 				}
 				case 4: { // Format 4: Segment mapping to delta values
-					$length = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$length = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
 					$offset += 2; // skip version/language
-					$segCount = floor(TCPDF_STATIC::_getUSHORT($font, $offset) / 2);
+					$segCount = floor(WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset) / 2);
 					$offset += 2;
 					$offset += 6; // skip searchRange, entrySelector, rangeShift
 					$endCount = array(); // array of end character codes for each segment
 					for ($k = 0; $k < $segCount; ++$k) {
-						$endCount[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$endCount[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					$offset += 2; // skip reservedPad
 					$startCount = array(); // array of start character codes for each segment
 					for ($k = 0; $k < $segCount; ++$k) {
-						$startCount[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$startCount[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					$idDelta = array(); // delta for all character codes in segment
 					for ($k = 0; $k < $segCount; ++$k) {
-						$idDelta[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$idDelta[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					$idRangeOffset = array(); // Offsets into glyphIdArray or 0
 					for ($k = 0; $k < $segCount; ++$k) {
-						$idRangeOffset[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$idRangeOffset[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					$gidlen = (floor($length / 2) - 8 - (4 * $segCount));
 					$glyphIdArray = array(); // glyph index array
 					for ($k = 0; $k < $gidlen; ++$k) {
-						$glyphIdArray[$k] = TCPDF_STATIC::_getUSHORT($font, $offset);
+						$glyphIdArray[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 						$offset += 2;
 					}
 					for ($k = 0; $k < $segCount; ++$k) {
@@ -1149,19 +1154,19 @@ class TCPDF_FONTS {
 								$subsetglyphs[$g] = true;
 							}
 						}
-					}	
+					}
 					break;
 				}
 				case 6: { // Format 6: Trimmed table mapping
 					$offset += 4; // skip length and version/language
-					$firstCode = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$firstCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
-					$entryCount = TCPDF_STATIC::_getUSHORT($font, $offset);
+					$entryCount = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 					$offset += 2;
 					for ($k = 0; $k < $entryCount; ++$k) {
 						$c = ($k + $firstCode);
 						if (isset($subsetchars[$c])) {
-							$g = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$subsetglyphs[$g] = true;
 						}
 						$offset += 2;
@@ -1171,17 +1176,17 @@ class TCPDF_FONTS {
 				case 8: { // Format 8: Mixed 16-bit and 32-bit coverage
 					$offset += 10; // skip reserved, length and version/language
 					for ($k = 0; $k < 8192; ++$k) {
-						$is32[$k] = TCPDF_STATIC::_getBYTE($font, $offset);
+						$is32[$k] = WooCommerceNFe_PDF_TCPDF_STATIC::_getBYTE($font, $offset);
 						++$offset;
 					}
-					$nGroups = TCPDF_STATIC::_getULONG($font, $offset);
+					$nGroups = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 					$offset += 4;
 					for ($i = 0; $i < $nGroups; ++$i) {
-						$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+						$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
-						$endCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+						$endCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
-						$startGlyphID = TCPDF_STATIC::_getULONG($font, $offset);
+						$startGlyphID = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
 						for ($k = $startCharCode; $k <= $endCharCode; ++$k) {
 							$is32idx = floor($c / 8);
@@ -1204,14 +1209,14 @@ class TCPDF_FONTS {
 				}
 				case 10: { // Format 10: Trimmed array
 					$offset += 10; // skip reserved, length and version/language
-					$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+					$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 					$offset += 4;
-					$numChars = TCPDF_STATIC::_getULONG($font, $offset);
+					$numChars = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 					$offset += 4;
 					for ($k = 0; $k < $numChars; ++$k) {
 						$c = ($k + $startCharCode);
 						if (isset($subsetchars[$c])) {
-							$g = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$g = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$subsetglyphs[$g] = true;
 						}
 						$offset += 2;
@@ -1220,14 +1225,14 @@ class TCPDF_FONTS {
 				}
 				case 12: { // Format 12: Segmented coverage
 					$offset += 10; // skip length and version/language
-					$nGroups = TCPDF_STATIC::_getULONG($font, $offset);
+					$nGroups = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 					$offset += 4;
 					for ($k = 0; $k < $nGroups; ++$k) {
-						$startCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+						$startCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
-						$endCharCode = TCPDF_STATIC::_getULONG($font, $offset);
+						$endCharCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
-						$startGlyphCode = TCPDF_STATIC::_getULONG($font, $offset);
+						$startGlyphCode = WooCommerceNFe_PDF_TCPDF_STATIC::_getULONG($font, $offset);
 						$offset += 4;
 						for ($c = $startCharCode; $c <= $endCharCode; ++$c) {
 							if (isset($subsetchars[$c])) {
@@ -1256,14 +1261,14 @@ class TCPDF_FONTS {
 			foreach ($sga as $key => $val) {
 				if (isset($indexToLoc[$key])) {
 					$offset = ($table['glyf']['offset'] + $indexToLoc[$key]);
-					$numberOfContours = TCPDF_STATIC::_getSHORT($font, $offset);
+					$numberOfContours = WooCommerceNFe_PDF_TCPDF_STATIC::_getSHORT($font, $offset);
 					$offset += 2;
 					if ($numberOfContours < 0) { // composite glyph
 						$offset += 8; // skip xMin, yMin, xMax, yMax
 						do {
-							$flags = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$flags = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$offset += 2;
-							$glyphIndex = TCPDF_STATIC::_getUSHORT($font, $offset);
+							$glyphIndex = WooCommerceNFe_PDF_TCPDF_STATIC::_getUSHORT($font, $offset);
 							$offset += 2;
 							if (!isset($subsetglyphs[$glyphIndex])) {
 								// add missing glyphs
@@ -1321,43 +1326,43 @@ class TCPDF_FONTS {
 					// set the checkSumAdjustment to 0
 					$table[$tag]['data'] = substr($table[$tag]['data'], 0, 8)."\x0\x0\x0\x0".substr($table[$tag]['data'], 12);
 				}
-				$pad = 4 - ($table[$tag]['length'] % 4);
-				if ($pad != 4) {
-					// the length of a table must be a multiple of four bytes
-					$table[$tag]['length'] += $pad;
-					$table[$tag]['data'] .= str_repeat("\x0", $pad);
-				}
 				$table[$tag]['offset'] = $offset;
 				$offset += $table[$tag]['length'];
+				$numPad = ($offset + 3 & ~3) - $offset;
+				if($numPad > 0) {
+					$table[$tag]['data'] .= str_repeat("\x0", $numPad);
+					$offset += $numPad;
+				}
 				// check sum is not changed (so keep the following line commented)
-				//$table[$tag]['checkSum'] = self::_getTTFtableChecksum($table[$tag]['data'], $table[$tag]['length']);
+				//$table[$tag]['checkSum'] = self::_getTTFtableChecksum($table[$tag]['data'], $table[$tag]['length'] + $numPad);
 			} else {
 				unset($table[$tag]);
 			}
 		}
 		// add loca
+		$table['loca'] = array();
 		$table['loca']['data'] = $loca;
 		$table['loca']['length'] = strlen($loca);
-		$pad = 4 - ($table['loca']['length'] % 4);
-		if ($pad != 4) {
-			// the length of a table must be a multiple of four bytes
-			$table['loca']['length'] += $pad;
-			$table['loca']['data'] .= str_repeat("\x0", $pad);
-		}
 		$table['loca']['offset'] = $offset;
-		$table['loca']['checkSum'] = self::_getTTFtableChecksum($table['loca']['data'], $table['loca']['length']);
 		$offset += $table['loca']['length'];
+		$numPad = ($offset + 3 & ~3) - $offset;
+		if($numPad > 0) {
+			$table['loca']['data'] .= str_repeat("\x0", $numPad);
+			$offset += $numPad;
+		}
+		$table['loca']['checkSum'] = self::_getTTFtableChecksum($table['loca']['data'], $table['loca']['length'] + $numPad);
 		// add glyf
+		$table['glyf'] = array();
 		$table['glyf']['data'] = $glyf;
 		$table['glyf']['length'] = strlen($glyf);
-		$pad = 4 - ($table['glyf']['length'] % 4);
-		if ($pad != 4) {
-			// the length of a table must be a multiple of four bytes
-			$table['glyf']['length'] += $pad;
-			$table['glyf']['data'] .= str_repeat("\x0", $pad);
-		}
 		$table['glyf']['offset'] = $offset;
-		$table['glyf']['checkSum'] = self::_getTTFtableChecksum($table['glyf']['data'], $table['glyf']['length']);
+		$offset += $table['glyf']['length'];
+		$numPad = ($offset + 3 & ~3) - $offset;
+		if($numPad > 0) {
+			$table['glyf']['data'] .= str_repeat("\x0", $numPad);
+			$offset += $numPad;
+		}
+		$table['glyf']['checkSum'] = self::_getTTFtableChecksum($table['glyf']['data'], $table['glyf']['length'] + $numPad);
 		// rebuild font
 		$font = '';
 		$font .= pack('N', 0x10000); // sfnt version
@@ -1381,15 +1386,15 @@ class TCPDF_FONTS {
 		}
 		// set checkSumAdjustment on head table
 		$checkSumAdjustment = 0xB1B0AFBA - self::_getTTFtableChecksum($font, strlen($font));
-		$font = substr($font, 0, $table['head']['offset'] + 8).pack('N', $checkSumAdjustment).substr($font, $table['head']['offset'] + 12);
+		$font = substr($font, 0, $table['head']['offset'] + $offset + 4).pack('N', $checkSumAdjustment).substr($font, $table['head']['offset'] + $offset + 8);
 		return $font;
 	}
 
 	/**
 	 * Outputs font widths
-	 * @param $font (array) font data
-	 * @param $cidoffset (int) offset for CID values
-	 * @return PDF command string for font widths
+	 * @param array $font font data
+	 * @param int $cidoffset offset for CID values
+	 * @return string PDF command string for font widths
 	 * @author Nicola Asuni
 	 * @since 4.4.000 (2008-12-07)
 	 * @public static
@@ -1495,10 +1500,10 @@ class TCPDF_FONTS {
 
 	/**
 	 * Update the CIDToGIDMap string with a new value.
-	 * @param $map (string) CIDToGIDMap.
-	 * @param $cid (int) CID value.
-	 * @param $gid (int) GID value.
-	 * @return (string) CIDToGIDMap.
+	 * @param string $map CIDToGIDMap.
+	 * @param int $cid CID value.
+	 * @param int $gid GID value.
+	 * @return string CIDToGIDMap.
 	 * @author Nicola Asuni
 	 * @since 5.9.123 (2011-09-29)
 	 * @public static
@@ -1520,21 +1525,21 @@ class TCPDF_FONTS {
 	 * @public static
 	 */
 	public static function _getfontpath() {
-		if (!defined('K_PATH_FONTS') AND is_dir($fdir = realpath(dirname(__FILE__).'/../fonts'))) {
+		if (!defined('WOOCOMMERCE_NFE_PDF_K_PATH_FONTS') AND is_dir($fdir = realpath(dirname(__FILE__).'/../fonts'))) {
 			if (substr($fdir, -1) != '/') {
 				$fdir .= '/';
 			}
-			define('K_PATH_FONTS', $fdir);
+			define('WOOCOMMERCE_NFE_PDF_K_PATH_FONTS', $fdir);
 		}
-		return defined('K_PATH_FONTS') ? K_PATH_FONTS : '';
+		return defined('WOOCOMMERCE_NFE_PDF_K_PATH_FONTS') ? WOOCOMMERCE_NFE_PDF_K_PATH_FONTS : '';
 	}
 
 
 
 	/**
 	 * Return font full path
-	 * @param $file (string) Font file name.
-	 * @param $fontdir (string) Font directory (set to false fto search on default directories)
+	 * @param string $file Font file name.
+	 * @param string $fontdir Font directory (set to false fto search on default directories)
 	 * @return string Font full path or empty string
 	 * @author Nicola Asuni
 	 * @since 6.0.025
@@ -1543,11 +1548,11 @@ class TCPDF_FONTS {
 	public static function getFontFullPath($file, $fontdir=false) {
 		$fontfile = '';
 		// search files on various directories
-		if (($fontdir !== false) AND @file_exists($fontdir.$file)) {
+		if (($fontdir !== false) AND @WooCommerceNFe_PDF_TCPDF_STATIC::file_exists($fontdir.$file)) {
 			$fontfile = $fontdir.$file;
-		} elseif (@file_exists(self::_getfontpath().$file)) {
+		} elseif (@WooCommerceNFe_PDF_TCPDF_STATIC::file_exists(self::_getfontpath().$file)) {
 			$fontfile = self::_getfontpath().$file;
-		} elseif (@file_exists($file)) {
+		} elseif (@WooCommerceNFe_PDF_TCPDF_STATIC::file_exists($file)) {
 			$fontfile = $file;
 		}
 		return $fontfile;
@@ -1558,8 +1563,8 @@ class TCPDF_FONTS {
 
 	/**
 	 * Get a reference font size.
-	 * @param $size (string) String containing font size value.
-	 * @param $refsize (float) Reference font size in points.
+	 * @param string $size String containing font size value.
+	 * @param float $refsize Reference font size in points.
 	 * @return float value in points
 	 * @public static
 	 */
@@ -1657,16 +1662,15 @@ class TCPDF_FONTS {
 
 	/**
 	 * Returns the unicode caracter specified by the value
-	 * @param $c (int) UTF-8 value
-	 * @param $unicode (boolean) True if we are in unicode mode, false otherwise.
-	 * @return Returns the specified character.
+	 * @param int $c UTF-8 value
+	 * @param boolean $unicode True if we are in unicode mode, false otherwise.
+	 * @return string Returns the specified character.
 	 * @since 2.3.000 (2008-03-05)
 	 * @public static
 	 */
 	public static function unichr($c, $unicode=true) {
-		if (is_null($c) || !strlen($c)) {
-			return '';
-		} elseif (!$unicode) {
+		$c = intval($c);
+		if (!$unicode) {
 			return chr($c);
 		} elseif ($c <= 0x7F) {
 			// one byte
@@ -1687,8 +1691,8 @@ class TCPDF_FONTS {
 
 	/**
 	 * Returns the unicode caracter specified by UTF-8 value
-	 * @param $c (int) UTF-8 value
-	 * @return Returns the specified character.
+	 * @param int $c UTF-8 value
+	 * @return string Returns the specified character.
 	 * @public static
 	 */
 	public static function unichrUnicode($c) {
@@ -1697,8 +1701,8 @@ class TCPDF_FONTS {
 
 	/**
 	 * Returns the unicode caracter specified by ASCII value
-	 * @param $c (int) UTF-8 value
-	 * @return Returns the specified character.
+	 * @param int $c UTF-8 value
+	 * @return string Returns the specified character.
 	 * @public static
 	 */
 	public static function unichrASCII($c) {
@@ -1735,8 +1739,8 @@ class TCPDF_FONTS {
 	 *    W1 = 110110yyyyyyyyyy
 	 *    W2 = 110111xxxxxxxxxx
 	 * </pre>
-	 * @param $unicode (array) array containing UTF-8 unicode values
-	 * @param $setbom (boolean) if true set the Byte Order Mark (BOM = 0xFEFF)
+	 * @param array $unicode array containing UTF-8 unicode values
+	 * @param boolean $setbom if true set the Byte Order Mark (BOM = 0xFEFF)
 	 * @return string
 	 * @protected
 	 * @author Nicola Asuni
@@ -1771,26 +1775,26 @@ class TCPDF_FONTS {
 
 	/**
 	 * Convert an array of UTF8 values to array of unicode characters
-	 * @param $ta (array) The input array of UTF8 values.
-	 * @param $isunicode (boolean) True for Unicode mode, false otherwise.
-	 * @return Return array of unicode characters
+	 * @param array $ta The input array of UTF8 values.
+	 * @param boolean $isunicode True for Unicode mode, false otherwise.
+	 * @return array Return array of unicode characters
 	 * @since 4.5.037 (2009-04-07)
 	 * @public static
 	 */
 	public static function UTF8ArrayToUniArray($ta, $isunicode=true) {
 		if ($isunicode) {
-			return array_map(array('TCPDF_FONTS', 'unichrUnicode'), $ta);
+			return array_map(static::class.'::unichrUnicode', $ta);
 		}
-		return array_map(array('TCPDF_FONTS', 'unichrASCII'), $ta);
+		return array_map(static::class.'::unichrASCII', $ta);
 	}
 
 	/**
 	 * Extract a slice of the $strarr array and return it as string.
-	 * @param $strarr (string) The input array of characters.
-	 * @param $start (int) the starting element of $strarr.
-	 * @param $end (int) first element that will not be returned.
-	 * @param $unicode (boolean) True if we are in unicode mode, false otherwise.
-	 * @return Return part of a string
+	 * @param string[] $strarr The input array of characters.
+	 * @param int $start the starting element of $strarr.
+	 * @param int $end first element that will not be returned.
+	 * @param boolean $unicode True if we are in unicode mode, false otherwise.
+	 * @return string Return part of a string
 	 * @public static
 	 */
 	public static function UTF8ArrSubString($strarr, $start='', $end='', $unicode=true) {
@@ -1809,10 +1813,10 @@ class TCPDF_FONTS {
 
 	/**
 	 * Extract a slice of the $uniarr array and return it as string.
-	 * @param $uniarr (string) The input array of characters.
-	 * @param $start (int) the starting element of $strarr.
-	 * @param $end (int) first element that will not be returned.
-	 * @return Return part of a string
+	 * @param string[] $uniarr The input array of characters.
+	 * @param int $start the starting element of $strarr.
+	 * @param int $end first element that will not be returned.
+	 * @return string Return part of a string
 	 * @since 4.5.037 (2009-04-07)
 	 * @public static
 	 */
@@ -1832,7 +1836,7 @@ class TCPDF_FONTS {
 
 	/**
 	 * Converts UTF-8 characters array to array of Latin1 characters array<br>
-	 * @param $unicode (array) array containing UTF-8 unicode values
+	 * @param array $unicode array containing UTF-8 unicode values
 	 * @return array
 	 * @author Nicola Asuni
 	 * @since 4.8.023 (2010-01-15)
@@ -1843,9 +1847,9 @@ class TCPDF_FONTS {
 		foreach ($unicode as $char) {
 			if ($char < 256) {
 				$outarr[] = $char;
-			} elseif (array_key_exists($char, TCPDF_FONT_DATA::$uni_utf8tolatin)) {
+			} elseif (array_key_exists($char, WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_utf8tolatin)) {
 				// map from UTF-8
-				$outarr[] = TCPDF_FONT_DATA::$uni_utf8tolatin[$char];
+				$outarr[] = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_utf8tolatin[$char];
 			} elseif ($char == 0xFFFD) {
 				// skip
 			} else {
@@ -1856,9 +1860,9 @@ class TCPDF_FONTS {
 	}
 
 	/**
-	 * Converts UTF-8 characters array to array of Latin1 string<br>
-	 * @param $unicode (array) array containing UTF-8 unicode values
-	 * @return array
+	 * Converts UTF-8 characters array to Latin1 string<br>
+	 * @param array $unicode array containing UTF-8 unicode values
+	 * @return string
 	 * @author Nicola Asuni
 	 * @since 4.8.023 (2010-01-15)
 	 * @public static
@@ -1868,9 +1872,9 @@ class TCPDF_FONTS {
 		foreach ($unicode as $char) {
 			if ($char < 256) {
 				$outstr .= chr($char);
-			} elseif (array_key_exists($char, TCPDF_FONT_DATA::$uni_utf8tolatin)) {
+			} elseif (array_key_exists($char, WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_utf8tolatin)) {
 				// map from UTF-8
-				$outstr .= chr(TCPDF_FONT_DATA::$uni_utf8tolatin[$char]);
+				$outstr .= chr(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_utf8tolatin[$char]);
 			} elseif ($char == 0xFFFD) {
 				// skip
 			} else {
@@ -1883,8 +1887,8 @@ class TCPDF_FONTS {
 	/**
 	 * Converts UTF-8 character to integer value.<br>
 	 * Uses the getUniord() method if the value is not cached.
-	 * @param $uch (string) character string to process.
-	 * @return integer Unicode value
+	 * @param string $uch character string to process.
+	 * @return int Unicode value
 	 * @public static
 	 */
 	public static function uniord($uch) {
@@ -1922,8 +1926,8 @@ class TCPDF_FONTS {
 	 *   UTF8-tail   = %x80-BF
 	 *   ---------------------------------------------------------------------
 	 * </pre>
-	 * @param $uch (string) character string to process.
-	 * @return integer Unicode value
+	 * @param string $uch character string to process.
+	 * @return int Unicode value
 	 * @author Nicola Asuni
 	 * @public static
 	 */
@@ -1989,52 +1993,57 @@ class TCPDF_FONTS {
 	/**
 	 * Converts UTF-8 strings to codepoints array.<br>
 	 * Invalid byte sequences will be replaced with 0xFFFD (replacement character)<br>
-	 * @param $str (string) string to process.
-	 * @param $isunicode (boolean) True when the documetn is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param string $str string to process.
+	 * @param boolean $isunicode True when the documetn is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return array containing codepoints (UTF-8 characters values)
 	 * @author Nicola Asuni
 	 * @public static
 	 */
-	public static function UTF8StringToArray($str, $isunicode=true, &$currentfont) {
+	public static function UTF8StringToArray($str, $isunicode, &$currentfont) {
+		$str = is_null($str) ? '' : $str;
 		if ($isunicode) {
 			// requires PCRE unicode support turned on
-			$chars = TCPDF_STATIC::pregSplit('//','u', $str, -1, PREG_SPLIT_NO_EMPTY);
-			$carr = array_map(array('TCPDF_FONTS', 'uniord'), $chars);
+			$chars = WooCommerceNFe_PDF_TCPDF_STATIC::pregSplit('//','u', $str, -1, PREG_SPLIT_NO_EMPTY);
+			$carr = array_map(static::class.'::uniord', $chars);
 		} else {
 			$chars = str_split($str);
 			$carr = array_map('ord', $chars);
 		}
-		$currentfont['subsetchars'] += array_fill_keys($carr, true);
+		if (is_array($currentfont['subsetchars']) && is_array($carr)) {
+			$currentfont['subsetchars'] += array_fill_keys($carr, true);
+		} else {
+			$currentfont['subsetchars'] = array_merge($currentfont['subsetchars'], $carr);
+		}
 		return $carr;
 	}
 
 	/**
 	 * Converts UTF-8 strings to Latin1 when using the standard 14 core fonts.<br>
-	 * @param $str (string) string to process.
-	 * @param $isunicode (boolean) True when the documetn is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param string $str string to process.
+	 * @param boolean $isunicode True when the documetn is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return string
 	 * @since 3.2.000 (2008-06-23)
 	 * @public static
 	 */
-	public static function UTF8ToLatin1($str, $isunicode=true, &$currentfont) {
+	public static function UTF8ToLatin1($str, $isunicode, &$currentfont) {
 		$unicode = self::UTF8StringToArray($str, $isunicode, $currentfont); // array containing UTF-8 unicode values
 		return self::UTF8ArrToLatin1($unicode);
 	}
 
 	/**
 	 * Converts UTF-8 strings to UTF16-BE.<br>
-	 * @param $str (string) string to process.
-	 * @param $setbom (boolean) if true set the Byte Order Mark (BOM = 0xFEFF)
-	 * @param $isunicode (boolean) True when the documetn is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param string $str string to process.
+	 * @param boolean $setbom if true set the Byte Order Mark (BOM = 0xFEFF)
+	 * @param boolean $isunicode True when the documetn is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return string
 	 * @author Nicola Asuni
 	 * @since 1.53.0.TC005 (2005-01-05)
 	 * @public static
 	 */
-	public static function UTF8ToUTF16BE($str, $setbom=false, $isunicode=true, &$currentfont) {
+	public static function UTF8ToUTF16BE($str, $setbom, $isunicode, &$currentfont) {
 		if (!$isunicode) {
 			return $str; // string is not in unicode
 		}
@@ -2044,66 +2053,66 @@ class TCPDF_FONTS {
 
 	/**
 	 * Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-	 * @param $str (string) string to manipulate.
-	 * @param $setbom (bool) if true set the Byte Order Mark (BOM = 0xFEFF)
-	 * @param $forcertl (bool) if true forces RTL text direction
-	 * @param $isunicode (boolean) True if the document is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param string $str string to manipulate.
+	 * @param bool $setbom if true set the Byte Order Mark (BOM = 0xFEFF)
+	 * @param bool $forcertl if true forces RTL text direction
+	 * @param boolean $isunicode True if the document is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return string
 	 * @author Nicola Asuni
 	 * @since 2.1.000 (2008-01-08)
 	 * @public static
 	 */
-	public static function utf8StrRev($str, $setbom=false, $forcertl=false, $isunicode=true, &$currentfont) {
+	public static function utf8StrRev($str, $setbom, $forcertl, $isunicode, &$currentfont) {
 		return self::utf8StrArrRev(self::UTF8StringToArray($str, $isunicode, $currentfont), $str, $setbom, $forcertl, $isunicode, $currentfont);
 	}
 
 	/**
 	 * Reverse the RLT substrings array using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-	 * @param $arr (array) array of unicode values.
-	 * @param $str (string) string to manipulate (or empty value).
-	 * @param $setbom (bool) if true set the Byte Order Mark (BOM = 0xFEFF)
-	 * @param $forcertl (bool) if true forces RTL text direction
-	 * @param $isunicode (boolean) True if the document is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param array $arr array of unicode values.
+	 * @param string $str string to manipulate (or empty value).
+	 * @param bool $setbom if true set the Byte Order Mark (BOM = 0xFEFF)
+	 * @param bool $forcertl if true forces RTL text direction
+	 * @param boolean $isunicode True if the document is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return string
 	 * @author Nicola Asuni
 	 * @since 4.9.000 (2010-03-27)
 	 * @public static
 	 */
-	public static function utf8StrArrRev($arr, $str='', $setbom=false, $forcertl=false, $isunicode=true, &$currentfont) {
+	public static function utf8StrArrRev($arr, $str, $setbom, $forcertl, $isunicode, &$currentfont) {
 		return self::arrUTF8ToUTF16BE(self::utf8Bidi($arr, $str, $forcertl, $isunicode, $currentfont), $setbom);
 	}
 
 	/**
 	 * Reverse the RLT substrings using the Bidirectional Algorithm (http://unicode.org/reports/tr9/).
-	 * @param $ta (array) array of characters composing the string.
-	 * @param $str (string) string to process
-	 * @param $forcertl (bool) if 'R' forces RTL, if 'L' forces LTR
-	 * @param $isunicode (boolean) True if the document is in Unicode mode, false otherwise.
-	 * @param $currentfont (array) Reference to current font array.
+	 * @param array $ta array of characters composing the string.
+	 * @param string $str string to process
+	 * @param bool $forcertl if 'R' forces RTL, if 'L' forces LTR
+	 * @param boolean $isunicode True if the document is in Unicode mode, false otherwise.
+	 * @param array $currentfont Reference to current font array.
 	 * @return array of unicode chars
 	 * @author Nicola Asuni
 	 * @since 2.4.000 (2008-03-06)
 	 * @public static
 	 */
-	public static function utf8Bidi($ta, $str='', $forcertl=false, $isunicode=true, &$currentfont) {
+	public static function utf8Bidi($ta, $str, $forcertl, $isunicode, &$currentfont) {
 		// paragraph embedding level
 		$pel = 0;
 		// max level
 		$maxlevel = 0;
-		if (TCPDF_STATIC::empty_string($str)) {
+		if (WooCommerceNFe_PDF_TCPDF_STATIC::empty_string($str)) {
 			// create string from array
 			$str = self::UTF8ArrSubString($ta, '', '', $isunicode);
 		}
 		// check if string contains arabic text
-		if (preg_match(TCPDF_FONT_DATA::$uni_RE_PATTERN_ARABIC, $str)) {
+		if (preg_match(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RE_PATTERN_ARABIC, $str)) {
 			$arabic = true;
 		} else {
 			$arabic = false;
 		}
 		// check if string contains RTL text
-		if (!($forcertl OR $arabic OR preg_match(TCPDF_FONT_DATA::$uni_RE_PATTERN_RTL, $str))) {
+		if (!($forcertl OR $arabic OR preg_match(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RE_PATTERN_RTL, $str))) {
 			return $ta;
 		}
 
@@ -2118,7 +2127,7 @@ class TCPDF_FONTS {
 			// P2. In each paragraph, find the first character of type L, AL, or R.
 			// P3. If a character is found in P2 and it is of type AL or R, then set the paragraph embedding level to one; otherwise, set it to zero.
 			for ($i=0; $i < $numchars; ++$i) {
-				$type = TCPDF_FONT_DATA::$uni_type[$ta[$i]];
+				$type = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$ta[$i]];
 				if ($type == 'L') {
 					$pel = 0;
 					break;
@@ -2144,62 +2153,62 @@ class TCPDF_FONTS {
 		// X1. Begin by setting the current embedding level to the paragraph embedding level. Set the directional override status to neutral. Process each character iteratively, applying rules X2 through X9. Only embedding levels from 0 to 61 are valid in this phase.
 		// In the resolution of levels in rules I1 and I2, the maximum embedding level of 62 can be reached.
 		for ($i=0; $i < $numchars; ++$i) {
-			if ($ta[$i] == TCPDF_FONT_DATA::$uni_RLE) {
+			if ($ta[$i] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLE) {
 				// X2. With each RLE, compute the least greater odd embedding level.
 				//	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
 				//	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
 				$next_level = $cel + ($cel % 2) + 1;
 				if ($next_level < 62) {
-					$remember[] = array('num' => TCPDF_FONT_DATA::$uni_RLE, 'cel' => $cel, 'dos' => $dos);
+					$remember[] = array('num' => WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLE, 'cel' => $cel, 'dos' => $dos);
 					$cel = $next_level;
 					$dos = 'N';
 					$sor = $eor;
 					$eor = $cel % 2 ? 'R' : 'L';
 				}
-			} elseif ($ta[$i] == TCPDF_FONT_DATA::$uni_LRE) {
+			} elseif ($ta[$i] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRE) {
 				// X3. With each LRE, compute the least greater even embedding level.
 				//	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to neutral.
 				//	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
 				$next_level = $cel + 2 - ($cel % 2);
 				if ( $next_level < 62 ) {
-					$remember[] = array('num' => TCPDF_FONT_DATA::$uni_LRE, 'cel' => $cel, 'dos' => $dos);
+					$remember[] = array('num' => WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRE, 'cel' => $cel, 'dos' => $dos);
 					$cel = $next_level;
 					$dos = 'N';
 					$sor = $eor;
 					$eor = $cel % 2 ? 'R' : 'L';
 				}
-			} elseif ($ta[$i] == TCPDF_FONT_DATA::$uni_RLO) {
+			} elseif ($ta[$i] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLO) {
 				// X4. With each RLO, compute the least greater odd embedding level.
 				//	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to right-to-left.
 				//	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
 				$next_level = $cel + ($cel % 2) + 1;
 				if ($next_level < 62) {
-					$remember[] = array('num' => TCPDF_FONT_DATA::$uni_RLO, 'cel' => $cel, 'dos' => $dos);
+					$remember[] = array('num' => WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLO, 'cel' => $cel, 'dos' => $dos);
 					$cel = $next_level;
 					$dos = 'R';
 					$sor = $eor;
 					$eor = $cel % 2 ? 'R' : 'L';
 				}
-			} elseif ($ta[$i] == TCPDF_FONT_DATA::$uni_LRO) {
+			} elseif ($ta[$i] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRO) {
 				// X5. With each LRO, compute the least greater even embedding level.
 				//	a. If this new level would be valid, then this embedding code is valid. Remember (push) the current embedding level and override status. Reset the current level to this new level, and reset the override status to left-to-right.
 				//	b. If the new level would not be valid, then this code is invalid. Do not change the current level or override status.
 				$next_level = $cel + 2 - ($cel % 2);
 				if ( $next_level < 62 ) {
-					$remember[] = array('num' => TCPDF_FONT_DATA::$uni_LRO, 'cel' => $cel, 'dos' => $dos);
+					$remember[] = array('num' => WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRO, 'cel' => $cel, 'dos' => $dos);
 					$cel = $next_level;
 					$dos = 'L';
 					$sor = $eor;
 					$eor = $cel % 2 ? 'R' : 'L';
 				}
-			} elseif ($ta[$i] == TCPDF_FONT_DATA::$uni_PDF) {
+			} elseif ($ta[$i] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_PDF) {
 				// X7. With each PDF, determine the matching embedding or override code. If there was a valid matching code, restore (pop) the last remembered (pushed) embedding level and directional override.
 				if (count($remember)) {
 					$last = count($remember ) - 1;
-					if (($remember[$last]['num'] == TCPDF_FONT_DATA::$uni_RLE) OR
-						($remember[$last]['num'] == TCPDF_FONT_DATA::$uni_LRE) OR
-						($remember[$last]['num'] == TCPDF_FONT_DATA::$uni_RLO) OR
-						($remember[$last]['num'] == TCPDF_FONT_DATA::$uni_LRO)) {
+					if (($remember[$last]['num'] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLE) OR
+						($remember[$last]['num'] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRE) OR
+						($remember[$last]['num'] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLO) OR
+						($remember[$last]['num'] == WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRO)) {
 						$match = array_pop($remember);
 						$cel = $match['cel'];
 						$dos = $match['dos'];
@@ -2207,19 +2216,19 @@ class TCPDF_FONTS {
 						$eor = ($cel > $match['cel'] ? $cel : $match['cel']) % 2 ? 'R' : 'L';
 					}
 				}
-			} elseif (($ta[$i] != TCPDF_FONT_DATA::$uni_RLE) AND
-							 ($ta[$i] != TCPDF_FONT_DATA::$uni_LRE) AND
-							 ($ta[$i] != TCPDF_FONT_DATA::$uni_RLO) AND
-							 ($ta[$i] != TCPDF_FONT_DATA::$uni_LRO) AND
-							 ($ta[$i] != TCPDF_FONT_DATA::$uni_PDF)) {
+			} elseif (($ta[$i] != WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLE) AND
+							 ($ta[$i] != WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRE) AND
+							 ($ta[$i] != WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_RLO) AND
+							 ($ta[$i] != WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_LRO) AND
+							 ($ta[$i] != WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_PDF)) {
 				// X6. For all types besides RLE, LRE, RLO, LRO, and PDF:
 				//	a. Set the level of the current character to the current embedding level.
 				//	b. Whenever the directional override status is not neutral, reset the current character type to the directional override status.
 				if ($dos != 'N') {
 					$chardir = $dos;
 				} else {
-					if (isset(TCPDF_FONT_DATA::$uni_type[$ta[$i]])) {
-						$chardir = TCPDF_FONT_DATA::$uni_type[$ta[$i]];
+					if (isset(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$ta[$i]])) {
+						$chardir = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$ta[$i]];
 					} else {
 						$chardir = 'L';
 					}
@@ -2472,7 +2481,7 @@ class TCPDF_FONTS {
 			$charAL = array();
 			$x = 0;
 			for ($i=0; $i < $numchars; ++$i) {
-				if ((TCPDF_FONT_DATA::$uni_type[$chardata[$i]['char']] == 'AL') OR ($chardata[$i]['char'] == 32) OR ($chardata[$i]['char'] == 8204)) {
+				if ((WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$chardata[$i]['char']] == 'AL') OR ($chardata[$i]['char'] == 32) OR ($chardata[$i]['char'] == 8204)) {
 					$charAL[$x] = $chardata[$i];
 					$charAL[$x]['i'] = $i;
 					$chardata[$i]['x'] = $x;
@@ -2492,7 +2501,7 @@ class TCPDF_FONTS {
 				} else {
 					$nextchar = false;
 				}
-				if (TCPDF_FONT_DATA::$uni_type[$thischar['char']] == 'AL') {
+				if (WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$thischar['char']] == 'AL') {
 					$x = $thischar['x'];
 					if ($x > 0) {
 						$prevchar = $charAL[($x-1)];
@@ -2506,7 +2515,7 @@ class TCPDF_FONTS {
 					}
 					// if laa letter
 					if (($prevchar !== false) AND ($prevchar['char'] == 1604) AND (in_array($thischar['char'], $alfletter))) {
-						$arabicarr = TCPDF_FONT_DATA::$uni_laa_array;
+						$arabicarr = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_laa_array;
 						$laaletter = true;
 						if ($x > 1) {
 							$prevchar = $charAL[($x-2)];
@@ -2514,12 +2523,12 @@ class TCPDF_FONTS {
 							$prevchar = false;
 						}
 					} else {
-						$arabicarr = TCPDF_FONT_DATA::$uni_arabicsubst;
+						$arabicarr = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_arabicsubst;
 						$laaletter = false;
 					}
 					if (($prevchar !== false) AND ($nextchar !== false) AND
-						((TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'AL') OR (TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'NSM')) AND
-						((TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'AL') OR (TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'NSM')) AND
+						((WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'AL') OR (WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'NSM')) AND
+						((WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'AL') OR (WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'NSM')) AND
 						($prevchar['type'] == $thischar['type']) AND
 						($nextchar['type'] == $thischar['type']) AND
 						($nextchar['char'] != 1567)) {
@@ -2535,7 +2544,7 @@ class TCPDF_FONTS {
 							}
 						}
 					} elseif (($nextchar !== false) AND
-						((TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'AL') OR (TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'NSM')) AND
+						((WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'AL') OR (WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$nextchar['char']] == 'NSM')) AND
 						($nextchar['type'] == $thischar['type']) AND
 						($nextchar['char'] != 1567)) {
 						if (isset($arabicarr[$chardata[$i]['char']][2])) {
@@ -2543,7 +2552,7 @@ class TCPDF_FONTS {
 							$chardata2[$i]['char'] = $arabicarr[$thischar['char']][2];
 						}
 					} elseif ((($prevchar !== false) AND
-						((TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'AL') OR (TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'NSM')) AND
+						((WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'AL') OR (WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_type[$prevchar['char']] == 'NSM')) AND
 						($prevchar['type'] == $thischar['type'])) OR
 						(($nextchar !== false) AND ($nextchar['char'] == 1567))) {
 						// final
@@ -2584,11 +2593,11 @@ class TCPDF_FONTS {
 			 * Putting the combining mark and shadda in the same glyph allows us to avoid the two marks overlapping each other in an illegible manner.
 			 */
 			for ($i = 0; $i < ($numchars-1); ++$i) {
-				if (($chardata2[$i]['char'] == 1617) AND (isset(TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])]))) {
+				if (($chardata2[$i]['char'] == 1617) AND (isset(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])]))) {
 					// check if the subtitution font is defined on current font
-					if (isset($currentfont['cw'][(TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])])])) {
+					if (isset($currentfont['cw'][(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])])])) {
 						$chardata2[$i]['char'] = false;
-						$chardata2[$i+1]['char'] = TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])];
+						$chardata2[$i+1]['char'] = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_diacritics[($chardata2[$i+1]['char'])];
 					}
 				}
 			}
@@ -2614,9 +2623,9 @@ class TCPDF_FONTS {
 			for ($i=0; $i < $numchars; ++$i) {
 				if ($chardata[$i]['level'] >= $j) {
 					$onlevel = true;
-					if (isset(TCPDF_FONT_DATA::$uni_mirror[$chardata[$i]['char']])) {
+					if (isset(WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_mirror[$chardata[$i]['char']])) {
 						// L4. A character is depicted by a mirrored glyph if and only if (a) the resolved directionality of that character is R, and (b) the Bidi_Mirrored property value of that character is true.
-						$chardata[$i]['char'] = TCPDF_FONT_DATA::$uni_mirror[$chardata[$i]['char']];
+						$chardata[$i]['char'] = WooCommerceNFe_PDF_TCPDF_FONT_DATA::$uni_mirror[$chardata[$i]['char']];
 					}
 					$revarr[] = $chardata[$i];
 				} else {

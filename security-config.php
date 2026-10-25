@@ -12,6 +12,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
+require_once __DIR__ . '/inc/class-client-ip.php';
+
 // Security Constants
 define( 'WOOCOMMERCE_NFE_SECURITY_VERSION', '1.0.0' );
 
@@ -46,28 +48,8 @@ define( 'WOOCOMMERCE_NFE_REQUIRE_SPECIAL_CHARS', true );
 define( 'WOOCOMMERCE_NFE_REQUIRE_NUMBERS', true );
 define( 'WOOCOMMERCE_NFE_REQUIRE_UPPERCASE', true );
 
-// Security Headers (if not set by server)
-if ( ! headers_sent() ) {
-	// Prevent MIME sniffing
-	header( 'X-Content-Type-Options: nosniff' );
-	
-	// Prevent clickjacking
-	header( 'X-Frame-Options: SAMEORIGIN' );
-	
-	// Enable XSS protection
-	header( 'X-XSS-Protection: 1; mode=block' );
-	
-	// Referrer Policy
-	header( 'Referrer-Policy: strict-origin-when-cross-origin' );
-	
-	// Remove PHP version
-	header_remove( 'X-Powered-By' );
-	
-	// HSTS (only on HTTPS)
-	if ( is_ssl() ) {
-		header( 'Strict-Transport-Security: max-age=31536000; includeSubDomains' );
-	}
-}
+// Site-wide HTTP security headers, including HSTS, belong to the host/site configuration.
+// Loading a fiscal plugin must not change framing, transport policy or sibling subdomains.
 
 /**
  * Security functions
@@ -112,10 +94,10 @@ function woocommerce_nfe_get_security_config( $key, $default = null ) {
 function woocommerce_nfe_validate_request_origin() {
 	// Check if request is from same origin
 	if ( isset( $_SERVER['HTTP_REFERER'] ) ) {
-		$referer = parse_url( $_SERVER['HTTP_REFERER'] );
-		$site_url = parse_url( site_url() );
+		$referer = is_string( $_SERVER['HTTP_REFERER'] ) ? wp_parse_url( esc_url_raw( wp_unslash( $_SERVER['HTTP_REFERER'] ) ) ) : false;
+		$site_url = wp_parse_url( site_url() );
 		
-		if ( $referer['host'] !== $site_url['host'] ) {
+		if ( ! is_array( $referer ) || ! is_array( $site_url ) || ( $referer['host'] ?? '' ) !== ( $site_url['host'] ?? '' ) ) {
 			return false;
 		}
 	}
@@ -133,21 +115,26 @@ function woocommerce_nfe_clean_old_logs() {
 		return;
 	}
 	
-	$upload_dir = wp_upload_dir();
-	$log_dir = $upload_dir['basedir'] . '/woocommerce-nfe-logs/';
+	if ( ! class_exists( 'WooCommerceNFe_Security' ) ) { return; }
+	$private = WooCommerceNFe_Security::private_directory();
+	if ( ! $private ) { return; }
+	$log_dir = $private . '/';
 	
 	if ( ! is_dir( $log_dir ) ) {
 		return;
 	}
 	
-	$files = glob( $log_dir . '*.log' );
+	$files = glob( $log_dir . 'security-*.log' );
+	if ( ! is_array( $files ) ) {
+		return;
+	}
 	$now = time();
 	$retention_seconds = WOOCOMMERCE_NFE_LOG_RETENTION_DAYS * 86400;
 	
 	foreach ( $files as $file ) {
 		if ( is_file( $file ) ) {
 			if ( $now - filemtime( $file ) >= $retention_seconds ) {
-				@unlink( $file );
+				wp_delete_file( $file );
 			}
 		}
 	}
@@ -177,39 +164,15 @@ function woocommerce_nfe_validate_input_length( $input, $max_length = 1000 ) {
  * @return string|false
  */
 function woocommerce_nfe_sanitize_file_path( $path ) {
-	// Remove any directory traversal attempts
-	$path = str_replace( array( '../', '..\\' ), '', $path );
-	
-	// Remove null bytes
-	$path = str_replace( chr(0), '', $path );
-	
-	// Normalize slashes
-	$path = str_replace( '\\', '/', $path );
-	
-	// Remove multiple slashes
-	$path = preg_replace( '#/+#', '/', $path );
-	
-	// Check if path is within allowed directories
-	$upload_dir = wp_upload_dir();
-	$allowed_dirs = array(
-		ABSPATH,
-		WP_CONTENT_DIR,
-		$upload_dir['basedir']
-	);
-	
-	$is_allowed = false;
-	foreach ( $allowed_dirs as $dir ) {
-		if ( strpos( $path, $dir ) === 0 ) {
-			$is_allowed = true;
-			break;
-		}
+	if ( ! is_string( $path ) || strpos( $path, chr(0) ) !== false ) { return false; }
+	$resolved = realpath( $path );
+	if ( false === $resolved ) { return false; }
+	$uploads = wp_upload_dir();
+	foreach ( array( ABSPATH, WP_CONTENT_DIR, $uploads['basedir'] ) as $directory ) {
+		$root = realpath( $directory );
+		if ( $root && ( $resolved === $root || strpos( $resolved, $root . DIRECTORY_SEPARATOR ) === 0 ) ) { return $resolved; }
 	}
-	
-	if ( ! $is_allowed ) {
-		return false;
-	}
-	
-	return $path;
+	return false;
 }
 
 /**
@@ -246,28 +209,8 @@ function woocommerce_nfe_verify_hash( $data, $hash, $key = '' ) {
  * @return string
  */
 function woocommerce_nfe_get_client_ip() {
-	// Don't log IPs if disabled
-	if ( ! WOOCOMMERCE_NFE_LOG_IP_ADDRESSES ) {
-		return 'hidden';
-	}
-	
-	// Check for CloudFlare IP
-	if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
-		return sanitize_text_field( $_SERVER['HTTP_CF_CONNECTING_IP'] );
-	}
-	
-	// Check for proxy
-	if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
-		$ips = explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] );
-		return sanitize_text_field( trim( $ips[0] ) );
-	}
-	
-	// Standard IP
-	if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-		return sanitize_text_field( $_SERVER['REMOTE_ADDR'] );
-	}
-	
-	return 'unknown';
+	if ( ! WOOCOMMERCE_NFE_LOG_IP_ADDRESSES ) { return 'hidden'; }
+	return WooCommerceNFe_Client_IP::from_request();
 }
 
 /**
@@ -286,31 +229,15 @@ function woocommerce_nfe_security_log( $event_type, $data = array() ) {
 		'timestamp' => current_time( 'mysql' ),
 		'event' => sanitize_text_field( $event_type ),
 		'user_id' => get_current_user_id(),
-		'data' => array_map( 'sanitize_text_field', $data )
+		'data' => array()
 	);
 	
-	// Don't log sensitive data
-	if ( WOOCOMMERCE_NFE_LOG_SENSITIVE_DATA === false ) {
-		unset( $log_entry['data']['password'] );
-		unset( $log_entry['data']['token'] );
-		unset( $log_entry['data']['secret'] );
-		unset( $log_entry['data']['api_key'] );
-	}
-	
-	// Log to file
-	$upload_dir = wp_upload_dir();
-	$log_dir = $upload_dir['basedir'] . '/woocommerce-nfe-logs/';
-	
-	if ( ! is_dir( $log_dir ) ) {
-		wp_mkdir_p( $log_dir );
-		
-		// Create .htaccess to protect log files
-		$htaccess_content = "Order Deny,Allow\nDeny from all";
-		@file_put_contents( $log_dir . '.htaccess', $htaccess_content );
-	}
-	
-	$log_file = $log_dir . 'security-' . date( 'Y-m-d' ) . '.log';
-	$log_message = date( 'Y-m-d H:i:s' ) . ' - ' . wp_json_encode( $log_entry ) . PHP_EOL;
-	
-	@file_put_contents( $log_file, $log_message, FILE_APPEND | LOCK_EX );
+	// Keep logs outside the document root, with an explicit audit field allowlist.
+	if ( ! class_exists( 'WooCommerceNFe_Security' ) ) { return; }
+	$log_entry['data'] = WooCommerceNFe_Security::safe_log_data( $data );
+	$log_dir = WooCommerceNFe_Security::private_directory();
+	if ( ! $log_dir ) { return; }
+	$log_file = $log_dir . '/security-' . gmdate( 'Y-m-d' ) . '.log';
+	file_put_contents( $log_file, wp_json_encode( $log_entry ) . PHP_EOL, FILE_APPEND | LOCK_EX );
+	WooCommerceNFe_Security::filesystem()->chmod( $log_file, 0600 );
 }

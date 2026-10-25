@@ -354,7 +354,7 @@ jQuery( function ( $ ) {
     });
     
     // Intermediador info
-    $('input[name="nfe_info_intermediador_cnpj"], input[name="wc_settings_woocommercenfe_cnpj_intermediador"]').mask('99.999.999/9999-99');
+    $('input[name="nfe_info_intermediador_cnpj"], input[name="wc_settings_woocommercenfe_cnpj_intermediador"]').mask('**.***.***/****-99');
     $('input[name="nfe_info_intermediador"]').on('change', function(){
       if ($(this).is(':checked')){
         $('.nfe_info_intermediador').show();

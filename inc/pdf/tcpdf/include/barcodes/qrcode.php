@@ -1,13 +1,15 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //============================================================+
 // File name   : qrcode.php
 // Version     : 1.0.010
 // Begin       : 2010-03-22
 // Last Update : 2012-07-25
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2010-2012 Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2010-2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -22,7 +24,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TCPDF.  If not, see <http://www.gnu.org/licenses/>.
+// along with TCPDF.  If not, see <https://www.gnu.org/licenses/>.
 //
 // See LICENSE.TXT file for more information.
 // -------------------------------------------------------------------
@@ -80,12 +82,12 @@
  */
 
 // definitions
-if (!defined('QRCODEDEFS')) {
+if (!defined('WOOCOMMERCE_NFE_PDF_QRCODEDEFS')) {
 
 	/**
 	 * Indicate that definitions for this class are set
 	 */
-	define('QRCODEDEFS', true);
+	define('WOOCOMMERCE_NFE_PDF_QRCODEDEFS', true);
 
 	// -----------------------------------------------------
 
@@ -94,32 +96,32 @@ if (!defined('QRCODEDEFS')) {
 	/**
 	 * Encoding mode
 	 */
-	define('QR_MODE_NL', -1);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_NL', -1);
 
 	/**
 	 * Encoding mode numeric (0-9). 3 characters are encoded to 10bit length. In theory, 7089 characters or less can be stored in a QRcode.
 	 */
-	define('QR_MODE_NM', 0);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_NM', 0);
 
 	/**
 	 * Encoding mode alphanumeric (0-9A-Z $%*+-./:) 45characters. 2 characters are encoded to 11bit length. In theory, 4296 characters or less can be stored in a QRcode.
 	 */
-	define('QR_MODE_AN', 1);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_AN', 1);
 
 	/**
 	 * Encoding mode 8bit byte data. In theory, 2953 characters or less can be stored in a QRcode.
 	 */
-	define('QR_MODE_8B', 2);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_8B', 2);
 
 	/**
 	 * Encoding mode KANJI. A KANJI character (multibyte character) is encoded to 13bit length. In theory, 1817 characters or less can be stored in a QRcode.
 	 */
-	define('QR_MODE_KJ', 3);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_KJ', 3);
 
 	/**
 	 * Encoding mode STRUCTURED (currently unsupported)
 	 */
-	define('QR_MODE_ST', 4);
+	define('WOOCOMMERCE_NFE_PDF_QR_MODE_ST', 4);
 
 	// -----------------------------------------------------
 
@@ -130,22 +132,22 @@ if (!defined('QRCODEDEFS')) {
 	/**
 	 * Error correction level L : About 7% or less errors can be corrected.
 	 */
-	define('QR_ECLEVEL_L', 0);
+	define('WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_L', 0);
 
 	/**
 	 * Error correction level M : About 15% or less errors can be corrected.
 	 */
-	define('QR_ECLEVEL_M', 1);
+	define('WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_M', 1);
 
 	/**
 	 * Error correction level Q : About 25% or less errors can be corrected.
 	 */
-	define('QR_ECLEVEL_Q', 2);
+	define('WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_Q', 2);
 
 	/**
 	 * Error correction level H : About 30% or less errors can be corrected.
 	 */
-	define('QR_ECLEVEL_H', 3);
+	define('WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_H', 3);
 
 	// -----------------------------------------------------
 
@@ -157,34 +159,34 @@ if (!defined('QRCODEDEFS')) {
 	/**
 	 * Maximum QR Code version.
 	 */
-	define('QRSPEC_VERSION_MAX', 40);
+	define('WOOCOMMERCE_NFE_PDF_QRSPEC_VERSION_MAX', 40);
 
 	/**
 	 * Maximum matrix size for maximum version (version 40 is 177*177 matrix).
 	 */
-    define('QRSPEC_WIDTH_MAX', 177);
+    define('WOOCOMMERCE_NFE_PDF_QRSPEC_WIDTH_MAX', 177);
 
 	// -----------------------------------------------------
 
 	/**
 	 * Matrix index to get width from $capacity array.
 	 */
-    define('QRCAP_WIDTH',    0);
+    define('WOOCOMMERCE_NFE_PDF_QRCAP_WIDTH',    0);
 
     /**
 	 * Matrix index to get number of words from $capacity array.
 	 */
-    define('QRCAP_WORDS',    1);
+    define('WOOCOMMERCE_NFE_PDF_QRCAP_WORDS',    1);
 
     /**
 	 * Matrix index to get remainder from $capacity array.
 	 */
-    define('QRCAP_REMINDER', 2);
+    define('WOOCOMMERCE_NFE_PDF_QRCAP_REMINDER', 2);
 
     /**
 	 * Matrix index to get error correction level from $capacity array.
 	 */
-    define('QRCAP_EC',       3);
+    define('WOOCOMMERCE_NFE_PDF_QRCAP_EC',       3);
 
 	// -----------------------------------------------------
 
@@ -193,12 +195,12 @@ if (!defined('QRCODEDEFS')) {
 	/**
 	 * Number of header bits for structured mode
 	 */
-    define('STRUCTURE_HEADER_BITS',  20);
+    define('WOOCOMMERCE_NFE_PDF_STRUCTURE_HEADER_BITS',  20);
 
     /**
 	 * Max number of symbols for structured mode
 	 */
-    define('MAX_STRUCTURED_SYMBOLS', 16);
+    define('WOOCOMMERCE_NFE_PDF_MAX_STRUCTURED_SYMBOLS', 16);
 
 	// -----------------------------------------------------
 
@@ -207,22 +209,22 @@ if (!defined('QRCODEDEFS')) {
     /**
 	 * Down point base value for case 1 mask pattern (concatenation of same color in a line or a column)
 	 */
-    define('N1',  3);
+    define('WOOCOMMERCE_NFE_PDF_N1',  3);
 
     /**
 	 * Down point base value for case 2 mask pattern (module block of same color)
 	 */
-	define('N2',  3);
+	define('WOOCOMMERCE_NFE_PDF_N2',  3);
 
     /**
 	 * Down point base value for case 3 mask pattern (1:1:3:1:1(dark:bright:dark:bright:dark)pattern in a line or a column)
 	 */
-	define('N3', 40);
+	define('WOOCOMMERCE_NFE_PDF_N3', 40);
 
     /**
 	 * Down point base value for case 4 mask pattern (ration of dark modules in whole)
 	 */
-	define('N4', 10);
+	define('WOOCOMMERCE_NFE_PDF_N4', 10);
 
 	// -----------------------------------------------------
 
@@ -231,47 +233,21 @@ if (!defined('QRCODEDEFS')) {
 	/**
 	 * if true, estimates best mask (spec. default, but extremally slow; set to false to significant performance boost but (propably) worst quality code
 	 */
-	define('QR_FIND_BEST_MASK', true);
+	define('WOOCOMMERCE_NFE_PDF_QR_FIND_BEST_MASK', true);
 
 	/**
 	 * if false, checks all masks available, otherwise value tells count of masks need to be checked, mask id are got randomly
 	 */
-	define('QR_FIND_FROM_RANDOM', 2);
+	define('WOOCOMMERCE_NFE_PDF_QR_FIND_FROM_RANDOM', 2);
 
 	/**
 	 * when QR_FIND_BEST_MASK === false
 	 */
-	define('QR_DEFAULT_MASK', 2);
+	define('WOOCOMMERCE_NFE_PDF_QR_DEFAULT_MASK', 2);
 
 	// -----------------------------------------------------
 
 } // end of definitions
-
-// #*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#*#
-
-// for compatibility with PHP4
-if (!function_exists('str_split')) {
-	/**
-	 * Convert a string to an array (needed for PHP4 compatibility)
-	 * @param $string (string) The input string.
-	 * @param $split_length (int) Maximum length of the chunk.
-	 * @return  If the optional split_length  parameter is specified, the returned array will be broken down into chunks with each being split_length  in length, otherwise each chunk will be one character in length. FALSE is returned if split_length is less than 1. If the split_length length exceeds the length of string , the entire string is returned as the first (and only) array element.
-	 */
-	function str_split($string, $split_length=1) {
-		if ((strlen($string) > $split_length) OR (!$split_length)) {
-			do {
-				$c = strlen($string);
-				$parts[] = substr($string, 0, $split_length);
-				$string = substr($string, $split_length);
-			} while ($string !== false);
-		} else {
-			$parts = array($string);
-		}
-		return $parts;
-	}
-}
-
-// #####################################################
 
 /**
  * @class QRcode
@@ -287,8 +263,9 @@ if (!function_exists('str_split')) {
  * @package com.tecnick.tcpdf
  * @author Nicola Asuni
  * @version 1.0.010
+ * @deprecated TCPDF is deprecated: migrate to tecnickcom/tc-lib-pdf.
  */
-class QRcode {
+class WooCommerceNFe_PDF_QRcode {
 
 	/**
 	 * Barcode array to be returned which is readable by TCPDF.
@@ -306,13 +283,13 @@ class QRcode {
 	 * Levels of error correction. See definitions for possible values.
 	 * @protected
 	 */
-	protected $level = QR_ECLEVEL_L;
+	protected $level = WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_L;
 
 	/**
 	 * Encoding mode.
 	 * @protected
 	 */
-	protected $hint = QR_MODE_8B;
+	protected $hint = WOOCOMMERCE_NFE_PDF_QR_MODE_8B;
 
 	/**
 	 * Boolean flag, if true the input string will be converted to uppercase.
@@ -631,8 +608,8 @@ class QRcode {
 	/**
 	 * This is the class constructor.
 	 * Creates a QRcode object
-	 * @param $code (string) code to represent using QRcode
-	 * @param $eclevel (string) error level: <ul><li>L : About 7% or less errors can be corrected.</li><li>M : About 15% or less errors can be corrected.</li><li>Q : About 25% or less errors can be corrected.</li><li>H : About 30% or less errors can be corrected.</li></ul>
+	 * @param string $code code to represent using QRcode
+	 * @param string $eclevel error level: <ul><li>L : About 7% or less errors can be corrected.</li><li>M : About 15% or less errors can be corrected.</li><li>Q : About 25% or less errors can be corrected.</li><li>H : About 30% or less errors can be corrected.</li></ul>
 	 * @public
 	 * @since 1.0.000
 	 */
@@ -644,12 +621,12 @@ class QRcode {
 		// set error correction level
 		$this->level = array_search($eclevel, array('L', 'M', 'Q', 'H'));
 		if ($this->level === false) {
-			$this->level = QR_ECLEVEL_L;
+			$this->level = WOOCOMMERCE_NFE_PDF_QR_ECLEVEL_L;
 		}
-		if (($this->hint != QR_MODE_8B) AND ($this->hint != QR_MODE_KJ)) {
+		if (($this->hint != WOOCOMMERCE_NFE_PDF_QR_MODE_8B) AND ($this->hint != WOOCOMMERCE_NFE_PDF_QR_MODE_KJ)) {
 			return false;
 		}
-		if (($this->version < 0) OR ($this->version > QRSPEC_VERSION_MAX)) {
+		if (($this->version < 0) OR ($this->version > WOOCOMMERCE_NFE_PDF_QRSPEC_VERSION_MAX)) {
 			return false;
 		}
 		$this->items = array();
@@ -683,7 +660,7 @@ class QRcode {
 
 	/**
 	 * Convert the frame in binary form
-	 * @param $frame (array) array to binarize
+	 * @param array $frame array to binarize
 	 * @return array frame in binary form
 	 */
 	protected function binarize($frame) {
@@ -699,7 +676,7 @@ class QRcode {
 
 	/**
 	 * Encode the input string to QR code
-	 * @param $string (string) input string to encode
+	 * @param string $string input string to encode
 	 */
 	protected function encodeString($string) {
 		$this->dataStr = $string;
@@ -715,7 +692,7 @@ class QRcode {
 
 	/**
 	 * Encode mask
-	 * @param $mask (int) masking mode
+	 * @param int $mask masking mode
 	 */
 	protected function encodeMask($mask) {
 		$spec = array(0, 0, 0, 0, 0);
@@ -758,12 +735,12 @@ class QRcode {
 			$this->setFrameAt($addr, 0x02);
 		}
 		// masking
-		$this->runLength = array_fill(0, QRSPEC_WIDTH_MAX + 1, 0);
+		$this->runLength = array_fill(0, WOOCOMMERCE_NFE_PDF_QRSPEC_WIDTH_MAX + 1, 0);
 		if ($mask < 0) {
-			if (QR_FIND_BEST_MASK) {
+			if (WOOCOMMERCE_NFE_PDF_QR_FIND_BEST_MASK) {
 				$masked = $this->mask($this->width, $this->frame, $this->level);
 			} else {
-				$masked = $this->makeMask($this->width, $this->frame, (intval(QR_DEFAULT_MASK) % 8), $this->level);
+				$masked = $this->makeMask($this->width, $this->frame, (intval(WOOCOMMERCE_NFE_PDF_QR_DEFAULT_MASK) % 8), $this->level);
 			}
 		} else {
 			$masked = $this->makeMask($this->width, $this->frame, $mask, $this->level);
@@ -780,8 +757,8 @@ class QRcode {
 
 	/**
 	 * Set frame value at specified position
-	 * @param $at (array) x,y position
-	 * @param $val (int) value of the character to set
+	 * @param array $at x,y position
+	 * @param int $val value of the character to set
 	 */
 	protected function setFrameAt($at, $val) {
 		$this->frame[$at['y']][$at['x']] = chr($val);
@@ -789,7 +766,7 @@ class QRcode {
 
 	/**
 	 * Get frame value at specified position
-	 * @param $at (array) x,y position
+	 * @param array $at x,y position
 	 * @return value at specified position
 	 */
 	protected function getFrameAt($at) {
@@ -853,8 +830,8 @@ class QRcode {
 
 	/**
 	 * Initialize code.
-	 * @param $spec (array) array of ECC specification
-	 * @return 0 in case of success, -1 in case of error
+	 * @param array $spec array of ECC specification
+	 * @return int 0 in case of success, -1 in case of error
 	 */
 	protected function init($spec) {
 		$dl = $this->rsDataCodes1($spec);
@@ -910,14 +887,15 @@ class QRcode {
 	protected function getCode() {
 		if ($this->count < $this->dataLength) {
 			$row = $this->count % $this->blocks;
-			$col = $this->count / $this->blocks;
+			$col = (int)($this->count / $this->blocks);
 			if ($col >= $this->rsblocks[0]['dataLength']) {
 				$row += $this->b1;
 			}
+			$row = (int) $row;
 			$ret = $this->rsblocks[$row]['data'][$col];
 		} elseif ($this->count < $this->dataLength + $this->eccLength) {
 			$row = ($this->count - $this->dataLength) % $this->blocks;
-			$col = ($this->count - $this->dataLength) / $this->blocks;
+			$col = (int)(($this->count - $this->dataLength) / $this->blocks);
 			$ret = $this->rsblocks[$row]['ecc'][$col];
 		} else {
 			return 0;
@@ -932,10 +910,10 @@ class QRcode {
 
 	/**
 	 * Write Format Information on frame and returns the number of black bits
-	 * @param $width (int) frame width
-	 * @param $frame (array) frame
-	 * @param $mask (array) masking mode
-	 * @param $level (int) error correction level
+	 * @param int $width frame width
+	 * @param array $frame frame
+	 * @param array $mask masking mode
+	 * @param int $level error correction level
 	 * @return int blacks
 	 */
 	 protected function writeFormatInformation($width, &$frame, $mask, $level) {
@@ -976,8 +954,8 @@ class QRcode {
 
 	/**
 	 * mask0
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask0($x, $y) {
@@ -986,8 +964,8 @@ class QRcode {
 
 	/**
 	 * mask1
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask1($x, $y) {
@@ -996,8 +974,8 @@ class QRcode {
 
 	/**
 	 * mask2
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask2($x, $y) {
@@ -1006,8 +984,8 @@ class QRcode {
 
 	/**
 	 * mask3
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask3($x, $y) {
@@ -1016,8 +994,8 @@ class QRcode {
 
 	/**
 	 * mask4
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask4($x, $y) {
@@ -1026,8 +1004,8 @@ class QRcode {
 
 	/**
 	 * mask5
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask5($x, $y) {
@@ -1036,8 +1014,8 @@ class QRcode {
 
 	/**
 	 * mask6
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask6($x, $y) {
@@ -1046,8 +1024,8 @@ class QRcode {
 
 	/**
 	 * mask7
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
+	 * @param int $x X position
+	 * @param int $y Y position
 	 * @return int mask
 	 */
 	 protected function mask7($x, $y) {
@@ -1056,9 +1034,9 @@ class QRcode {
 
 	/**
 	 * Return bitmask
-	 * @param $maskNo (int) mask number
-	 * @param $width (int) width
-	 * @param $frame (array) frame
+	 * @param int $maskNo mask number
+	 * @param int $width width
+	 * @param array $frame frame
 	 * @return array bitmask
 	 */
 	protected function generateMaskNo($maskNo, $width, $frame) {
@@ -1078,17 +1056,17 @@ class QRcode {
 
 	/**
 	 * makeMaskNo
-	 * @param $maskNo (int)
-	 * @param $width (int)
-	 * @param $s (int)
-	 * @param $d (int)
-	 * @param $maskGenOnly (boolean)
+	 * @param int $maskNo
+	 * @param int $width
+	 * @param int $s
+	 * @param int $d
+	 * @param boolean $maskGenOnly
 	 * @return int b
 	 */
 	 protected function makeMaskNo($maskNo, $width, $s, &$d, $maskGenOnly=false) {
 		$b = 0;
 		$bitMask = array();
-		$bitMask = $this->generateMaskNo($maskNo, $width, $s, $d);
+		$bitMask = $this->generateMaskNo($maskNo, $width, $s);
 		if ($maskGenOnly) {
 			return;
 		}
@@ -1106,10 +1084,10 @@ class QRcode {
 
 	/**
 	 * makeMask
-	 * @param $width (int)
-	 * @param $frame (array)
-	 * @param $maskNo (int)
-	 * @param $level (int)
+	 * @param int $width
+	 * @param array $frame
+	 * @param int $maskNo
+	 * @param int $level
 	 * @return array mask
 	 */
 	 protected function makeMask($width, $frame, $maskNo, $level) {
@@ -1121,14 +1099,14 @@ class QRcode {
 
 	/**
 	 * calcN1N3
-	 * @param $length (int)
+	 * @param int $length
 	 * @return int demerit
 	 */
 	 protected function calcN1N3($length) {
 		$demerit = 0;
 		for ($i=0; $i<$length; ++$i) {
 			if ($this->runLength[$i] >= 5) {
-				$demerit += (N1 + ($this->runLength[$i] - 5));
+				$demerit += (WOOCOMMERCE_NFE_PDF_N1 + ($this->runLength[$i] - 5));
 			}
 			if ($i & 1) {
 				if (($i >= 3) AND ($i < ($length-2)) AND ($this->runLength[$i] % 3 == 0)) {
@@ -1138,9 +1116,9 @@ class QRcode {
 						AND ($this->runLength[$i+1] == $fact)
 						AND ($this->runLength[$i+2] == $fact)) {
 						if (($this->runLength[$i-3] < 0) OR ($this->runLength[$i-3] >= (4 * $fact))) {
-							$demerit += N3;
+							$demerit += WOOCOMMERCE_NFE_PDF_N3;
 						} elseif ((($i+3) >= $length) OR ($this->runLength[$i+3] >= (4 * $fact))) {
-							$demerit += N3;
+							$demerit += WOOCOMMERCE_NFE_PDF_N3;
 						}
 					}
 				}
@@ -1151,8 +1129,8 @@ class QRcode {
 
 	/**
 	 * evaluateSymbol
-	 * @param $width (int)
-	 * @param $frame (array)
+	 * @param int $width
+	 * @param array $frame
 	 * @return int demerit
 	 */
 	 protected function evaluateSymbol($width, $frame) {
@@ -1170,7 +1148,7 @@ class QRcode {
 					$b22 = ord($frameY[$x]) & ord($frameY[$x-1]) & ord($frameYM[$x]) & ord($frameYM[$x-1]);
 					$w22 = ord($frameY[$x]) | ord($frameY[$x-1]) | ord($frameYM[$x]) | ord($frameYM[$x-1]);
 					if (($b22 | ($w22 ^ 1)) & 1) {
-						$demerit += N2;
+						$demerit += WOOCOMMERCE_NFE_PDF_N2;
 					}
 				}
 				if (($x == 0) AND (ord($frameY[$x]) & 1)) {
@@ -1212,9 +1190,9 @@ class QRcode {
 
 	/**
 	 * mask
-	 * @param $width (int)
-	 * @param $frame (array)
-	 * @param $level (int)
+	 * @param int $width
+	 * @param array $frame
+	 * @param int $level
 	 * @return array best mask
 	 */
 	 protected function mask($width, $frame, $level) {
@@ -1222,10 +1200,10 @@ class QRcode {
 		$bestMaskNum = 0;
 		$bestMask = array();
 		$checked_masks = array(0, 1, 2, 3, 4, 5, 6, 7);
-		if (QR_FIND_FROM_RANDOM !== false) {
-			$howManuOut = 8 - (QR_FIND_FROM_RANDOM % 9);
+		if (WOOCOMMERCE_NFE_PDF_QR_FIND_FROM_RANDOM !== false) {
+			$howManuOut = 8 - (WOOCOMMERCE_NFE_PDF_QR_FIND_FROM_RANDOM % 9);
 			for ($i = 0; $i <  $howManuOut; ++$i) {
-				$remPos = rand (0, count($checked_masks)-1);
+				$remPos = wp_rand(0, count($checked_masks)-1);
 				unset($checked_masks[$remPos]);
 				$checked_masks = array_values($checked_masks);
 			}
@@ -1238,7 +1216,7 @@ class QRcode {
 			$blacks  = $this->makeMaskNo($i, $width, $frame, $mask);
 			$blacks += $this->writeFormatInformation($width, $mask, $i, $level);
 			$blacks  = (int)(100 * $blacks / ($width * $width));
-			$demerit = (int)((int)(abs($blacks - 50) / 5) * N4);
+			$demerit = (int)((int)(abs($blacks - 50) / 5) * WOOCOMMERCE_NFE_PDF_N4);
 			$demerit += $this->evaluateSymbol($width, $mask);
 			if ($demerit < $minDemerit) {
 				$minDemerit = $demerit;
@@ -1255,8 +1233,8 @@ class QRcode {
 
 	/**
 	 * Return true if the character at specified position is a number
-	 * @param $str (string) string
-	 * @param $pos (int) characted position
+	 * @param string $str string
+	 * @param int $pos characted position
 	 * @return boolean true of false
 	 */
 	 protected function isdigitat($str, $pos) {
@@ -1268,8 +1246,8 @@ class QRcode {
 
 	/**
 	 * Return true if the character at specified position is an alphanumeric character
-	 * @param $str (string) string
-	 * @param $pos (int) characted position
+	 * @param string $str string
+	 * @param int $pos characted position
 	 * @return boolean true of false
 	 */
 	 protected function isalnumat($str, $pos) {
@@ -1281,28 +1259,28 @@ class QRcode {
 
 	/**
 	 * identifyMode
-	 * @param $pos (int)
+	 * @param int $pos
 	 * @return int mode
 	 */
 	 protected function identifyMode($pos) {
 		if ($pos >= strlen($this->dataStr)) {
-			return QR_MODE_NL;
+			return WOOCOMMERCE_NFE_PDF_QR_MODE_NL;
 		}
 		$c = $this->dataStr[$pos];
 		if ($this->isdigitat($this->dataStr, $pos)) {
-			return QR_MODE_NM;
+			return WOOCOMMERCE_NFE_PDF_QR_MODE_NM;
 		} elseif ($this->isalnumat($this->dataStr, $pos)) {
-			return QR_MODE_AN;
-		} elseif ($this->hint == QR_MODE_KJ) {
+			return WOOCOMMERCE_NFE_PDF_QR_MODE_AN;
+		} elseif ($this->hint == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 			if ($pos+1 < strlen($this->dataStr)) {
 				$d = $this->dataStr[$pos+1];
 				$word = (ord($c) << 8) | ord($d);
 				if (($word >= 0x8140 && $word <= 0x9ffc) OR ($word >= 0xe040 && $word <= 0xebbf)) {
-					return QR_MODE_KJ;
+					return WOOCOMMERCE_NFE_PDF_QR_MODE_KJ;
 				}
 			}
 		}
-		return QR_MODE_8B;
+		return WOOCOMMERCE_NFE_PDF_QR_MODE_8B;
 	}
 
 	/**
@@ -1310,14 +1288,14 @@ class QRcode {
 	 * @return int run
 	 */
 	 protected function eatNum() {
-		$ln = $this->lengthIndicator(QR_MODE_NM, $this->version);
+		$ln = $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_NM, $this->version);
 		$p = 0;
 		while($this->isdigitat($this->dataStr, $p)) {
 			$p++;
 		}
 		$run = $p;
 		$mode = $this->identifyMode($p);
-		if ($mode == QR_MODE_8B) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_8B) {
 			$dif = $this->estimateBitsModeNum($run) + 4 + $ln
 			+ $this->estimateBitsMode8(1)         // + 4 + l8
 			- $this->estimateBitsMode8($run + 1); // - 4 - l8
@@ -1325,7 +1303,7 @@ class QRcode {
 				return $this->eat8();
 			}
 		}
-		if ($mode == QR_MODE_AN) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_AN) {
 			$dif = $this->estimateBitsModeNum($run) + 4 + $ln
 			+ $this->estimateBitsModeAn(1)        // + 4 + la
 			- $this->estimateBitsModeAn($run + 1);// - 4 - la
@@ -1333,7 +1311,7 @@ class QRcode {
 				return $this->eatAn();
 			}
 		}
-		$this->items = $this->appendNewInputItem($this->items, QR_MODE_NM, $run, str_split($this->dataStr));
+		$this->items = $this->appendNewInputItem($this->items, WOOCOMMERCE_NFE_PDF_QR_MODE_NM, $run, str_split($this->dataStr));
 		return $run;
 	}
 
@@ -1342,8 +1320,8 @@ class QRcode {
 	 * @return int run
 	 */
 	 protected function eatAn() {
-		$la = $this->lengthIndicator(QR_MODE_AN,  $this->version);
-		$ln = $this->lengthIndicator(QR_MODE_NM, $this->version);
+		$la = $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_AN,  $this->version);
+		$ln = $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_NM, $this->version);
 		$p =1 ;
 		while($this->isalnumat($this->dataStr, $p)) {
 			if ($this->isdigitat($this->dataStr, $p)) {
@@ -1372,7 +1350,7 @@ class QRcode {
 				return $this->eat8();
 			}
 		}
-		$this->items = $this->appendNewInputItem($this->items, QR_MODE_AN, $run, str_split($this->dataStr));
+		$this->items = $this->appendNewInputItem($this->items, WOOCOMMERCE_NFE_PDF_QR_MODE_AN, $run, str_split($this->dataStr));
 		return $run;
 	}
 
@@ -1382,10 +1360,11 @@ class QRcode {
 	 */
 	 protected function eatKanji() {
 		$p = 0;
-		while($this->identifyMode($p) == QR_MODE_KJ) {
+		while($this->identifyMode($p) == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 			$p += 2;
 		}
-		$this->items = $this->appendNewInputItem($this->items, QR_MODE_KJ, $p, str_split($this->dataStr));
+		$this->items = $this->appendNewInputItem($this->items, WOOCOMMERCE_NFE_PDF_QR_MODE_KJ, $p, str_split($this->dataStr));
+		$run = $p;
 		return $run;
 	}
 
@@ -1394,16 +1373,16 @@ class QRcode {
 	 * @return int run
 	 */
 	 protected function eat8() {
-		$la = $this->lengthIndicator(QR_MODE_AN, $this->version);
-		$ln = $this->lengthIndicator(QR_MODE_NM, $this->version);
+		$la = $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_AN, $this->version);
+		$ln = $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_NM, $this->version);
 		$p = 1;
 		$dataStrLen = strlen($this->dataStr);
 		while($p < $dataStrLen) {
 			$mode = $this->identifyMode($p);
-			if ($mode == QR_MODE_KJ) {
+			if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 				break;
 			}
-			if ($mode == QR_MODE_NM) {
+			if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_NM) {
 				$q = $p;
 				while($this->isdigitat($this->dataStr, $q)) {
 					$q++;
@@ -1416,7 +1395,7 @@ class QRcode {
 				} else {
 					$p = $q;
 				}
-			} elseif ($mode == QR_MODE_AN) {
+			} elseif ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_AN) {
 				$q = $p;
 				while($this->isalnumat($this->dataStr, $q)) {
 					$q++;
@@ -1434,28 +1413,28 @@ class QRcode {
 			}
 		}
 		$run = $p;
-		$this->items = $this->appendNewInputItem($this->items, QR_MODE_8B, $run, str_split($this->dataStr));
+		$this->items = $this->appendNewInputItem($this->items, WOOCOMMERCE_NFE_PDF_QR_MODE_8B, $run, str_split($this->dataStr));
 		return $run;
 	}
 
 	/**
 	 * splitString
-	 * @return (int)
+	 * @return int
 	 */
 	 protected function splitString() {
 		while (strlen($this->dataStr) > 0) {
 			$mode = $this->identifyMode(0);
 			switch ($mode) {
-				case QR_MODE_NM: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_NM: {
 					$length = $this->eatNum();
 					break;
 				}
-				case QR_MODE_AN: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_AN: {
 					$length = $this->eatAn();
 					break;
 				}
-				case QR_MODE_KJ: {
-					if ($hint == QR_MODE_KJ) {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_KJ: {
+					if ($this->hint == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 						$length = $this->eatKanji();
 					} else {
 						$length = $this->eat8();
@@ -1485,8 +1464,8 @@ class QRcode {
 		$stringLen = strlen($this->dataStr);
 		$p = 0;
 		while ($p < $stringLen) {
-			$mode = $this->identifyMode(substr($this->dataStr, $p), $this->hint);
-			if ($mode == QR_MODE_KJ) {
+			$mode = $this->identifyMode(substr($this->dataStr, $p));
+			if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 				$p += 2;
 			} else {
 				if ((ord($this->dataStr[$p]) >= ord('a')) AND (ord($this->dataStr[$p]) <= ord('z'))) {
@@ -1504,10 +1483,10 @@ class QRcode {
 
 	/**
 	 * newInputItem
-	 * @param $mode (int)
-	 * @param $size (int)
-	 * @param $data (array)
-	 * @param $bstream (array)
+	 * @param int $mode
+	 * @param int $size
+	 * @param array $data
+	 * @param array $bstream
 	 * @return array input item
 	 */
 	 protected function newInputItem($mode, $size, $data, $bstream=null) {
@@ -1528,8 +1507,8 @@ class QRcode {
 
 	/**
 	 * encodeModeNum
-	 * @param $inputitem (array)
-	 * @param $version (int)
+	 * @param array $inputitem
+	 * @param int $version
 	 * @return array input item
 	 */
 	 protected function encodeModeNum($inputitem, $version) {
@@ -1537,7 +1516,7 @@ class QRcode {
 		$inputitem['bstream'] = array();
 		$val = 0x1;
 		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], 4, $val);
-		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(QR_MODE_NM, $version), $inputitem['size']);
+		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_NM, $version), $inputitem['size']);
 		for ($i=0; $i < $words; ++$i) {
 			$val  = (ord($inputitem['data'][$i*3  ]) - ord('0')) * 100;
 			$val += (ord($inputitem['data'][$i*3+1]) - ord('0')) * 10;
@@ -1557,15 +1536,15 @@ class QRcode {
 
 	/**
 	 * encodeModeAn
-	 * @param $inputitem (array)
-	 * @param $version (int)
+	 * @param array $inputitem
+	 * @param int $version
 	 * @return array input item
 	 */
 	 protected function encodeModeAn($inputitem, $version) {
 		$words = (int)($inputitem['size'] / 2);
 		$inputitem['bstream'] = array();
 		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], 4, 0x02);
-		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(QR_MODE_AN, $version), $inputitem['size']);
+		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_AN, $version), $inputitem['size']);
 		for ($i=0; $i < $words; ++$i) {
 			$val  = (int)($this->lookAnTable(ord($inputitem['data'][$i*2])) * 45);
 			$val += (int)($this->lookAnTable(ord($inputitem['data'][($i*2)+1])));
@@ -1580,14 +1559,14 @@ class QRcode {
 
 	/**
 	 * encodeMode8
-	 * @param $inputitem (array)
-	 * @param $version (int)
+	 * @param array $inputitem
+	 * @param int $version
 	 * @return array input item
 	 */
 	 protected function encodeMode8($inputitem, $version) {
 		$inputitem['bstream'] = array();
 		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], 4, 0x4);
-		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(QR_MODE_8B, $version), $inputitem['size']);
+		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_8B, $version), $inputitem['size']);
 		for ($i=0; $i < $inputitem['size']; ++$i) {
 			$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], 8, ord($inputitem['data'][$i]));
 		}
@@ -1596,14 +1575,14 @@ class QRcode {
 
 	/**
 	 * encodeModeKanji
-	 * @param $inputitem (array)
-	 * @param $version (int)
+	 * @param array $inputitem
+	 * @param int $version
 	 * @return array input item
 	 */
 	 protected function encodeModeKanji($inputitem, $version) {
 		$inputitem['bstream'] = array();
 		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], 4, 0x8);
-		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(QR_MODE_KJ, $version), (int)($inputitem['size'] / 2));
+		$inputitem['bstream'] = $this->appendNum($inputitem['bstream'], $this->lengthIndicator(WOOCOMMERCE_NFE_PDF_QR_MODE_KJ, $version), (int)($inputitem['size'] / 2));
 		for ($i=0; $i<$inputitem['size']; $i+=2) {
 			$val = (ord($inputitem['data'][$i]) << 8) | ord($inputitem['data'][$i+1]);
 			if ($val <= 0x9ffc) {
@@ -1620,7 +1599,7 @@ class QRcode {
 
 	/**
 	 * encodeModeStructure
-	 * @param $inputitem (array)
+	 * @param array $inputitem
 	 * @return array input item
 	 */
 	 protected function encodeModeStructure($inputitem) {
@@ -1634,8 +1613,8 @@ class QRcode {
 
 	/**
 	 * encodeBitStream
-	 * @param $inputitem (array)
-	 * @param $version (int)
+	 * @param array $inputitem
+	 * @param int $version
 	 * @return array input item
 	 */
 	 protected function encodeBitStream($inputitem, $version) {
@@ -1651,23 +1630,23 @@ class QRcode {
 			$inputitem['bstream'] = $this->appendBitstream($inputitem['bstream'], $st2['bstream']);
 		} else {
 			switch($inputitem['mode']) {
-				case QR_MODE_NM: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_NM: {
 					$inputitem = $this->encodeModeNum($inputitem, $version);
 					break;
 				}
-				case QR_MODE_AN: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_AN: {
 					$inputitem = $this->encodeModeAn($inputitem, $version);
 					break;
 				}
-				case QR_MODE_8B: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_8B: {
 					$inputitem = $this->encodeMode8($inputitem, $version);
 					break;
 				}
-				case QR_MODE_KJ: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_KJ: {
 					$inputitem = $this->encodeModeKanji($inputitem, $version);
 					break;
 				}
-				case QR_MODE_ST: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_ST: {
 					$inputitem = $this->encodeModeStructure($inputitem);
 					break;
 				}
@@ -1686,11 +1665,11 @@ class QRcode {
 	/**
 	 * Append data to an input object.
 	 * The data is copied and appended to the input object.
-	 * @param $items (arrray) input items
-	 * @param $mode (int) encoding mode.
-	 * @param $size (int) size of data (byte).
-	 * @param $data (array) array of input data.
-	 * @return items
+	 * @param array $items input items
+	 * @param int $mode encoding mode.
+	 * @param int $size size of data (byte).
+	 * @param array $data array of input data.
+	 * @return array items
 	 *
 	 */
 	protected function appendNewInputItem($items, $mode, $size, $data) {
@@ -1703,34 +1682,34 @@ class QRcode {
 
 	/**
 	 * insertStructuredAppendHeader
-	 * @param $items (array)
-	 * @param $size (int)
-	 * @param $index (int)
-	 * @param $parity (int)
+	 * @param array $items
+	 * @param int $size
+	 * @param int $index
+	 * @param int $parity
 	 * @return array items
 	 */
 	 protected function insertStructuredAppendHeader($items, $size, $index, $parity) {
-		if ($size > MAX_STRUCTURED_SYMBOLS) {
+		if ($size > WOOCOMMERCE_NFE_PDF_MAX_STRUCTURED_SYMBOLS) {
 			return -1;
 		}
-		if (($index <= 0) OR ($index > MAX_STRUCTURED_SYMBOLS)) {
+		if (($index <= 0) OR ($index > WOOCOMMERCE_NFE_PDF_MAX_STRUCTURED_SYMBOLS)) {
 			return -1;
 		}
 		$buf = array($size, $index, $parity);
-		$entry = $this->newInputItem(QR_MODE_ST, 3, buf);
+		$entry = $this->newInputItem(WOOCOMMERCE_NFE_PDF_QR_MODE_ST, 3, $buf);
 		array_unshift($items, $entry);
 		return $items;
 	}
 
 	/**
 	 * calcParity
-	 * @param $items (array)
+	 * @param array $items
 	 * @return int parity
 	 */
 	 protected function calcParity($items) {
 		$parity = 0;
 		foreach ($items as $item) {
-			if ($item['mode'] != QR_MODE_ST) {
+			if ($item['mode'] != WOOCOMMERCE_NFE_PDF_QR_MODE_ST) {
 				for ($i=$item['size']-1; $i>=0; --$i) {
 					$parity ^= $item['data'][$i];
 				}
@@ -1741,8 +1720,8 @@ class QRcode {
 
 	/**
 	 * checkModeNum
-	 * @param $size (int)
-	 * @param $data (array)
+	 * @param int $size
+	 * @param array $data
 	 * @return boolean true or false
 	 */
 	 protected function checkModeNum($size, $data) {
@@ -1755,9 +1734,9 @@ class QRcode {
 	}
 
 	/**
-	 * Look up the alphabet-numeric convesion table (see JIS X0510:2004, pp.19).
-	 * @param $c (int) character value
-	 * @return value
+	 * Look up the alphabet-numeric conversion table (see JIS X0510:2004, pp.19).
+	 * @param int $c character value
+	 * @return int value
 	 */
 	protected function lookAnTable($c) {
 		return (($c > 127)?-1:$this->anTable[$c]);
@@ -1765,8 +1744,8 @@ class QRcode {
 
 	/**
 	 * checkModeAn
-	 * @param $size (int)
-	 * @param $data (array)
+	 * @param int $size
+	 * @param array $data
 	 * @return boolean true or false
 	 */
 	 protected function checkModeAn($size, $data) {
@@ -1780,7 +1759,7 @@ class QRcode {
 
 	/**
 	 * estimateBitsModeNum
-	 * @param $size (int)
+	 * @param int $size
 	 * @return int number of bits
 	 */
 	 protected function estimateBitsModeNum($size) {
@@ -1801,7 +1780,7 @@ class QRcode {
 
 	/**
 	 * estimateBitsModeAn
-	 * @param $size (int)
+	 * @param int $size
 	 * @return int number of bits
 	 */
 	 protected function estimateBitsModeAn($size) {
@@ -1814,7 +1793,7 @@ class QRcode {
 
 	/**
 	 * estimateBitsMode8
-	 * @param $size (int)
+	 * @param int $size
 	 * @return int number of bits
 	 */
 	 protected function estimateBitsMode8($size) {
@@ -1823,7 +1802,7 @@ class QRcode {
 
 	/**
 	 * estimateBitsModeKanji
-	 * @param $size (int)
+	 * @param int $size
 	 * @return int number of bits
 	 */
 	 protected function estimateBitsModeKanji($size) {
@@ -1832,8 +1811,8 @@ class QRcode {
 
 	/**
 	 * checkModeKanji
-	 * @param $size (int)
-	 * @param $data (array)
+	 * @param int $size
+	 * @param array $data
 	 * @return boolean true or false
 	 */
 	 protected function checkModeKanji($size, $data) {
@@ -1851,9 +1830,9 @@ class QRcode {
 
 	/**
 	 * Validate the input data.
-	 * @param $mode (int) encoding mode.
-	 * @param $size (int) size of data (byte).
-	 * @param $data (array) data to validate
+	 * @param int $mode encoding mode.
+	 * @param int $size size of data (byte).
+	 * @param array $data data to validate
 	 * @return boolean true in case of valid data, false otherwise
 	 */
 	protected function check($mode, $size, $data) {
@@ -1861,19 +1840,19 @@ class QRcode {
 			return false;
 		}
 		switch($mode) {
-			case QR_MODE_NM: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_NM: {
 				return $this->checkModeNum($size, $data);
 			}
-			case QR_MODE_AN: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_AN: {
 				return $this->checkModeAn($size, $data);
 			}
-			case QR_MODE_KJ: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_KJ: {
 				return $this->checkModeKanji($size, $data);
 			}
-			case QR_MODE_8B: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_8B: {
 				return true;
 			}
-			case QR_MODE_ST: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_ST: {
 				return true;
 			}
 			default: {
@@ -1885,8 +1864,8 @@ class QRcode {
 
 	/**
 	 * estimateBitStreamSize
-	 * @param $items (array)
-	 * @param $version (int)
+	 * @param array $items
+	 * @param int $version
 	 * @return int bits
 	 */
 	 protected function estimateBitStreamSize($items, $version) {
@@ -1896,24 +1875,24 @@ class QRcode {
 		}
 		foreach ($items as $item) {
 			switch($item['mode']) {
-				case QR_MODE_NM: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_NM: {
 					$bits = $this->estimateBitsModeNum($item['size']);
 					break;
 				}
-				case QR_MODE_AN: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_AN: {
 					$bits = $this->estimateBitsModeAn($item['size']);
 					break;
 				}
-				case QR_MODE_8B: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_8B: {
 					$bits = $this->estimateBitsMode8($item['size']);
 					break;
 				}
-				case QR_MODE_KJ: {
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_KJ: {
 					$bits = $this->estimateBitsModeKanji($item['size']);
 					break;
 				}
-				case QR_MODE_ST: {
-					return STRUCTURE_HEADER_BITS;
+				case WOOCOMMERCE_NFE_PDF_QR_MODE_ST: {
+					return WOOCOMMERCE_NFE_PDF_STRUCTURE_HEADER_BITS;
 				}
 				default: {
 					return 0;
@@ -1929,7 +1908,7 @@ class QRcode {
 
 	/**
 	 * estimateVersion
-	 * @param $items (array)
+	 * @param array $items
 	 * @return int version
 	 */
 	 protected function estimateVersion($items) {
@@ -1948,15 +1927,15 @@ class QRcode {
 
 	/**
 	 * lengthOfCode
-	 * @param $mode (int)
-	 * @param $version (int)
-	 * @param $bits (int)
+	 * @param int $mode
+	 * @param int $version
+	 * @param int $bits
 	 * @return int size
 	 */
 	 protected function lengthOfCode($mode, $version, $bits) {
 		$payload = $bits - 4 - $this->lengthIndicator($mode, $version);
 		switch($mode) {
-			case QR_MODE_NM: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_NM: {
 				$chunks = (int)($payload / 10);
 				$remain = $payload - $chunks * 10;
 				$size = $chunks * 3;
@@ -1967,7 +1946,7 @@ class QRcode {
 				}
 				break;
 			}
-			case QR_MODE_AN: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_AN: {
 				$chunks = (int)($payload / 11);
 				$remain = $payload - $chunks * 11;
 				$size = $chunks * 2;
@@ -1976,15 +1955,15 @@ class QRcode {
 				}
 				break;
 			}
-			case QR_MODE_8B: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_8B: {
 				$size = (int)($payload / 8);
 				break;
 			}
-			case QR_MODE_KJ: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_KJ: {
 				$size = (int)(($payload / 13) * 2);
 				break;
 			}
-			case QR_MODE_ST: {
+			case WOOCOMMERCE_NFE_PDF_QR_MODE_ST: {
 				$size = (int)($payload / 8);
 				break;
 			}
@@ -2005,7 +1984,7 @@ class QRcode {
 
 	/**
 	 * createBitStream
-	 * @param $items (array)
+	 * @param array $items
 	 * @return array of items and total bits
 	 */
 	 protected function createBitStream($items) {
@@ -2020,7 +1999,7 @@ class QRcode {
 
 	/**
 	 * convertData
-	 * @param $items (array)
+	 * @param array $items
 	 * @return array items
 	 */
 	 protected function convertData($items) {
@@ -2049,7 +2028,7 @@ class QRcode {
 
 	/**
 	 * Append Padding Bit to bitstream
-	 * @param $bstream (array)
+	 * @param array $bstream
 	 * @return array bitstream
 	 */
 	 protected function appendPaddingBit($bstream) {
@@ -2082,7 +2061,7 @@ class QRcode {
 
 	/**
 	 * mergeBitStream
-	 * @param $items (array) items
+	 * @param array $items items
 	 * @return array bitstream
 	 */
 	 protected function mergeBitStream($items) {
@@ -2099,7 +2078,7 @@ class QRcode {
 
 	/**
 	 * Returns a stream of bits.
-	 * @param $items (int)
+	 * @param int $items
 	 * @return array padded merged byte stream
 	 */
 	protected function getBitStream($items) {
@@ -2109,7 +2088,7 @@ class QRcode {
 
 	/**
 	 * Pack all bit streams padding bits into a byte array.
-	 * @param $items (int)
+	 * @param int $items
 	 * @return array padded merged byte stream
 	 */
 	protected function getByteStream($items) {
@@ -2123,7 +2102,7 @@ class QRcode {
 
 	/**
 	 * Return an array with zeros
-	 * @param $setLength (int) array size
+	 * @param int $setLength array size
 	 * @return array
 	 */
 	 protected function allocate($setLength) {
@@ -2132,8 +2111,8 @@ class QRcode {
 
 	/**
 	 * Return new bitstream from number
-	 * @param $bits (int) number of bits
-	 * @param $num (int) number
+	 * @param int $bits number of bits
+	 * @param int $num number
 	 * @return array bitstream
 	 */
 	 protected function newFromNum($bits, $num) {
@@ -2152,8 +2131,8 @@ class QRcode {
 
 	/**
 	 * Return new bitstream from bytes
-	 * @param $size (int) size
-	 * @param $data (array) bytes
+	 * @param int $size size
+	 * @param array $data bytes
 	 * @return array bitstream
 	 */
 	 protected function newFromBytes($size, $data) {
@@ -2176,8 +2155,8 @@ class QRcode {
 
 	/**
 	 * Append one bitstream to another
-	 * @param $bitstream (array) original bitstream
-	 * @param $append (array) bitstream to append
+	 * @param array $bitstream original bitstream
+	 * @param array $append bitstream to append
 	 * @return array bitstream
 	 */
 	 protected function appendBitstream($bitstream, $append) {
@@ -2192,9 +2171,9 @@ class QRcode {
 
 	/**
 	 * Append one bitstream created from number to another
-	 * @param $bitstream (array) original bitstream
-	 * @param $bits (int) number of bits
-	 * @param $num (int) number
+	 * @param array $bitstream original bitstream
+	 * @param int $bits number of bits
+	 * @param int $num number
 	 * @return array bitstream
 	 */
 	 protected function appendNum($bitstream, $bits, $num) {
@@ -2207,9 +2186,9 @@ class QRcode {
 
 	/**
 	 * Append one bitstream created from bytes to another
-	 * @param $bitstream (array) original bitstream
-	 * @param $size (int) size
-	 * @param $data (array) bytes
+	 * @param array $bitstream original bitstream
+	 * @param int $size size
+	 * @param array $data bytes
 	 * @return array bitstream
 	 */
 	 protected function appendBytes($bitstream, $size, $data) {
@@ -2222,7 +2201,7 @@ class QRcode {
 
 	/**
 	 * Convert bitstream to bytes
-	 * @param $bstream (array) original bitstream
+	 * @param array $bstream original bitstream
 	 * @return array of bytes
 	 */
 	 protected function bitstreamToByte($bstream) {
@@ -2263,11 +2242,11 @@ class QRcode {
 
 	/**
 	 * Replace a value on the array at the specified position
-	 * @param $srctab (array)
-	 * @param $x (int) X position
-	 * @param $y (int) Y position
-	 * @param $repl (string) value to replace
-	 * @param $replLen (int) length of the repl string
+	 * @param array $srctab
+	 * @param int $x X position
+	 * @param int $y Y position
+	 * @param string $repl value to replace
+	 * @param int $replLen length of the repl string
 	 * @return array srctab
 	 */
 	 protected function qrstrset($srctab, $x, $y, $repl, $replLen=false) {
@@ -2277,51 +2256,51 @@ class QRcode {
 
 	/**
 	 * Return maximum data code length (bytes) for the version.
-	 * @param $version (int) version
-	 * @param $level (int) error correction level
+	 * @param int $version version
+	 * @param int $level error correction level
 	 * @return int maximum size (bytes)
 	 */
 	protected function getDataLength($version, $level) {
-		return $this->capacity[$version][QRCAP_WORDS] - $this->capacity[$version][QRCAP_EC][$level];
+		return $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_WORDS] - $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_EC][$level];
 	}
 
 	/**
 	 * Return maximum error correction code length (bytes) for the version.
-	 * @param $version (int) version
-	 * @param $level (int) error correction level
+	 * @param int $version version
+	 * @param int $level error correction level
 	 * @return int ECC size (bytes)
 	 */
 	protected function getECCLength($version, $level){
-		return $this->capacity[$version][QRCAP_EC][$level];
+		return $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_EC][$level];
 	}
 
 	/**
 	 * Return the width of the symbol for the version.
-	 * @param $version (int) version
+	 * @param int $version version
 	 * @return int width
 	 */
 	protected function getWidth($version) {
-		return $this->capacity[$version][QRCAP_WIDTH];
+		return $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_WIDTH];
 	}
 
 	/**
 	 * Return the numer of remainder bits.
-	 * @param $version (int) version
+	 * @param int $version version
 	 * @return int number of remainder bits
 	 */
 	protected function getRemainder($version) {
-		return $this->capacity[$version][QRCAP_REMINDER];
+		return $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_REMINDER];
 	}
 
 	/**
 	 * Return a version number that satisfies the input code length.
-	 * @param $size (int) input code length (bytes)
-	 * @param $level (int) error correction level
+	 * @param int $size input code length (bytes)
+	 * @param int $level error correction level
 	 * @return int version number
 	 */
 	protected function getMinimumVersion($size, $level) {
-		for ($i = 1; $i <= QRSPEC_VERSION_MAX; ++$i) {
-			$words = ($this->capacity[$i][QRCAP_WORDS] - $this->capacity[$i][QRCAP_EC][$level]);
+		for ($i = 1; $i <= WOOCOMMERCE_NFE_PDF_QRSPEC_VERSION_MAX; ++$i) {
+			$words = ($this->capacity[$i][WOOCOMMERCE_NFE_PDF_QRCAP_WORDS] - $this->capacity[$i][WOOCOMMERCE_NFE_PDF_QRCAP_EC][$level]);
 			if ($words >= $size) {
 				return $i;
 			}
@@ -2332,12 +2311,12 @@ class QRcode {
 
 	/**
 	 * Return the size of length indicator for the mode and version.
-	 * @param $mode (int) encoding mode
-	 * @param $version (int) version
+	 * @param int $mode encoding mode
+	 * @param int $version version
 	 * @return int the size of the appropriate length indicator (bits).
 	 */
 	protected function lengthIndicator($mode, $version) {
-		if ($mode == QR_MODE_ST) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_ST) {
 			return 0;
 		}
 		if ($version <= 9) {
@@ -2352,12 +2331,12 @@ class QRcode {
 
 	/**
 	 * Return the maximum length for the mode and version.
-	 * @param $mode (int) encoding mode
-	 * @param $version (int) version
+	 * @param int $mode encoding mode
+	 * @param int $version version
 	 * @return int the maximum length (bytes)
 	 */
 	protected function maximumWords($mode, $version) {
-		if ($mode == QR_MODE_ST) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_ST) {
 			return 3;
 		}
 		if ($version <= 9) {
@@ -2369,7 +2348,7 @@ class QRcode {
 		}
 		$bits = $this->lengthTableBits[$mode][$l];
 		$words = (1 << $bits) - 1;
-		if ($mode == QR_MODE_KJ) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_QR_MODE_KJ) {
 			$words *= 2; // the number of bytes is required
 		}
 		return $words;
@@ -2377,9 +2356,9 @@ class QRcode {
 
 	/**
 	 * Return an array of ECC specification.
-	 * @param $version (int) version
-	 * @param $level (int) error correction level
-	 * @param $spec (array) an array of ECC specification contains as following: {# of type1 blocks, # of data code, # of ecc code, # of type2 blocks, # of data code}
+	 * @param int $version version
+	 * @param int $level error correction level
+	 * @param array $spec an array of ECC specification contains as following: {# of type1 blocks, # of data code, # of ecc code, # of type2 blocks, # of data code}
 	 * @return array spec
 	 */
 	protected function getEccSpec($version, $level, $spec) {
@@ -2408,9 +2387,9 @@ class QRcode {
 
 	/**
 	 * Put an alignment marker.
-	 * @param $frame (array) frame
-	 * @param $ox (int) X center coordinate of the pattern
-	 * @param $oy (int) Y center coordinate of the pattern
+	 * @param array $frame frame
+	 * @param int $ox X center coordinate of the pattern
+	 * @param int $oy Y center coordinate of the pattern
 	 * @return array frame
 	 */
 	protected function putAlignmentMarker($frame, $ox, $oy) {
@@ -2431,9 +2410,9 @@ class QRcode {
 
 	/**
 	 * Put an alignment pattern.
-	 * @param $version (int) version
-	 * @param $frame (array) frame
-	 * @param $width (int) width
+	 * @param int $version version
+	 * @param array $frame frame
+	 * @param int $width width
 	 * @return array frame
 	 */
 	 protected function putAlignmentPattern($version, $frame, $width) {
@@ -2473,11 +2452,11 @@ class QRcode {
 
 	/**
 	 * Return BCH encoded version information pattern that is used for the symbol of version 7 or greater. Use lower 18 bits.
-	 * @param $version (int) version
-	 * @return BCH encoded version information pattern
+	 * @param int $version version
+	 * @return string BCH encoded version information pattern
 	 */
 	protected function getVersionPattern($version) {
-		if (($version < 7) OR ($version > QRSPEC_VERSION_MAX)) {
+		if (($version < 7) OR ($version > WOOCOMMERCE_NFE_PDF_QRSPEC_VERSION_MAX)) {
 			return 0;
 		}
 		return $this->versionPattern[($version - 7)];
@@ -2485,9 +2464,9 @@ class QRcode {
 
 	/**
 	 * Return BCH encoded format information pattern.
-	 * @param $mask (array)
-	 * @param $level (int) error correction level
-	 * @return BCH encoded format information pattern
+	 * @param array $mask
+	 * @param int $level error correction level
+	 * @return string BCH encoded format information pattern
 	 */
 	protected function getFormatInfo($mask, $level) {
 		if (($mask < 0) OR ($mask > 7)) {
@@ -2501,9 +2480,9 @@ class QRcode {
 
 	/**
 	 * Put a finder pattern.
-	 * @param $frame (array) frame
-	 * @param $ox (int) X center coordinate of the pattern
-	 * @param $oy (int) Y center coordinate of the pattern
+	 * @param array $frame frame
+	 * @param int $ox X center coordinate of the pattern
+	 * @param int $oy Y center coordinate of the pattern
 	 * @return array frame
 	 */
 	protected function putFinderPattern($frame, $ox, $oy) {
@@ -2524,11 +2503,11 @@ class QRcode {
 
 	/**
 	 * Return a copy of initialized frame.
-	 * @param $version (int) version
-	 * @return Array of unsigned char.
+	 * @param int $version version
+	 * @return array array of unsigned char.
 	 */
 	protected function createFrame($version) {
-		$width = $this->capacity[$version][QRCAP_WIDTH];
+		$width = $this->capacity[$version][WOOCOMMERCE_NFE_PDF_QRCAP_WIDTH];
 		$frameLine = str_repeat ("\0", $width);
 		$frame = array_fill(0, $width, $frameLine);
 		// Finder pattern
@@ -2589,11 +2568,11 @@ class QRcode {
 
 	/**
 	 * Set new frame for the specified version.
-	 * @param $version (int) version
-	 * @return Array of unsigned char.
+	 * @param int $version version
+	 * @return array array of unsigned char.
 	 */
 	protected function newFrame($version) {
-		if (($version < 1) OR ($version > QRSPEC_VERSION_MAX)) {
+		if (($version < 1) OR ($version > WOOCOMMERCE_NFE_PDF_QRSPEC_VERSION_MAX)) {
 			return NULL;
 		}
 		if (!isset($this->frames[$version])) {
@@ -2607,7 +2586,7 @@ class QRcode {
 
 	/**
 	 * Return block number 0
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsBlockNum($spec) {
@@ -2616,7 +2595,7 @@ class QRcode {
 
 	/**
 	* Return block number 1
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsBlockNum1($spec) {
@@ -2625,7 +2604,7 @@ class QRcode {
 
 	/**
 	 * Return data codes 1
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsDataCodes1($spec) {
@@ -2634,7 +2613,7 @@ class QRcode {
 
 	/**
 	 * Return ecc codes 1
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsEccCodes1($spec) {
@@ -2643,7 +2622,7 @@ class QRcode {
 
 	/**
 	 * Return block number 2
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsBlockNum2($spec) {
@@ -2652,7 +2631,7 @@ class QRcode {
 
 	/**
 	 * Return data codes 2
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsDataCodes2($spec) {
@@ -2661,7 +2640,7 @@ class QRcode {
 
 	/**
 	 * Return ecc codes 2
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsEccCodes2($spec) {
@@ -2670,7 +2649,7 @@ class QRcode {
 
 	/**
 	 * Return data length
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsDataLength($spec) {
@@ -2679,7 +2658,7 @@ class QRcode {
 
 	/**
 	 * Return ecc length
-	 * @param $spec (array)
+	 * @param array $spec
 	 * @return int value
 	 */
 	 protected function rsEccLength($spec) {
@@ -2692,12 +2671,12 @@ class QRcode {
 
 	/**
 	 * Initialize a Reed-Solomon codec and add it to existing rsitems
-	 * @param $symsize (int) symbol size, bits
-	 * @param $gfpoly (int)  Field generator polynomial coefficients
-	 * @param $fcr (int)  first root of RS code generator polynomial, index form
-	 * @param $prim (int)  primitive element to generate polynomial roots
-	 * @param $nroots (int) RS code generator polynomial degree (number of roots)
-	 * @param $pad (int)  padding bytes at front of shortened block
+	 * @param int $symsize symbol size, bits
+	 * @param int $gfpoly  Field generator polynomial coefficients
+	 * @param int $fcr  first root of RS code generator polynomial, index form
+	 * @param int $prim  primitive element to generate polynomial roots
+	 * @param int $nroots RS code generator polynomial degree (number of roots)
+	 * @param int $pad  padding bytes at front of shortened block
 	 * @return array Array of RS values:<ul><li>mm = Bits per symbol;</li><li>nn = Symbols per block;</li><li>alpha_to = log lookup table array;</li><li>index_of = Antilog lookup table array;</li><li>genpoly = Generator polynomial array;</li><li>nroots = Number of generator;</li><li>roots = number of parity symbols;</li><li>fcr = First consecutive root, index form;</li><li>prim = Primitive element, index form;</li><li>iprim = prim-th root of 1, index form;</li><li>pad = Padding bytes in shortened block;</li><li>gfpoly</ul>.
 	 */
 	 protected function init_rs($symsize, $gfpoly, $fcr, $prim, $nroots, $pad) {
@@ -2719,8 +2698,8 @@ class QRcode {
 
 	/**
 	 * modnn
-	 * @param $rs (array) RS values
-	 * @param $x (int) X position
+	 * @param array $rs RS values
+	 * @param int $x X position
 	 * @return int X osition
 	 */
 	 protected function modnn($rs, $x) {
@@ -2733,12 +2712,12 @@ class QRcode {
 
 	/**
 	 * Initialize a Reed-Solomon codec and returns an array of values.
-	 * @param $symsize (int) symbol size, bits
-	 * @param $gfpoly (int)  Field generator polynomial coefficients
-	 * @param $fcr (int)  first root of RS code generator polynomial, index form
-	 * @param $prim (int)  primitive element to generate polynomial roots
-	 * @param $nroots (int) RS code generator polynomial degree (number of roots)
-	 * @param $pad (int)  padding bytes at front of shortened block
+	 * @param int $symsize symbol size, bits
+	 * @param int $gfpoly  Field generator polynomial coefficients
+	 * @param int $fcr  first root of RS code generator polynomial, index form
+	 * @param int $prim  primitive element to generate polynomial roots
+	 * @param int $nroots RS code generator polynomial degree (number of roots)
+	 * @param int $pad  padding bytes at front of shortened block
 	 * @return array Array of RS values:<ul><li>mm = Bits per symbol;</li><li>nn = Symbols per block;</li><li>alpha_to = log lookup table array;</li><li>index_of = Antilog lookup table array;</li><li>genpoly = Generator polynomial array;</li><li>nroots = Number of generator;</li><li>roots = number of parity symbols;</li><li>fcr = First consecutive root, index form;</li><li>prim = Primitive element, index form;</li><li>iprim = prim-th root of 1, index form;</li><li>pad = Padding bytes in shortened block;</li><li>gfpoly</ul>.
 	 */
 	protected function init_rs_char($symsize, $gfpoly, $fcr, $prim, $nroots, $pad) {
@@ -2820,9 +2799,9 @@ class QRcode {
 
 	/**
 	 * Encode a Reed-Solomon codec and returns the parity array
-	 * @param $rs (array) RS values
-	 * @param $data (array) data
-	 * @param $parity (array) parity
+	 * @param array $rs RS values
+	 * @param array $data data
+	 * @param array $parity parity
 	 * @return parity array
 	 */
 	 protected function encode_rs_char($rs, $data, $parity) {

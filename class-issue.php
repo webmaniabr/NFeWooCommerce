@@ -16,18 +16,25 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
   function send( $order_ids = array(), $is_massa = false, $is_auto_invoice = false ){
 
 		$result = array();
+		if ( ! $is_auto_invoice && ! current_user_can( 'manage_woocommerce' ) ) { return $result; }
 
 		// Security: Sanitize and validate POST inputs
-		$save_action = isset($_POST['save']) ? sanitize_text_field($_POST['save']) : '';
-		if ($save_action === 'Update') {
+		$editor_input = ! $is_auto_invoice && $order_ids ? WooCommerceNFe_Security::admin_order_input( reset( $order_ids ) ) : array();
+		$save_action = sanitize_text_field( $editor_input['save'] ?? '' );
+		if ( ! $is_auto_invoice && $save_action === 'Update' ) {
 			$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: </strong> Para relizar esta emissão utilize o botão <strong>'Aplicar'</strong> localizado ao lado da lista de ações do pedido.");
 			return;
 		}
 
-		foreach ($order_ids as $order_id) {
-
-			// Data
+		foreach ( array_unique( array_filter( array_map( array( 'WooCommerceNFe_Security', 'validate_order_id' ), (array) $order_ids ) ) ) as $order_id ) {
+			if ( ! $is_auto_invoice && ! current_user_can( 'edit_shop_order', $order_id ) ) { continue; }
+			$lock = WooCommerceNFe_Security::acquire_lock( $order_id );
+			if ( ! $lock ) { $this->add_error( 'Emissão já em andamento para este pedido.' ); continue; }
+			try {
 			$order = wc_get_order( $order_id );
+			if ( ! $order || $order->get_type() !== 'shop_order' ) { continue; }
+			$order->read_meta_data( true );
+			if ( $is_auto_invoice && $order->get_meta( 'nfe' ) ) { continue; }
 			$data = $this->order_data( $order_id );
 
 			// Async
@@ -35,6 +42,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				$data['nfe']['assincrono'] = 1;
 			}
 
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			do_action('nfe_before_response', $data, $order_id);
 
 			$this->get_credentials( $order_id );
@@ -43,22 +51,20 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			if (isset($data['nfe'])) {
 
-				$issuance_ID = $data['nfe']['ID'];
-				$cached_id = get_transient('cached_nfe_id');
-
-				if ($cached_id && $cached_id == $issuance_ID) {
-					$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: Identificada possível NF-e em duplicidade.</strong> Para relizar uma nova emissão para o pedido <strong>nº $issuance_ID</strong> aguarde alguns instantes.");
-					return;
+				if ( $order->get_meta( '_wmbr_uncertain_nfe' ) || get_transient( 'wmbr_cooldown_nfe_' . $order_id ) ) {
+					$this->add_error( 'Nova emissão bloqueada: há uma tentativa recente ou sem confirmação. Confira a nota na Webmania antes de repetir.' );
 				} else {
-					set_transient('cached_nfe_id', $issuance_ID, 10);
-				}
-
+				$order->update_meta_data( '_wmbr_uncertain_nfe', time() );
+				$order->save();
+				set_transient( 'wmbr_cooldown_nfe_' . $order_id, 1, 60 );
 				$response = $webmaniabr->emissaoNotaFiscal( $data['nfe'] );
+
 				$result[] = $response;
 	
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 				do_action('nfe_after_response', $response, $order_id);
 
-				if (isset($response->error) || $response->status == 'reprovado') {
+				if (isset($response->error) || isset($response->errors) || ( $response->status ?? '' ) == 'reprovado') {
 
 					$mensagem = 'Erro ao emitir a NF-e do Pedido #'.$order_id.':';
 					$mensagem .= '<ul style="padding-left:20px;">';
@@ -72,6 +78,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					}
 
 					$error_messages = array();
+					foreach ( (array) ( $response->errors ?? array() ) as $api_error ) {
+						if ( is_scalar( $api_error ) ) { $error_messages[] = sanitize_text_field( (string) $api_error ); }
+					}
 					if ( ! empty( $response->motivo ) && is_string( $response->motivo ) ) {
 						$error_messages[] = sanitize_text_field( $response->motivo );
 					} elseif ( isset( $response->log ) ) {
@@ -102,7 +111,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					}
 
 					if ( '' === $invoice_error && empty( $error_messages ) ) {
-						$fallback_error = __( 'Erro desconhecido.', $this->domain );
+						$fallback_error = __( 'Erro desconhecido.', 'nota-fiscal-eletronica-woocommerce' );
 						$invoice_error = sanitize_text_field( $fallback_error );
 						$mensagem .= '<li>' . esc_html( $invoice_error ) . '</li>';
 					}
@@ -139,71 +148,40 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				}
 	
-				// If API respond with status, register 'NF-e'
-				if ( is_object($response) && $response->status ) {
-
-					$nfe = $order->get_meta('nfe');
-					$nfe_doc = $data['nfe']['cliente']['cpf'] ?? $data['nfe']['cliente']['cnpj'];
-					$nfe_doc = str_replace(['.', '-', '/'], '', $nfe_doc);
-	
-					if (!$nfe)
-						$nfe = array();
-	
-					// Identify NFe repeated
-					if (count($nfe) > 0){
-						$is_repeated = false;
-						foreach ($nfe as $nf){
-	
-							if ($nf['chave_acesso'] == $response->chave){
-	
-								$is_repeated = true;
-								break;
-	
-							}
-	
-						}
-	
-						if ($is_repeated) {
-							continue;
-						}
+				// Persist validated API fields before allowing another dispatch.
+				if ( is_object( $response ) && ! empty( $response->status ) && ! empty( $response->uuid ) ) {
+					$invoice = WooCommerceNFe_Callback::invoice( $response, 'nfe' );
+					if ( is_wp_error( $invoice ) ) {
+						$response->request_uncertain = true;
+						$this->add_error( 'Resposta fiscal sem confirmação. Consulte a nota na Webmania.' );
+					} else {
+						$nfe = $order->get_meta( 'nfe' );
+						$nfe = is_array( $nfe ) ? $nfe : array();
+						$invoice['nfe_doc'] = WooCommerceNFe_TaxId::normalize_document( $data['nfe']['cliente']['cpf'] ?? $data['nfe']['cliente']['cnpj'] ?? '' );
+						WooCommerceNFe_Callback::upsert( $nfe, $invoice );
+						$order->update_meta_data( 'nfe', array_map( array( 'WooCommerceNFe_Security', 'sanitize_invoice' ), $nfe ) );
+						$order->save();
 					}
-	
-					// Register new NFe
-					$nfe[] = array(
-						'uuid'   => (string) $response->uuid,
-						'status' => (string) $response->status,
-						'modelo' => 'nfe',
-						'chave_acesso' => $response->chave,
-						'n_recibo' => (int) isset($response->recibo) ? $response->recibo : '',
-						'n_nfe' => (int) $response->nfe,
-						'n_serie' => (int) $response->serie,
-						'nfe_doc' => (string) $nfe_doc,
-						'url_xml' => (string) $response->xml,
-						'url_danfe' => (string) $response->danfe,
-						'url_danfe_simplificada' => (string) $response->danfe_simples,
-						'url_danfe_etiqueta' => (string) $response->danfe_etiqueta,
-						'data' => date_i18n('d/m/Y'),
-					);
+				}
 
-					$order->update_meta_data('nfe', $nfe);
+				if ( empty( $response->request_uncertain ) && ( ! empty( $response->status ) || isset( $response->error ) || isset( $response->errors ) ) ) {
+					$order->delete_meta_data( '_wmbr_uncertain_nfe' );
 					$order->save();
-	
+				}
+
 				}
 			}
 
 			if (isset($data['nfse'])) {
 
-				$issuance_ID = $data['nfse']['ID'];
-				$cached_id = get_transient('cached_nfse_id');
-
-				if ($cached_id && $cached_id == $issuance_ID) {
-					$this->add_error("<strong>[WebmaniaBR® Nota Fiscal] Aviso: Identificada possível NFS-e em duplicidade.</strong> Para relizar uma nova emissão para o pedido <strong>nº $issuance_ID</strong> aguarde alguns instantes.");
-					return;
+				if ( $order->get_meta( '_wmbr_uncertain_nfse' ) || get_transient( 'wmbr_cooldown_nfse_' . $order_id ) ) {
+					$this->add_error( 'Nova emissão bloqueada: há uma tentativa recente ou sem confirmação. Confira a nota na Webmania antes de repetir.' );
 				} else {
-					set_transient('cached_nfse_id', $issuance_ID, 10);
-				}
-
+				$order->update_meta_data( '_wmbr_uncertain_nfse', time() );
+				$order->save();
+				set_transient( 'wmbr_cooldown_nfse_' . $order_id, 1, 60 );
 				$response = $webmaniabr_nfse->emissaoNFSe($data['nfse']);
+
 				$result[] = $response;
 
 				if (isset($response->error) || isset($response->errors) || $response->status == 'reprovado') {
@@ -254,21 +232,21 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 					}
 
 					if (empty( $error_messages_nfse )) {
-						$fallback_error = __( 'Erro desconhecido.', $this->domain );
+						$fallback_error = __( 'Erro desconhecido.', 'nota-fiscal-eletronica-woocommerce' );
 						$fallback_error = sanitize_text_field( $fallback_error );
 						$error_messages_nfse[] = $fallback_error;
 						$mensagem .= '<li>' . esc_html( $fallback_error ) . '</li>';
 					}
 
 					$mensagem .= '</ul>';
-	
+
 					$is_auto_invoice && $this->send_error_email( $mensagem, $order_id );
 					$this->add_id_to_invoice_errors( implode(' | ', $error_messages_nfse ), $order_id );
 					$this->add_error( $mensagem );
 	
 				} else {
 	
-					if ( (is_object($response) && ($response->status == 'processando')) || $response->modelo == 'lote_rps' ) {
+					if ( (is_object($response) && ($response->status == 'processando')) || ( $response->modelo ?? '' ) == 'lote_rps' ) {
 	
 						$this->add_success( 'Nota Fiscal de Serviço do pedido nº '.$order_id.' em processamento. O status será atualizado assim que a NFS-e for processada pela Prefeitura.' );
 	
@@ -281,54 +259,35 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				}
 	
-				// If API respond with status, register 'NFS-e'
-				if ( is_object($response) && $response->status ) {
-	
-					$nfe = $order->get_meta('nfe');
-	
-					if (!$nfe)
-						$nfe = array();
-	
-					// Identify NFSe repeated
-					if (count($nfe) > 0){
-						$is_repeated = false;
-						foreach ($nfe as $nf){
-	
-							if ($nf['uuid'] == $response->uuid){
-	
-								$is_repeated = true;
-								break;
-	
-							}
-	
-						}
-	
-						if ($is_repeated) {
-							continue;
-						}
+				// Persist validated API fields before allowing another dispatch.
+				if ( is_object( $response ) && ! empty( $response->status ) && ! empty( $response->uuid ) ) {
+					$invoice = WooCommerceNFe_Callback::invoice( $response, 'nfse' );
+					if ( is_wp_error( $invoice ) ) {
+						$response->request_uncertain = true;
+						$this->add_error( 'Resposta fiscal sem confirmação. Consulte a nota na Webmania.' );
+					} else {
+						$nfe = $order->get_meta( 'nfe' );
+						$nfe = is_array( $nfe ) ? $nfe : array();
+						WooCommerceNFe_Callback::upsert( $nfe, $invoice );
+						$order->update_meta_data( 'nfe', array_map( array( 'WooCommerceNFe_Security', 'sanitize_invoice' ), $nfe ) );
+						$order->save();
 					}
-	
-					// Register new NFe
-					$nfe[] = array(
-						'uuid'   => (string) $response->uuid,
-						'status' => (string) $response->status,
-						'modelo' => (string) $response->modelo,
-						'n_nfe' => (int) $response->numero ?: $response->numero_lote,
-						'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
-						'url_xml' => (string) $response->xml,
-						'url_pdf' => (string) $response->pdf_nfse ?? '', 
-						'pdf_rps' => (string) $response->pdf_rps ?? '',
-						'data' => date_i18n('d/m/Y'),
-					);
-	
-					$order->update_meta_data('nfe', $nfe);
+				}
+
+				if ( empty( $response->request_uncertain ) && ( ! empty( $response->status ) || isset( $response->error ) || isset( $response->errors ) ) ) {
+					$order->delete_meta_data( '_wmbr_uncertain_nfse' );
 					$order->save();
-	
+				}
+
 				}
 			}
 			
 
 			
+
+			} finally {
+				WooCommerceNFe_Security::release_lock( $order_id, $lock );
+			}
 
 		}
 
@@ -373,6 +332,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 * @return boolean
 	 */
 	function mount_nfe_data( $post_id, $products ){
+		$invoice_input = WooCommerceNFe_Security::invoice_input( $post_id );
 
 		global $wpdb;
 
@@ -392,20 +352,21 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$total_discount = $total_fee = 0;
 		$fee_aditional_informations = '';
 		$natureza_operacao = '';
-		$payment_gateway = UtilsGateways::get_gateway_class( $order->payment_method );
+		$order_payment_method = $order->get_payment_method();
+		$payment_gateway = UtilsGateways::get_gateway_class( $order_payment_method );
 
 		// Coupons
 		if ($coupons){
 			foreach($coupons as $coupon_code){
 				$coupon_obj = new WC_Coupon($coupon_code);
-				if($coupon_obj->discount_type == 'percent'){
-					$coupons_percentage[] = $coupon_obj->coupon_amount;
+				if($coupon_obj->get_discount_type() == 'percent'){
+					$coupons_percentage[] = $coupon_obj->get_amount();
 				}
 			}
 		}
 
 		// Order
-		$modalidade_frete = isset($_POST['modalidade_frete'])? sanitize_text_field($_POST['modalidade_frete']) : $order->get_meta( '_nfe_modalidade_frete' );
+		$modalidade_frete = isset($invoice_input['modalidade_frete'])? sanitize_text_field($invoice_input['modalidade_frete']) : $order->get_meta( '_nfe_modalidade_frete' );
 
 		if (!$modalidade_frete || $modalidade_frete == 'null')
 			 $modalidade_frete = 0;
@@ -416,7 +377,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$natureza_operacao = ($order->get_meta( '_nfe_natureza_operacao_pedido' )) ? $order->get_meta( '_nfe_natureza_operacao_pedido' ) : get_option('wc_settings_woocommercenfe_natureza_operacao');
 
 		// Security: Sanitize POST input
-		$post_natureza_operacao = isset($_POST['natureza_operacao_pedido']) ? sanitize_text_field($_POST['natureza_operacao_pedido']) : '';
+		$post_natureza_operacao = isset($invoice_input['natureza_operacao_pedido']) ? sanitize_text_field($invoice_input['natureza_operacao_pedido']) : '';
 		if ( $post_natureza_operacao !== '' && $post_natureza_operacao !== $natureza_operacao ) {
 			$natureza_operacao = $post_natureza_operacao;
 		}
@@ -425,12 +386,17 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data = array(
 			'ID'                => $post_id, // Número do pedido
 			'origem'					  => 'woocommerce',
-			'url_notificacao'   => get_bloginfo('url').'/wc-api/nfe_callback?order_key='.$order_key.'&order_id='.$post_id,
+			'url_notificacao'   => WooCommerceNFe_Security::callback_url( $order, 'nfe' ),
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'operacao'          => apply_filters( 'nfe_order_operation', 1, $post_id ), // Tipo de Operação da Nota Fiscal
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'natureza_operacao' => apply_filters( 'nfe_order_operation_n', $natureza_operacao, $post_id  ), // Natureza da Operação
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'modelo'            => apply_filters( 'nfe_order_model', 1, $post_id ), // Modelo da Nota Fiscal (NF-e ou NFC-e)
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'finalidade'        => apply_filters( 'nfe_order_finality', 1, $post_id ), // Finalidade de emissão da Nota Fiscal
-			'ambiente'          => apply_filters( 'nfe_environment', ( isset($_POST['emitir_homologacao']) && sanitize_text_field($_POST['emitir_homologacao']) ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente') ), $post_id ) // Identificação do Ambiente do Sefaz
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
+			'ambiente'          => apply_filters( 'nfe_environment', ( isset($invoice_input['emitir_homologacao']) && sanitize_text_field($invoice_input['emitir_homologacao']) ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente') ), $post_id ) // Identificação do Ambiente do Sefaz
 		);
 
 		// Fees
@@ -467,7 +433,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		$data['pedido'] = array(
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'presenca'         => apply_filters( 'nfe_order_presence', 2, $post_id ), // Indicador de presença do comprador no estabelecimento comercial no momento da operação
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			'modalidade_frete' => apply_filters( 'nfe_order_freight', (int) $modalidade_frete, $post_id ), // Modalidade do frete
 			'frete'            => $order->get_shipping_total(), // Total do frete
 			'desconto'         => number_format($total_discount, 2, '.', '' ), // Total do desconto
@@ -475,11 +443,11 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		);
 
 		//Intermediador da operação
-		$intermediador = isset($_POST['nfe_info_intermediador']) ? sanitize_text_field($_POST['nfe_info_intermediador']) : $order->get_meta( '_nfe_info_intermediador' );
+		$intermediador = isset($invoice_input['nfe_info_intermediador']) ? sanitize_text_field($invoice_input['nfe_info_intermediador']) : $order->get_meta( '_nfe_info_intermediador' );
 		if ($intermediador) {
-			$data['pedido']['intermediador'] = isset($_POST['nfe_info_intermediador_type']) ? sanitize_text_field($_POST['nfe_info_intermediador_type']) : $order->get_meta( '_nfe_info_intermediador_type' );
-			$data['pedido']['cnpj_intermediador'] = isset($_POST['nfe_info_intermediador_cnpj']) ? sanitize_text_field($_POST['nfe_info_intermediador_cnpj']) : $order->get_meta( '_nfe_info_intermediador_cnpj' );
-			$data['pedido']['id_intermediador'] = isset($_POST['nfe_info_intermediador_id']) ? sanitize_text_field($_POST['nfe_info_intermediador_id']) : $order->get_meta( '_nfe_info_intermediador_id' );
+			$data['pedido']['intermediador'] = isset($invoice_input['nfe_info_intermediador_type']) ? sanitize_text_field($invoice_input['nfe_info_intermediador_type']) : $order->get_meta( '_nfe_info_intermediador_type' );
+			$data['pedido']['cnpj_intermediador'] = isset($invoice_input['nfe_info_intermediador_cnpj']) ? sanitize_text_field($invoice_input['nfe_info_intermediador_cnpj']) : $order->get_meta( '_nfe_info_intermediador_cnpj' );
+			$data['pedido']['id_intermediador'] = isset($invoice_input['nfe_info_intermediador_id']) ? sanitize_text_field($invoice_input['nfe_info_intermediador_id']) : $order->get_meta( '_nfe_info_intermediador_id' );
 		}
 		else {
 			$data['pedido']['intermediador'] = get_option('wc_settings_woocommercenfe_intermediador');
@@ -496,10 +464,10 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			$data = $payment_gateway::payment_type( $post_id, $order, $data );
 
-		} elseif ( isset($payment_methods[$order->payment_method]) && $payment_methods[$order->payment_method] ) {
+		} elseif ( isset($payment_methods[$order_payment_method]) && $payment_methods[$order_payment_method] ) {
 
-			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order->payment_method] ];
-			$data['pedido']['desc_pagamento'] = [$payment_descs[$order->payment_method]];
+			$data['pedido']['forma_pagamento'] = [ $payment_methods[$order_payment_method] ];
+			$data['pedido']['desc_pagamento'] = [ $payment_descs[$order_payment_method] ?? '' ];
 
 		} else {
 
@@ -521,8 +489,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ( $fee_aditional_informations != '' ) {
 			$consumidor_inf .= $fee_aditional_informations;
 		}
-		if ($additional_info = (!empty($_POST) && isset($_POST['nfe_additional_info'])) ? $_POST['nfe_additional_info'] : $order->get_meta( '_nfe_additional_info' )) {
-			$value = isset($_POST['nfe_additional_info_text']) ? sanitize_text_field($_POST['nfe_additional_info_text']) : '';
+		if ($additional_info = (!empty($invoice_input) && isset($invoice_input['nfe_additional_info'])) ? $invoice_input['nfe_additional_info'] : $order->get_meta( '_nfe_additional_info' )) {
+			$value = isset($invoice_input['nfe_additional_info_text']) ? sanitize_text_field($invoice_input['nfe_additional_info_text']) : '';
 
 			if (!isset($value)) {
 				$value = $order->get_meta( '_nfe_additional_info_text' );
@@ -561,7 +529,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Contribuinte ICMS
-		$contribuinte = isset($_POST['nfe_contribuinte']) ? intval($_POST['nfe_contribuinte']) : intval($order->get_meta( '_nfe_contribuinte' ));
+		$contribuinte = isset($invoice_input['nfe_contribuinte']) ? intval($invoice_input['nfe_contribuinte']) : intval($order->get_meta( '_nfe_contribuinte' ));
 		if (in_array($contribuinte, [1, 2, 9], true)) {
 			$data['cliente']['contribuinte'] = $contribuinte;
 		}
@@ -576,7 +544,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			
 			$product      = wc_get_product($item['product_id']);
 			if(empty($product)){
-				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Um ou mais produtos deste pedido estão <strong>indisponíveis ou foram excluídos permanentemente</strong> impossibilitando a emissão da nota fiscal.");
+				$reason = __( "<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Um ou mais produtos deste pedido estão <strong>indisponíveis ou foram excluídos permanentemente</strong> impossibilitando a emissão da nota fiscal.", 'nota-fiscal-eletronica-woocommerce' );
 				$this->add_error($reason);
 				return;
 			}
@@ -611,6 +579,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			$product_info = $this->get_product_nfe_info($item, $order);
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			$ignore_product = apply_filters( 'nfe_order_product_ignore', $product->get_meta( '_nfe_ignorar_nfe' ), $product_id, $post_id);
 
 			// Ignore product or NOT
@@ -639,8 +608,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			// Tax Benefit
 			$beneficio_fiscal = $order->get_meta( '_nfe_beneficio_fiscal_pedido' );
 
-			if ( isset($_POST['beneficio_fiscal_pedido']) && $_POST['beneficio_fiscal_pedido'] != '' && $_POST['beneficio_fiscal_pedido'] != $beneficio_fiscal ) {
-				$beneficio_fiscal = sanitize_text_field($_POST['beneficio_fiscal_pedido']);
+			if ( isset($invoice_input['beneficio_fiscal_pedido']) && $invoice_input['beneficio_fiscal_pedido'] != '' && $invoice_input['beneficio_fiscal_pedido'] != $beneficio_fiscal ) {
+				$beneficio_fiscal = sanitize_text_field($invoice_input['beneficio_fiscal_pedido']);
 			}
 
 			if ($beneficio_fiscal){
@@ -659,6 +628,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data['produtos'] = array_merge($bundle_info['products'], $data['produtos']);
 		$data['pedido']['desconto'] += $bundle_info['bundle_discount'];
 		$data['pedido']['desconto'] = number_format($data['pedido']['desconto'], 2, '.', '' );
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 		$data['pedido'] = apply_filters( 'nfe_order_payment', $data['pedido'], $post_id );
 
 		// Gateway Installments
@@ -693,7 +663,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
     }
 
 	  // Courier
-		$shipping_method = @array_shift($order->get_shipping_methods());
+		$order_shipping_methods = $order->get_shipping_methods();
+		$shipping_method = is_array( $order_shipping_methods ) ? array_shift( $order_shipping_methods ) : null;
 
 		if ($shipping_method || $data['pedido']['modalidade_frete'] != 9) {
       
@@ -706,28 +677,28 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			}
 
 			// Frenet shipping
-			if ($shipping_method_id == 'frenet' && isset($shipping_data['meta_data']) && is_array($shipping_data['meta_data']) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
+			if ($shipping_method_id == 'frenet' && isset($shipping_data['meta_data'][0]) && is_object($shipping_data['meta_data'][0]) && $shipping_data['meta_data'][0]->key == 'FRENET_ID'){
 				$shipping_method_id = $shipping_data['meta_data'][0]->value;
 			}
 
-			// Carrier
-			if (!empty($transportadoras) && $transportadoras[$shipping_method_id]){
+			// Carrier (orders may use a shipping method without a registered carrier)
+			if (is_array($transportadoras) && is_scalar($shipping_method_id) && !empty($transportadoras[$shipping_method_id]) && is_array($transportadoras[$shipping_method_id])){
 
 				$transp = $transportadoras[$shipping_method_id];
-				$data['transporte']['cnpj']         = $transp['cnpj'];
-				$data['transporte']['razao_social'] = $transp['razao_social'];
-				$data['transporte']['ie']           = $transp['ie'];
-				$data['transporte']['endereco']     = $transp['address'];
-				$data['transporte']['uf']           = $transp['uf'];
-				$data['transporte']['cidade']       = $transp['city'];
-				$data['transporte']['cep']          = $transp['cep'];
+				$data['transporte']['cnpj']         = $transp['cnpj'] ?? '';
+				$data['transporte']['razao_social'] = $transp['razao_social'] ?? '';
+				$data['transporte']['ie']           = $transp['ie'] ?? '';
+				$data['transporte']['endereco']     = $transp['address'] ?? '';
+				$data['transporte']['uf']           = $transp['uf'] ?? '';
+				$data['transporte']['cidade']       = $transp['city'] ?? '';
+				$data['transporte']['cep']          = $transp['cep'] ?? '';
 
 			}
 			
 		}
 
 		// Product Volume and Weight
-		$volume_weight = isset($_POST['nfe_volume_weight']) ? (bool) $_POST['nfe_volume_weight'] : (bool) $order->get_meta( '_nfe_volume_weight' );
+		$volume_weight = isset($invoice_input['nfe_volume_weight']) ? (bool) $invoice_input['nfe_volume_weight'] : (bool) $order->get_meta( '_nfe_volume_weight' );
 		if ($volume_weight) {
 
 			$order_specifics = array(
@@ -739,7 +710,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
 			foreach ($order_specifics as $api_key => $meta_key) {
 
-				$value = isset($_POST[str_replace('_nfe_', '', $meta_key)]) ? sanitize_text_field($_POST[str_replace('_nfe_', '', $meta_key)]) : '';
+				$value = isset($invoice_input[str_replace('_nfe_', '', $meta_key)]) ? sanitize_text_field($invoice_input[str_replace('_nfe_', '', $meta_key)]) : '';
 
 				if (!isset($value))
 					$value = $order->get_meta( $meta_key );
@@ -755,11 +726,12 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		}
 
 		// Preview
-		if (isset($_POST['previa_danfe'])){
+		if (isset($invoice_input['previa_danfe'])){
 			$data['previa_danfe'] = true;
 		}
 
 		// Return
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 		return apply_filters('nfe_order_data', $data, $post_id);
 
 	}
@@ -770,6 +742,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 * @return array
 	 */
 	function mount_nfse_data($post_id, $services) {
+		$invoice_input = WooCommerceNFe_Security::invoice_input( $post_id );
 
 		// Vars
 		$order = wc_get_order( $post_id );
@@ -785,8 +758,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$data = array(
 			'ID' => $post_id,
 			'origem' => 'woocommerce',
-			'url_notificacao' => get_bloginfo('url').'/wc-api/nfse_callback?order_key='.$order->get_order_key().'&order_id='.$post_id,
-			'ambiente' => apply_filters( 'nfe_environment', ( isset($_POST['emitir_homologacao']) && $_POST['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente') ), $post_id ),
+			'url_notificacao' => WooCommerceNFe_Security::callback_url( $order, 'nfse' ),
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
+			'ambiente' => apply_filters( 'nfe_environment', ( isset($invoice_input['emitir_homologacao']) && $invoice_input['emitir_homologacao'] ? '2' : (int) get_option('wc_settings_woocommercenfe_ambiente') ), $post_id ),
 			'rps' => []
 		);
 
@@ -794,8 +768,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		if ($coupons){
 			foreach($coupons as $coupon_code){
 				$coupon_obj = new WC_Coupon($coupon_code);
-				if($coupon_obj->discount_type == 'percent'){
-					$coupons_percentage[] = $coupon_obj->coupon_amount;
+				if($coupon_obj->get_discount_type() == 'percent'){
+					$coupons_percentage[] = $coupon_obj->get_amount();
 				}
 			}
 		}
@@ -823,6 +797,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		foreach ($services as $item) {
 
 			$product_id  = $item['product_id'];
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			$ignore_product = apply_filters( 'nfe_order_product_ignore', get_post_meta($product_id, '_nfe_ignorar_nfe', true), $product_id, $post_id);
 
 			if (!$ignore_product){
@@ -864,9 +839,9 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	
 				// Service additional information
 				$servico_inf = get_option('wc_settings_woocommercenfe_servico_inf');
-				$service_info = isset($_POST['nfe_service_info']) ? (bool) $_POST['nfe_service_info'] : (bool) $order->get_meta( '_nfe_service_info' );
+				$service_info = isset($invoice_input['nfe_service_info']) ? (bool) $invoice_input['nfe_service_info'] : (bool) $order->get_meta( '_nfe_service_info' );
 				if ($service_info) {
-					$value = isset($_POST['nfe_service_info_text']) ? sanitize_textarea_field($_POST['nfe_service_info_text']) : '';
+					$value = isset($invoice_input['nfe_service_info_text']) ? sanitize_textarea_field($invoice_input['nfe_service_info_text']) : '';
 
 					if (!isset($value)) {
 						$value = $order->get_meta( '_nfe_service_info_text' );
@@ -876,7 +851,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 				if (!empty($servico_inf)) $discriminacao .= ' - ' . $servico_inf;
 
 				// Discount
-				$tipo_desconto = isset($_POST['tipo_desconto']) ? sanitize_text_field($_POST['tipo_desconto']) : null;
+				$tipo_desconto = isset($invoice_input['tipo_desconto']) ? sanitize_text_field($invoice_input['tipo_desconto']) : null;
 				if (empty($tipo_desconto)) $tipo_desconto = $order->get_meta( '_nfse_tipo_desconto' );
 				if (empty($tipo_desconto)) $tipo_desconto = get_option('wc_settings_woocommercenfe_tipo_desconto_nfse');
 				if (empty($tipo_desconto)) $tipo_desconto = 1;
@@ -999,6 +974,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			'classe_imposto' => $imposto // Referência do imposto cadastrado
 		);
 
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 		return apply_filters('nfe_order_data_product', $info, $order->get_id(), $product);
 
   }
@@ -1113,6 +1089,22 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	}
 
 	/**
+	 * Read a WooCommerce core address field through its getter (WC 3.2+ reports
+	 * get_meta() on internal keys as "doing it wrong"); plugin fields stay meta.
+	 *
+	 * @param WC_Order $order
+	 * @param string   $key e.g. _billing_city
+	 * @return mixed
+	 */
+	public static function order_field( $order, $key ) {
+		$getter = 'get_' . ltrim( $key, '_' );
+		if ( preg_match( '/^_(billing|shipping)_(first_name|last_name|company|address_1|address_2|city|state|postcode|country|email|phone)$/D', $key ) && is_callable( array( $order, $getter ) ) ) {
+			return $order->{$getter}();
+		}
+		return $order->get_meta( $key );
+	}
+
+	/**
 	 * Verify if shipping and billing
 	 * informations are different
 	 *
@@ -1123,32 +1115,33 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 		$WooCommerceNFeFormat = new WooCommerceNFeFormat;
 
 		$order = wc_get_order( $post_id );
-		$phone = (get_user_meta($post_id, 'billing_phone', true) ? get_user_meta($post_id, 'billing_phone', true) : $order->get_meta( '_billing_phone' ));
-		$email = ($envio_email && $envio_email == 'yes' ? $order->get_meta( '_billing_email' ) : '');
+		// The order ID is not a user ID: only the buyer's own order data may reach the invoice.
+		$phone = self::order_field( $order, '_billing_phone' );
+		$email = ($envio_email && $envio_email == 'yes' ? self::order_field( $order, '_billing_email' ) : '');
 
 		$billing = array(
-			'endereco'    => $order->get_meta( '_billing_address_1' ),
-			'complemento' => $order->get_meta( '_billing_address_2' ),
+			'endereco'    => self::order_field( $order, '_billing_address_1' ),
+			'complemento' => self::order_field( $order, '_billing_address_2' ),
 			'numero'      => $order->get_meta( '_billing_number' ),
 			'bairro'      => $order->get_meta( '_billing_neighborhood' ),
-			'cidade'      => $order->get_meta( '_billing_city' ),
-			'uf'          => $order->get_meta( '_billing_state' ),
-			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_billing_postcode' )),
+			'cidade'      => self::order_field( $order, '_billing_city' ),
+			'uf'          => self::order_field( $order, '_billing_state' ),
+			'cep'         => $WooCommerceNFeFormat->cep( self::order_field( $order, '_billing_postcode' ) ),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => $order->get_meta( '_billing_country' )
+			'pais'        => self::order_field( $order, '_billing_country' )
 		);
 		$shipping = array(
-			'endereco'    => $order->get_meta( '_shipping_address_1' ),
-			'complemento' => $order->get_meta( '_shipping_address_2' ),
+			'endereco'    => self::order_field( $order, '_shipping_address_1' ),
+			'complemento' => self::order_field( $order, '_shipping_address_2' ),
 			'numero'      => $order->get_meta( '_shipping_number' ),
 			'bairro'      => $order->get_meta( '_shipping_neighborhood' ),
-			'cidade'      => $order->get_meta( '_shipping_city' ),
-			'uf'          => $order->get_meta( '_shipping_state' ),
-			'cep'         => $WooCommerceNFeFormat->cep($order->get_meta( '_shipping_postcode' )),
+			'cidade'      => self::order_field( $order, '_shipping_city' ),
+			'uf'          => self::order_field( $order, '_shipping_state' ),
+			'cep'         => $WooCommerceNFeFormat->cep( self::order_field( $order, '_shipping_postcode' ) ),
 			'telefone'    => $phone,
 			'email'       => $email,
-			'pais'        => $order->get_meta( '_shipping_country' )
+			'pais'        => self::order_field( $order, '_shipping_country' )
 		);
 
 		if ( $shipping['endereco'] == '' ) {
@@ -1263,16 +1256,19 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 			$type = '_billing';
 		}
 
+		// Checkout does not restrict this select to 1/2; unknown values must not abort emission.
+		$person_info = array();
+
 		if ( $persontype == 1 ) {
 
 			// Full name and CPF
-			$person_info['nome_completo'] = $order->get_meta( $type.'_first_name' ).' '.$order->get_meta( $type.'_last_name' );
+			$person_info['nome_completo'] = self::order_field( $order, $type.'_first_name' ).' '.self::order_field( $order, $type.'_last_name' );
 			$person_info['cpf'] = $WooCommerceNFeFormat->cpf($order->get_meta( $type.'_cpf' ));
 
 		} elseif ( $persontype == 2 ) {
 
 			// Razao Social, CNPJ and IE
-			$person_info['razao_social'] = $order->get_meta( $type.'_company', true);
+			$person_info['razao_social'] = self::order_field( $order, $type.'_company' );
 			$person_info['cnpj'] = $WooCommerceNFeFormat->cnpj($order->get_meta( $type.'_cnpj' ));
 			$person_info['ie'] = str_replace(array('-','.',','), '', $order->get_meta( $type.'_ie' ));
 
@@ -1322,7 +1318,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 **/
 	function add_id_to_invoice_errors( $message, $order_id ) {
 
-		$ids_db = get_option('wmbr_auto_invoice_errors');
+		$ids_db = get_option('wmbr_auto_invoice_errors', array());
+		$ids_db = is_array( $ids_db ) ? $ids_db : array();
 		$order = wc_get_order( $order_id );
 		$nfes = $order->get_meta('nfe');
 
@@ -1350,7 +1347,8 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 	 **/
 	function remove_id_to_invoice_errors( $order_id ) {
 
-		$ids_db = get_option('wmbr_auto_invoice_errors');
+		$ids_db = get_option('wmbr_auto_invoice_errors', array());
+		$ids_db = is_array( $ids_db ) ? $ids_db : array();
 
 		if ( is_array($ids_db) ) {
 
@@ -1376,6 +1374,7 @@ class WooCommerceNFeIssue extends WooCommerceNFe {
 
         // If automatic issue, ignore orders with only ignored items
 		foreach($items as $item){
+			// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Published legacy integration hook; keep existing stores compatible.
 			$ignore_item = apply_filters( 'nfe_order_product_ignore', get_post_meta($item['product_id'], '_nfe_ignorar_nfe', true), $item['product_id'], $post_id);
 			if ($ignore_item != 1){
 				return false;

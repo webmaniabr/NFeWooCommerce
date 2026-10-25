@@ -1,4 +1,6 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //============================================================+
 // File name   : tcpdf_config.php
 // Begin       : 2004-06-11
@@ -6,9 +8,9 @@
 //
 // Description : Configuration file for TCPDF.
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2004-2014  Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2004-2014 2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -23,7 +25,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TCPDF.  If not, see <http://www.gnu.org/licenses/>.
+// along with TCPDF.  If not, see <https://www.gnu.org/licenses/>.
 //
 // See LICENSE.TXT file for more information.
 //============================================================+
@@ -84,143 +86,151 @@
 /**
  * Generic name for a blank image.
  */
-define ('K_BLANK_IMAGE', '_blank.png');
+define ('WOOCOMMERCE_NFE_PDF_K_BLANK_IMAGE', '_blank.png');
 
 /**
  * Page format.
  */
-define ('PDF_PAGE_FORMAT', 'A4');
+define ('WOOCOMMERCE_NFE_PDF_PDF_PAGE_FORMAT', 'A4');
 
 /**
  * Page orientation (P=portrait, L=landscape).
  */
-define ('PDF_PAGE_ORIENTATION', 'P');
+define ('WOOCOMMERCE_NFE_PDF_PDF_PAGE_ORIENTATION', 'P');
 
 /**
  * Document creator.
  */
-define ('PDF_CREATOR', 'TCPDF');
+define ('WOOCOMMERCE_NFE_PDF_PDF_CREATOR', 'TCPDF');
 
 /**
  * Document author.
  */
-define ('PDF_AUTHOR', 'TCPDF');
+define ('WOOCOMMERCE_NFE_PDF_PDF_AUTHOR', 'TCPDF');
 
 /**
  * Header title.
  */
-define ('PDF_HEADER_TITLE', 'TCPDF Example');
+define ('WOOCOMMERCE_NFE_PDF_PDF_HEADER_TITLE', 'TCPDF Example');
 
 /**
  * Header description string.
  */
-define ('PDF_HEADER_STRING', "by Nicola Asuni - Tecnick.com\nwww.tcpdf.org");
+define ('WOOCOMMERCE_NFE_PDF_PDF_HEADER_STRING', "by Nicola Asuni - Tecnick.com\nwww.tcpdf.org");
 
 /**
  * Document unit of measure [pt=point, mm=millimeter, cm=centimeter, in=inch].
  */
-define ('PDF_UNIT', 'mm');
+define ('WOOCOMMERCE_NFE_PDF_PDF_UNIT', 'mm');
 
 /**
  * Header margin.
  */
-define ('PDF_MARGIN_HEADER', 5);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_HEADER', 5);
 
 /**
  * Footer margin.
  */
-define ('PDF_MARGIN_FOOTER', 10);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_FOOTER', 10);
 
 /**
  * Top margin.
  */
-define ('PDF_MARGIN_TOP', 27);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_TOP', 27);
 
 /**
  * Bottom margin.
  */
-define ('PDF_MARGIN_BOTTOM', 25);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_BOTTOM', 25);
 
 /**
  * Left margin.
  */
-define ('PDF_MARGIN_LEFT', 15);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_LEFT', 15);
 
 /**
  * Right margin.
  */
-define ('PDF_MARGIN_RIGHT', 15);
+define ('WOOCOMMERCE_NFE_PDF_PDF_MARGIN_RIGHT', 15);
 
 /**
  * Default main font name.
  */
-define ('PDF_FONT_NAME_MAIN', 'helvetica');
+define ('WOOCOMMERCE_NFE_PDF_PDF_FONT_NAME_MAIN', 'helvetica');
 
 /**
  * Default main font size.
  */
-define ('PDF_FONT_SIZE_MAIN', 10);
+define ('WOOCOMMERCE_NFE_PDF_PDF_FONT_SIZE_MAIN', 10);
 
 /**
  * Default data font name.
  */
-define ('PDF_FONT_NAME_DATA', 'helvetica');
+define ('WOOCOMMERCE_NFE_PDF_PDF_FONT_NAME_DATA', 'helvetica');
 
 /**
  * Default data font size.
  */
-define ('PDF_FONT_SIZE_DATA', 8);
+define ('WOOCOMMERCE_NFE_PDF_PDF_FONT_SIZE_DATA', 8);
 
 /**
  * Default monospaced font name.
  */
-define ('PDF_FONT_MONOSPACED', 'courier');
+define ('WOOCOMMERCE_NFE_PDF_PDF_FONT_MONOSPACED', 'courier');
 
 /**
  * Ratio used to adjust the conversion of pixels to user units.
  */
-define ('PDF_IMAGE_SCALE_RATIO', 1.25);
+define ('WOOCOMMERCE_NFE_PDF_PDF_IMAGE_SCALE_RATIO', 1.25);
 
 /**
  * Magnification factor for titles.
  */
-define('HEAD_MAGNIFICATION', 1.1);
+define('WOOCOMMERCE_NFE_PDF_HEAD_MAGNIFICATION', 1.1);
 
 /**
  * Height of cell respect font height.
  */
-define('K_CELL_HEIGHT_RATIO', 1.25);
+define('WOOCOMMERCE_NFE_PDF_K_CELL_HEIGHT_RATIO', 1.25);
 
 /**
  * Title magnification respect main font size.
  */
-define('K_TITLE_MAGNIFICATION', 1.3);
+define('WOOCOMMERCE_NFE_PDF_K_TITLE_MAGNIFICATION', 1.3);
 
 /**
  * Reduction factor for small font.
  */
-define('K_SMALL_RATIO', 2/3);
+define('WOOCOMMERCE_NFE_PDF_K_SMALL_RATIO', 2/3);
 
 /**
  * Set to true to enable the special procedure used to avoid the overlappind of symbols on Thai language.
  */
-define('K_THAI_TOPCHARS', true);
+define('WOOCOMMERCE_NFE_PDF_K_THAI_TOPCHARS', true);
 
 /**
  * If true allows to call TCPDF methods using HTML syntax
  * IMPORTANT: For security reason, disable this feature if you are printing user HTML content.
  */
-define('K_TCPDF_CALLS_IN_HTML', false);
+define('WOOCOMMERCE_NFE_PDF_K_TCPDF_CALLS_IN_HTML', false);
+
+/**
+ * List of TCPDF methods that are allowed to be called using HTML syntax.
+ * Note: each method name must end with surrounded with | (pipe) character.
+ * The constant K_TCPDF_CALLS_IN_HTML must be set to true.
+ * IMPORTANT: For security reason, disable this feature if you are allowing user HTML content.
+ */
+define('WOOCOMMERCE_NFE_PDF_K_ALLOWED_TCPDF_TAGS', '');
 
 /**
  * If true and PHP version is greater than 5, then the Error() method throw new exception instead of terminating the execution.
  */
-define('K_TCPDF_THROW_EXCEPTION_ERROR', false);
+if (!defined('WOOCOMMERCE_NFE_PDF_K_TCPDF_THROW_EXCEPTION_ERROR')) { define('WOOCOMMERCE_NFE_PDF_K_TCPDF_THROW_EXCEPTION_ERROR', true); }
 
 /**
  * Default timezone for datetime functions
  */
-define('K_TIMEZONE', 'UTC');
+define('WOOCOMMERCE_NFE_PDF_K_TIMEZONE', 'UTC');
 
 //============================================================+
 // END OF FILE

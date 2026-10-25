@@ -9,6 +9,8 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	private $auto_invoice_notice = null;
 
 	function __construct(){
+		add_action( 'admin_post_wmbr_download_pdf', array( 'WooCommerceNFePrint', 'download' ) );
+		add_action( 'admin_init', array( 'WooCommerceNFe_Security', 'migrate' ) );
 
 		add_action( 'admin_notices', array($this, 'validate_certificate') );
 		add_action( 'admin_notices', array($this, 'render_auto_invoice_notice') );
@@ -71,7 +73,8 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 			add_filter( 'woocommerce_user_column_shipping_address', array( $this, 'user_column_shipping_address' ), 1, 2 );
 			add_filter( 'woocommerce_admin_billing_fields', array( $this, 'shop_order_billing_fields' ) );
 			add_filter( 'woocommerce_admin_shipping_fields', array( $this, 'shop_order_shipping_fields' ) );
-			add_filter( 'woocommerce_found_customer_details', array( $this, 'customer_details_ajax' ) );
+			// woocommerce_found_customer_details is never applied since WooCommerce 3.0 (the minimum
+			// supported version) and merely registering it logs a deprecation on every customer lookup.
 			add_action( 'woocommerce_process_shop_order_meta', array( $this, 'save_custom_shop_data' ) );
 			add_action( 'woocommerce_api_create_order', array( $this, 'wc_api_save_custom_shop_data' ), 10, 2 );
 			add_action( 'woocommerce_admin_order_data_after_billing_address', array( $this, 'order_data_after_billing_address' ) );
@@ -90,11 +93,11 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	 */
   function scripts(){
 
-		global $version_woonfe;
+		global $woocommercenfe_version;
 
-		wp_register_script( 'woocommercenfe_maskedinput', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.js', array('jquery'), $version_woonfe, true );
-    wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), null, $version_woonfe );
-    wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $version_woonfe );
+		wp_register_script( 'woocommercenfe_maskedinput', plugins_url( 'assets/js/jquery.maskedinput.js', __FILE__ ), array('jquery'), $woocommercenfe_version, true );
+    wp_register_script( 'woocommercenfe_admin_script', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/admin_scripts.js', __FILE__ ) ), array( 'jquery' ), $woocommercenfe_version, true );
+    wp_register_style( 'woocommercenfe_admin_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/admin_style.css', __FILE__ ) ), null, $woocommercenfe_version );
     wp_enqueue_style( 'woocommercenfe_admin_style' );
 		wp_enqueue_script( 'woocommercenfe_admin_script' );
 		wp_enqueue_script( 'woocommercenfe_maskedinput' );
@@ -108,8 +111,10 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	 */
 	function global_admin_scripts(){
 
-    wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ) );
-    wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ) );
+		global $woocommercenfe_version;
+
+    wp_register_script( 'woocommercenfe_table_scripts', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/js/nfe_table.js', __FILE__ ) ), array( 'jquery' ), $woocommercenfe_version, true );
+    wp_register_style( 'woocommercenfe_table_style', apply_filters( 'woocommercenfe_plugins_url', plugins_url( 'assets/css/nfe_table.css', __FILE__ ) ), array(), $woocommercenfe_version );
     wp_enqueue_style( 'woocommercenfe_table_style' );
 		wp_enqueue_script( 'woocommercenfe_table_scripts' );
 
@@ -122,7 +127,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	 */
 	function add_settings_tab( $settings_tabs ){
 
-		$settings_tabs['woocommercenfe_tab'] = __( 'Nota Fiscal', $this->domain );
+		$settings_tabs['woocommercenfe_tab'] = __( 'Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' );
 
 		return $settings_tabs;
 
@@ -134,6 +139,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	 * @return html
 	 */
 	function settings_tab(){
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { return; }
 
 		woocommerce_admin_fields( $this->get_settings() );
 		$transportadoras = get_option('wc_settings_woocommercenfe_transportadoras', array());
@@ -280,7 +286,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 	<div class="nfe-table-body">
 		<div class="entry">
 			<div class="shipping-method-col">
-				<?php echo $this->get_shipping_methods_select(); ?>
+				<?php echo wp_kses( $this->get_shipping_methods_select(), WooCommerceNFe_Security::form_html_tags() ); ?>
 			</div>
 			<div class="shipping-info-col">
 					<p><label class="nfe-shipping-label">Razão Social: </label><input type="text" name="shipping_info_rs_0"/></p>
@@ -293,7 +299,7 @@ class WooCommerceNFeBackend extends WooCommerceNFe {
 			</div>
 			<button type="button" class="button wmbr-remove-shipping-info"><span class="dashicons dashicons-no"></span> Remover</button>
 		</div>
-		<?php echo $this->get_transportadoras_entries(); ?>
+		<?php echo wp_kses( $this->get_transportadoras_entries(), WooCommerceNFe_Security::form_html_tags() ); ?>
 	</div>
 	<button type="button" class="button-primary" id="wmbr-add-shipping-info">Adicionar Método de Entrega</button>
 	<input type="hidden" name="shipping-info-count" value="<?php echo esc_attr( (string) count( $transportadoras ) ); ?>" />
@@ -323,12 +329,14 @@ jQuery(document).ready(function($) {
 		var response = '';
 		$("#update-digital-certificate").prop('disabled', true);
 		jQuery.post(ajaxurl, data, function(response) {
-			if ( response.status == 'success' ) {
-				response = '<h4 class="cert_ajax_success">Seu Certificado Digital A1 foi atualizado: Faltam ' + response.msg + ' dias para o certificado digital A1 expirar.</h4>';
-			} else if ( response.status == 'error' ) {
-				response = '<h4 class="cert_ajax_error">Erro ao atualizar o Certificado Digital A1: ' + response.msg + '</h4> ';
-			} else if ( response.status == 'null_credentials' ) {
-				response = '<h4 class="cert_ajax_error">' + response.msg + '</h4> ';
+			// API-provided messages are inserted as text, never parsed as HTML.
+			var msg = ( response && response.msg !== undefined && response.msg !== null ) ? String( response.msg ) : '';
+			if ( response && response.status == 'success' ) {
+				response = $('<h4 class="cert_ajax_success"></h4>').text('Seu Certificado Digital A1 foi atualizado: Faltam ' + msg + ' dias para o certificado digital A1 expirar.');
+			} else if ( response && response.status == 'error' ) {
+				response = $('<h4 class="cert_ajax_error"></h4>').text('Erro ao atualizar o Certificado Digital A1: ' + msg);
+			} else if ( response && response.status == 'null_credentials' ) {
+				response = $('<h4 class="cert_ajax_error"></h4>').text(msg);
 			} else {
 				response = '<h4 class="cert_ajax_error">Não foi possível atualizar seu Certificado Digital A1. Por favor, solicite suporte para <a href="mailto:suporte@webmaniabr.com">suporte@webmaniabr.com</a></h4>';
 			}
@@ -349,12 +357,16 @@ jQuery(document).ready(function($) {
 	 */
 	function update_settings(){
 
-		woocommerce_update_options( $this->get_settings() );
-
-		// Capability check for safety
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		if ( ! current_user_can( 'manage_woocommerce' ) || ! isset( $_POST['_wpnonce'] ) || ! is_string( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'woocommerce-settings' ) ) {
 			return;
 		}
+		$settings = $this->get_settings();
+		foreach ( WooCommerceNFe_Security::credential_options() as $key ) {
+			foreach ( $settings as $index => $field ) {
+				if ( ( $field['id'] ?? '' ) === $key && ( ! isset( $_POST[$key] ) || ! is_string( $_POST[$key] ) || trim( sanitize_text_field( wp_unslash( $_POST[$key] ) ) ) === '' ) ) { unset( $settings[$index] ); }
+			}
+		}
+		woocommerce_update_options( $settings );
 
 		// Vars
 		$count = isset($_POST['shipping-info-count']) ? (int) $_POST['shipping-info-count'] : 0;
@@ -363,8 +375,10 @@ jQuery(document).ready(function($) {
 		$payment_descs = array();
 		$cnpj_payment_methods = array();
 
-		if ($method = @$_POST['payment_method']){
-			$desc = @$_POST['payment_desc'];
+		// Unslash form values once before saving; stored values remain plain text.
+		$method = isset( $_POST['payment_method'] ) && is_array( $_POST['payment_method'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['payment_method'] ) ) : array();
+		if ($method){
+			$desc = isset( $_POST['payment_desc'] ) && is_array( $_POST['payment_desc'] ) ? array_map( 'sanitize_text_field', wp_unslash( $_POST['payment_desc'] ) ) : array();
 			foreach($method as $key => $value){
 				$san_key = sanitize_text_field( (string) $key );
 				$payment_methods[$san_key] = sanitize_text_field($value);
@@ -376,7 +390,7 @@ jQuery(document).ready(function($) {
 		if ($_POST){
 			for ($i = 1; $i < $count+1; $i++) {
 
-				$id = isset($_POST['shipping_info_method_'.$i]) ? sanitize_text_field($_POST['shipping_info_method_'.$i]) : '';
+				$id = isset($_POST['shipping_info_method_'.$i]) ? sanitize_text_field( wp_unslash( $_POST['shipping_info_method_'.$i] ) ) : '';
 				if (!$id) continue;
 				$transportadoras[$id] = array();
 				$keys = array(
@@ -390,7 +404,7 @@ jQuery(document).ready(function($) {
 				);
 
 				foreach($keys as $name => $post_key){
-					$transportadoras[$id][$name] = isset($_POST['shipping_info_'.$post_key.'_'.$i]) ? sanitize_text_field($_POST['shipping_info_'.$post_key.'_'.$i]) : '';
+					$transportadoras[$id][$name] = isset($_POST['shipping_info_'.$post_key.'_'.$i]) ? sanitize_text_field( wp_unslash( $_POST['shipping_info_'.$post_key.'_'.$i] ) ) : '';
 				}
 
 			}
@@ -415,31 +429,47 @@ jQuery(document).ready(function($) {
 
 		$settings = array(
 			'title' => array(
-				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Produto)', $this->domain ),
+				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Produto)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Informe os acessos da sua aplicação - API 1.0'
 			),
 			'consumer_key' => array(
-				'name' => __( 'Consumer Key', $this->domain ),
-				'type' => 'text',
+				'name' => __( 'Consumer Key', 'nota-fiscal-eletronica-woocommerce' ),
+				'type' => 'password',
+				'value' => '',
+				'autoload' => false,
+				'custom_attributes' => array( 'autocomplete' => 'new-password' ),
+				'desc' => 'Deixe em branco para manter a credencial já salva.',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_consumer_key'
 			),
 			'consumer_secret' => array(
-				'name' => __( 'Consumer Secret', $this->domain ),
-				'type' => 'text',
+				'name' => __( 'Consumer Secret', 'nota-fiscal-eletronica-woocommerce' ),
+				'type' => 'password',
+				'value' => '',
+				'autoload' => false,
+				'custom_attributes' => array( 'autocomplete' => 'new-password' ),
+				'desc' => 'Deixe em branco para manter a credencial já salva.',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_consumer_secret'
 			),
 			'access_token' => array(
-				'name' => __( 'Access Token', $this->domain ),
-				'type' => 'text',
+				'name' => __( 'Access Token', 'nota-fiscal-eletronica-woocommerce' ),
+				'type' => 'password',
+				'value' => '',
+				'autoload' => false,
+				'custom_attributes' => array( 'autocomplete' => 'new-password' ),
+				'desc' => 'Deixe em branco para manter a credencial já salva.',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_access_token'
 			),
 			'access_token_secret' => array(
-				'name' => __( 'Access Token Secret', $this->domain ),
-				'type' => 'text',
+				'name' => __( 'Access Token Secret', 'nota-fiscal-eletronica-woocommerce' ),
+				'type' => 'password',
+				'value' => '',
+				'autoload' => false,
+				'custom_attributes' => array( 'autocomplete' => 'new-password' ),
+				'desc' => 'Deixe em branco para manter a credencial já salva.',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_access_token_secret'
 			),
@@ -448,13 +478,17 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end'
 			),
 			'title_nfse_credentials' => array(
-				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Serviço)', $this->domain ),
+				'name'     => __( 'Credenciais de Acesso (Nota Fiscal de Serviço)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Informe os acessos da sua aplicação - API 2.0'
 			),
 			'bearer_access_token' => array(
-				'name' => __( 'Bearer Access Token', $this->domain ),
-				'type' => 'text',
+				'name' => __( 'Bearer Access Token', 'nota-fiscal-eletronica-woocommerce' ),
+				'type' => 'password',
+				'value' => '',
+				'autoload' => false,
+				'custom_attributes' => array( 'autocomplete' => 'new-password' ),
+				'desc' => 'Deixe em branco para manter a credencial já salva.',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_bearer_access_token'
 			),
@@ -463,12 +497,12 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end'
 			),
 			'title_environment' => array(
-				'name'     => __( 'Ambiente de emissão', $this->domain ),
+				'name'     => __( 'Ambiente de emissão', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Informe o ambiente de emissão. Para validade fiscal (produção) ou para testes (desenvolvimento).'
 			),
 			'ambiente' => array(
-				'name' => __( 'Ambiente', $this->domain ),
+				'name' => __( 'Ambiente', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'radio',
 				'options' => array('1' => 'Produção', '2' => 'Desenvolvimento (Testes)'),
 				'default' => '2',
@@ -479,12 +513,12 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end'
 			),
 			'title2' => array(
-				'name'     => __( 'Configuração Padrão', $this->domain ),
+				'name'     => __( 'Configuração Padrão', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'A configuração padrão será utilizada para todos os produtos.<br>Caso deseje a configuração também pode ser personalizada em cada produto ou categoria.'
 			),
 			'emissao_automatica' => array(
-				'name' => __( 'Emissão automática', $this->domain ),
+				'name' => __( 'Emissão automática', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'radio',
 				'options' => array(
 					'0' => 'Não emitir automaticamente',
@@ -495,23 +529,24 @@ jQuery(document).ready(function($) {
 				'id'   => 'wc_settings_woocommercenfe_emissao_automatica'
 			),
 			'envio_email' => array(
-			'name' => __( 'Envio automático de E-mail', $this->domain ),
+			'name' => __( 'Envio automático de E-mail', 'nota-fiscal-eletronica-woocommerce' ),
 			'type' =>'checkbox',
-			'desc' => __( 'Enviar e-mail para o cliente após a emissão da Nota Fiscal'),
+			'desc' => __( 'Enviar e-mail para o cliente após a emissão da Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' ),
 			'default' => 'yes',
-			'id'   => __('wc_settings_woocommercenfe_envio_email'),
+			'id'   => 'wc_settings_woocommercenfe_envio_email',
 			),
 			'data_emissao' => array(
-				'name' => __( 'Emissão com Data do Pedido', $this->domain ),
+				'name' => __( 'Emissão com Data do Pedido', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' =>'checkbox',
-			'desc' => __( 'Emissão de Nota Fiscal com a data do pedido (retroativa)'),
+			'desc' => __( 'Emissão de Nota Fiscal com a data do pedido (retroativa)', 'nota-fiscal-eletronica-woocommerce' ),
 				'default' => 'no',
 				'id'   => 'wc_settings_woocommercenfe_data_emissao'
 			),
 			'email_notification' => array(
-				'name' => __( 'Notificação de erros', $this->domain ),
+				'name' => __( 'Notificação de erros', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'email',
-				'desc' => __( 'Informe um e-mail para notificações de erros na emissão ou <a target="_blank" href="'.$auto_invoice_report_url.'">visualize as notificações</a>.'),
+				/* translators: %s: URL of the automatic invoice error report. */
+				'desc' => sprintf( __( 'Informe um e-mail para notificações de erros na emissão ou <a target="_blank" href="%s">visualize as notificações</a>.', 'nota-fiscal-eletronica-woocommerce' ), esc_url( $auto_invoice_report_url ) ),
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_email_notification'
 			),
@@ -520,17 +555,17 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end2'
 			),
 			'title_nfse' => array(
-				'name'     => __( 'Configurações (Nota Fiscal de Serviço)', $this->domain ),
+				'name'     => __( 'Configurações (Nota Fiscal de Serviço)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Configuração de campos específicos para a emissão de NFS-e.'
 			),
 			'imposto_nfse' => array(
-				'name' => __( 'Classe de Imposto (NFS-e)', $this->domain ),
+				'name' => __( 'Classe de Imposto (NFS-e)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_imposto_nfse'
 			),
 			'tipo_desconto_nfse' => array(
-				'name' => __( 'Tipo de desconto', $this->domain ),
+				'name' => __( 'Tipo de desconto', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'select',
 				'id'   => 'wc_settings_woocommercenfe_tipo_desconto_nfse',
 				'options' => array(
@@ -541,10 +576,10 @@ jQuery(document).ready(function($) {
 				),
 			),
 			'inclui_taxas_nfse' => array(
-				'name' => __( 'Incluir taxas no valor do serviço', $this->domain ),
+				'name' => __( 'Incluir taxas no valor do serviço', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_woocommercenfe_incluir_taxas_nfse',
 				'type' => 'checkbox',
-				'desc' => __( 'Incluir o valor das taxas do pedido no valor do serviço da NFS-e', $this->domain ),
+				'desc' => __( 'Incluir o valor das taxas do pedido no valor do serviço da NFS-e', 'nota-fiscal-eletronica-woocommerce' ),
 				'default' => 'no',
 			),
 			'section_end_nfse2' => array(
@@ -552,33 +587,33 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end_nfse'
 			),
 			'title_nfe' => array(
-				'name'     => __( 'Configurações (Nota Fiscal de Produto)', $this->domain ),
+				'name'     => __( 'Configurações (Nota Fiscal de Produto)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Configuração de campos específicos para a emissão de NF-e.'
 			),
 			'natureza_operacao' => array(
-				'name' => __( 'Natureza da Operação', $this->domain ),
+				'name' => __( 'Natureza da Operação', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_natureza_operacao'
 			),
 			'imposto' => array(
-				'name' => __( 'Classe de Imposto (NF-e)', $this->domain ),
+				'name' => __( 'Classe de Imposto (NF-e)', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_imposto'
 			),
 			'ncm' => array(
-				'name' => __( 'Código NCM', $this->domain ),
+				'name' => __( 'Código NCM', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_ncm'
 			),
 			'cest' => array(
-				'name' => __( 'Código CEST', $this->domain ),
+				'name' => __( 'Código CEST', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'id'   => 'wc_settings_woocommercenfe_cest'
 			),
 			'origem' => array(
-				'name' => __( 'Origem dos Produtos', $this->domain ),
+				'name' => __( 'Origem dos Produtos', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'select',
 				'options' => array(
 						'null' => 'Selecionar Origem dos Produtos',
@@ -600,12 +635,12 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end_nfe'
 			),
 			'title_intermediador' => array(
-				'name'     => __( 'Indicativo de Intermediador', $this->domain ),
+				'name'     => __( 'Indicativo de Intermediador', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Campos para indicar o intermediador da operação.'
 			),
 			'intermediador' => array(
-				'name' => __( 'Intermediador da operação', $this->domain ),
+				'name' => __( 'Intermediador da operação', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'select',
 				'options' => array(
 						'0' => '0 - Operação sem intermediador (em site ou plataforma própria)',
@@ -615,13 +650,13 @@ jQuery(document).ready(function($) {
 				'id'   => 'wc_settings_woocommercenfe_intermediador'
 			),
 			'cnpj_intermediador' => array(
-				'name' => __( 'CNPJ do Intermediador', $this->domain ),
+				'name' => __( 'CNPJ do Intermediador', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_cnpj_intermediador'
 			),
 			'id_intermediador' => array(
-				'name' => __( 'ID do intermediador', $this->domain ),
+				'name' => __( 'ID do intermediador', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'text',
 				'css' => 'width:300px;',
 				'id'   => 'wc_settings_woocommercenfe_id_intermediador'
@@ -631,24 +666,24 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end_intermediador'
 			),
 			'title4' => array(
-			'name'     => __( 'Informações Complementares (Opcional)', $this->domain ),
+			'name'     => __( 'Informações Complementares (Opcional)', 'nota-fiscal-eletronica-woocommerce' ),
 			'type'     => 'title',
 			'desc'     => 'Informações fiscais complementares.'
 			),
 			'fisco_inf' => array(
-				'name' => __( 'Informações ao Fisco', $this->domain ),
+				'name' => __( 'Informações ao Fisco', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'textarea',
 				'id'   => 'wc_settings_woocommercenfe_fisco_inf',
 			'class' => 'nfe_textarea',
 			),
 			'cons_inf' => array(
-				'name' => __( 'Informações Complementares ao Consumidor', $this->domain ),
+				'name' => __( 'Informações Complementares ao Consumidor', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'textarea',
 				'id'   => 'wc_settings_woocommercenfe_cons_inf',
 			'class' => 'nfe_textarea',
 			),
 			'servico_inf' => array(
-				'name' => __( 'Descrição Complementar do Serviço', $this->domain ),
+				'name' => __( 'Descrição Complementar do Serviço', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'textarea',
 				'id'   => 'wc_settings_woocommercenfe_servico_inf',
 			'class' => 'nfe_textarea',
@@ -658,14 +693,14 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_ebanx'
 			),
 			'ebanx_title' => array(
-				'name'     => __( 'Gateways de Pagamento', $this->domain ),
+				'name'     => __( 'Gateways de Pagamento', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Compatibilidade com EBANX, Pagar.me, PagSeguro e Paypal Plus.'
 			),
 			'ebanx_parcelas' => array(
-				'name' => __( 'Emitir pagamento parcelado como duplicata na Nota Fiscal', $this->domain ),
+				'name' => __( 'Emitir pagamento parcelado como duplicata na Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'checkbox',
-				'desc' => __( 'Pagamento parcelado como duplicata na Nota Fiscal', $this->domain ),
+				'desc' => __( 'Pagamento parcelado como duplicata na Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_parcelas_ebanx',
 				'default' => 'no',
 			),
@@ -674,35 +709,35 @@ jQuery(document).ready(function($) {
 				'id' => 'wc_settings_woocommercenfe_end3'
 			),
 			'title6' => array(
-				'name'     => __( 'Campos Personalizados no Checkout', $this->domain ),
+				'name'     => __( 'Campos Personalizados no Checkout', 'nota-fiscal-eletronica-woocommerce' ),
 				'type'     => 'title',
 				'desc'     => 'Informe se deseja mostrar os campos na página de Finalizar Compra.'
 			),
 			'tipo_pessoa' => array(
-				'name' => __( 'Exibir Tipo de Pessoa', $this->domain ),
+				'name' => __( 'Exibir Tipo de Pessoa', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'checkbox',
-				'desc' => __( 'Caso esteja marcado exibe os campos de Tipo de Pessoa, CPF, CNPJ e Empresa nas informações de cobrança.', $this->domain ),
+				'desc' => __( 'Caso esteja marcado exibe os campos de Tipo de Pessoa, CPF, CNPJ e Empresa nas informações de cobrança.', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_woocommercenfe_tipo_pessoa',
 				'default' => 'yes',
 			),
 			'mascara_campos' => array(
-				'name' => __( 'Habilitar Máscara de Campos', $this->domain ),
+				'name' => __( 'Habilitar Máscara de Campos', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'checkbox',
-				'desc' => __( 'Caso esteja marcado adiciona máscaras de preenchimento para os campos de CPF e CNPJ.', $this->domain ),
+				'desc' => __( 'Caso esteja marcado adiciona máscaras de preenchimento para os campos de CPF e CNPJ.', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_woocommercenfe_mascara_campos',
 				'default' => 'yes',
 			),
 			'cep' => array(
-				'name' => __( 'Preenchimento automático do endereço', $this->domain ),
+				'name' => __( 'Preenchimento automático do endereço', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'checkbox',
-				'desc' => __( 'Caso esteja marcado, o endereço será automaticamente preenchido quando o usuário informar o CEP.', $this->domain ),
+				'desc' => __( 'Caso esteja marcado, o endereço será automaticamente preenchido quando o usuário informar o CEP.', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_woocommercenfe_cep',
 				'default' => 'yes',
 			),
 			'bairro' => array(
-				'name' => __( 'Bairro obrigatório', $this->domain ),
+				'name' => __( 'Bairro obrigatório', 'nota-fiscal-eletronica-woocommerce' ),
 				'type' => 'checkbox',
-				'desc' => __( 'Caso esteja marcado, o campo do endereço Bairro será obrigatório o preenchimento.', $this->domain ),
+				'desc' => __( 'Caso esteja marcado, o campo do endereço Bairro será obrigatório o preenchimento.', 'nota-fiscal-eletronica-woocommerce' ),
 				'id'   => 'wc_settings_woocommercenfe_bairro',
 				'default' => 'no',
 			),
@@ -805,12 +840,13 @@ jQuery(document).ready(function($) {
 
 				foreach ($frenet->ShippingSeviceAvailableArray as $var){
 
+					if ( ! is_object( $var ) || ! isset( $var->ServiceCode ) || ! is_scalar( $var->ServiceCode ) ) { continue; }
 					$selected = '';
 
 					if ($id){
 						((isset($carriers['FRENET_'.$var->ServiceCode]) && $id == 'FRENET_'.$var->ServiceCode) ? $selected = 'selected' : $selected = '');
 					}
-					$html .= '<option value="'.esc_attr( 'FRENET_'.$var->ServiceCode ).'" '.$selected.'>Frenet - '.esc_html( $var->Carrier ).' ('.esc_html( $var->ServiceDescription ).')</option>';
+					$html .= '<option value="'.esc_attr( 'FRENET_'.$var->ServiceCode ).'" '.$selected.'>Frenet - '.esc_html( is_scalar( $var->Carrier ?? '' ) ? (string) ( $var->Carrier ?? '' ) : '' ).' ('.esc_html( is_scalar( $var->ServiceDescription ?? '' ) ? (string) ( $var->ServiceDescription ?? '' ) : '' ).')</option>';
 
 				}
 
@@ -960,43 +996,43 @@ jQuery(document).ready(function($) {
 			}
 
 			// Security: Verify nonce
-			if ( ! wp_verify_nonce( $_GET['nonce'], 'atualizar_nfe_' . $_GET['post'] ) ) {
-				wp_die( __( 'Security check failed', 'woocommerce' ) );
+			if ( ! is_string( $_GET['nonce'] ) || ! is_string( $_GET['post'] ) || ! is_string( $_GET['chave'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['nonce'] ) ), 'atualizar_nfe_' . sanitize_text_field( wp_unslash( $_GET['post'] ) ) ) ) {
+				wp_die( esc_html__( 'Security check failed', 'nota-fiscal-eletronica-woocommerce' ) );
 			}
 
-			$this->get_credentials();
-			$post_id = (int) sanitize_text_field($_GET['post']);
+			$post_id = (int) sanitize_text_field( wp_unslash( $_GET['post'] ) );
+			if ( ! current_user_can( 'edit_shop_order', $post_id ) ) { return false; }
+			$this->get_credentials( $post_id );
 			$order = wc_get_order( $post_id );
-			$chave = sanitize_text_field($_GET['chave']);
+			if ( ! $order ) { return false; }
+			$chave = sanitize_text_field( wp_unslash( $_GET['chave'] ) );
+			if ( '' === $chave ) { return false; }
 			$webmaniabr = new NFe($this->settings);
 			$response = $webmaniabr->consultaNotaFiscal($chave);
-			if (isset($response->error)){
+			$nfe_data = $order->get_meta('nfe');
+			if (isset($response->error) || ! isset( $response->status ) || ! is_scalar( $response->status ) || ! is_array( $nfe_data )){
 
-				$this->add_error( __('Erro: '.$response->error, $this->domain) );
+				$error = isset( $response->error ) && is_scalar( $response->error ) ? (string) $response->error : 'Não foi possível consultar a nota.';
+				$this->add_error( esc_html( 'Erro: ' . $error ) );
 				return false;
 
 			} else {
 
 				$new_status = $response->status;
-				$nfe_data = $order->get_meta('nfe');
 
 				foreach ($nfe_data as &$order_nfe) {
 
-					if ($order_nfe['chave_acesso'] == $chave) {
+					if ( is_array( $order_nfe ) && ( $order_nfe['chave_acesso'] ?? '' ) == $chave ) {
 						$order_nfe['status'] = $new_status;
-						isset($response->nfe) && $order_nfe['n_nfe'] = $response->nfe;
-						isset($response->uuid) && $order_nfe['uuid'] = $response->uuid;
-						isset($response->recibo) && $order_nfe['n_recibo'] = $response->recibo;
-						isset($response->serie) && $order_nfe['n_serie'] = $response->serie;
-						isset($response->xml) && $order_nfe['url_xml'] = $response->xml;
-						isset($response->danfe) && $order_nfe['url_danfe'] = $response->danfe;
-						isset($response->danfe_simples) && $order_nfe['url_danfe_simplificada'] = $response->danfe_simples;
-						isset($response->danfe_etiqueta) && $order_nfe['url_danfe_etiqueta'] = $response->danfe_etiqueta;
+						// Only scalar API values are stored; the meta box renders them as strings.
+						foreach ( array( 'nfe' => 'n_nfe', 'uuid' => 'uuid', 'recibo' => 'n_recibo', 'serie' => 'n_serie', 'xml' => 'url_xml', 'danfe' => 'url_danfe', 'danfe_simples' => 'url_danfe_simplificada', 'danfe_etiqueta' => 'url_danfe_etiqueta' ) as $source => $target ) {
+							if ( isset( $response->$source ) && is_scalar( $response->$source ) ) { $order_nfe[ $target ] = $response->$source; }
+						}
 					}
 
 				}
 
-				$order->update_meta_data( 'nfe', $nfe_data );
+				$order->update_meta_data( 'nfe', array_map( array( 'WooCommerceNFe_Security', 'sanitize_invoice' ), $nfe_data ) );
 				$order->save();
 				$this->add_success( 'NF-e atualizada com sucesso' );
 
@@ -1017,6 +1053,11 @@ jQuery(document).ready(function($) {
 			$order = wc_get_order( $order->ID );
 		}
 		$nfe_data = $order->get_meta('nfe');
+		if ( $order->get_meta( '_wmbr_uncertain_nfe' ) || $order->get_meta( '_wmbr_uncertain_nfse' ) ) {
+			echo '<p><strong>Emissão sem confirmação.</strong> Confira este pedido no painel Webmania antes de repetir a emissão.</p>';
+			wp_nonce_field( 'save_nfe_meta_box_' . $order->get_id(), 'nfe_meta_box_nonce' );
+			echo '<label><input type="checkbox" name="wmbr_confirm_no_invoice" value="1"> Confirmei na Webmania que nenhuma nota foi emitida nesta tentativa. Liberar nova tentativa ao salvar.</label>';
+		}
 		if (empty($nfe_data)):
 
 	?>
@@ -1037,6 +1078,7 @@ jQuery(document).ready(function($) {
 <div class="body">
 <?php foreach($nfe_data as $order_nfe):
 
+	$order_nfe = WooCommerceNFe_Security::sanitize_invoice( $order_nfe );
 	if (empty($order_nfe['data'])){
 		continue;
 	}
@@ -1098,8 +1140,10 @@ jQuery(document).ready(function($) {
 			} ?>
 		</h4>
 		<?php
-			$post_url = get_edit_post_link($order->get_id());
-			$update_url = $post_url.'&atualizar_nfe=true&chave='.$chave_acesso_nfe;
+			// atualizar_status_nota() requires post + nonce; HPOS edit screens are reached via the post.php redirect.
+			$post_url = get_edit_post_link( $order->get_id(), 'raw' );
+			if ( ! $post_url ) { $post_url = admin_url( 'post.php?post=' . (int) $order->get_id() . '&action=edit' ); }
+			$update_url = add_query_arg( array( 'post' => (int) $order->get_id(), 'atualizar_nfe' => 'true', 'chave' => rawurlencode( (string) $chave_acesso_nfe ), 'nonce' => wp_create_nonce( 'atualizar_nfe_' . $order->get_id() ) ), $post_url );
 		?>
 		<h4 class="body-info status-column"><span class="nfe-status <?php echo esc_attr( (string) $status_nfe ); ?>"><?php echo esc_html( (string) $status_nfe ); ?></span>
 		<?php if (!in_array($modelo_nfe, ['NFS-e', 'Lote RPS'])) { ?><a class="unstyled" href="<?php echo esc_url( $update_url ); ?>"><span class="dashicons dashicons-image-rotate update-nfe"></span></a><?php } ?>
@@ -1149,8 +1193,12 @@ jQuery(document).ready(function($) {
 		$installments_checked = $order->get_meta( '_nfe_installments' );
 		$nfe_installments_n = $order->get_meta( '_nfe_installments_n' );
 		$nfe_installments_n = ($nfe_installments_n) ? $nfe_installments_n : '1';
+		// Saved rows can be fewer than the saved count (JavaScript disabled or count > 100); emission caps at 120.
+		$nfe_installments_n = max( 1, min( 120, (int) $nfe_installments_n ) );
 		$nfe_installments_due_date = $order->get_meta( '_nfe_installments_due_date' );
+		$nfe_installments_due_date = is_array( $nfe_installments_due_date ) ? $nfe_installments_due_date : array();
 		$nfe_installments_value = $order->get_meta( '_nfe_installments_value' );
+		$nfe_installments_value = is_array( $nfe_installments_value ) ? $nfe_installments_value : array();
 		$additional_info_checked = $order->get_meta( '_nfe_additional_info' );
 		$nfe_additional_info_text = $order->get_meta( '_nfe_additional_info_text' );
 		$service_info_checked = $order->get_meta( '_nfe_service_info' );
@@ -1218,10 +1266,10 @@ jQuery(document).ready(function($) {
 				<label class="title">Contribuinte ICMS</label>
 			</p>
 			<select name="nfe_contribuinte" id="nfe_contribuinte">
-				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
-				<option value="1" <?php if (is_numeric($contribuinte) && $contribuinte == '1') echo 'selected'; ?> ><?php _e( 'Contribuinte ICMS', $this->domain ); ?></option>
-				<option value="2" <?php if (is_numeric($contribuinte) && $contribuinte == '2') echo 'selected'; ?> ><?php _e( 'Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
-				<option value="9" <?php if (is_numeric($contribuinte) && $contribuinte == '9') echo 'selected'; ?> ><?php _e( 'Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS', $this->domain ); ?></option>
+				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php esc_html_e( 'Selecionar', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="1" <?php if (is_numeric($contribuinte) && $contribuinte == '1') echo 'selected'; ?> ><?php esc_html_e( 'Contribuinte ICMS', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="2" <?php if (is_numeric($contribuinte) && $contribuinte == '2') echo 'selected'; ?> ><?php esc_html_e( 'Contribuinte isento de Inscrição no cadastro de Contribuintes do ICMS', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="9" <?php if (is_numeric($contribuinte) && $contribuinte == '9') echo 'selected'; ?> ><?php esc_html_e( 'Não Contribuinte, que pode ou não possuir Inscrição Estadual no Cadastro de Contribuintes do ICMS', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
 			</select>
 		</div>
 		<div class="field">
@@ -1229,12 +1277,12 @@ jQuery(document).ready(function($) {
 				<label class="title">Modalidade do frete</label>
 			</p>
 			<select name="modalidade_frete" id="modalidade_frete">
-				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Remetente (CIF)', $this->domain ); ?></option>
-				<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta do Destinatário (FOB)', $this->domain ); ?></option>
-				<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php _e( 'Contratação do Frete por conta de Terceiros', $this->domain ); ?></option>
-				<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Remetente', $this->domain ); ?></option>
-				<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php _e( 'Transporte Próprio por conta do Destinatário', $this->domain ); ?></option>
-				<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php _e( 'Sem Ocorrência de Transporte', $this->domain ); ?></option>
+				<option value="null" <?php if (!is_numeric($modalidade_frete)) echo 'selected'; ?> ><?php esc_html_e( 'Contratação do Frete por conta do Remetente (CIF)', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="1" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '1') echo 'selected'; ?> ><?php esc_html_e( 'Contratação do Frete por conta do Destinatário (FOB)', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="2" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '2') echo 'selected'; ?> ><?php esc_html_e( 'Contratação do Frete por conta de Terceiros', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="3" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '3') echo 'selected'; ?> ><?php esc_html_e( 'Transporte Próprio por conta do Remetente', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="4" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '4') echo 'selected'; ?> ><?php esc_html_e( 'Transporte Próprio por conta do Destinatário', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="9" <?php if (is_numeric($modalidade_frete) && $modalidade_frete == '9') echo 'selected'; ?> ><?php esc_html_e( 'Sem Ocorrência de Transporte', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
 			</select>
 		</div>
 		<div class="field">
@@ -1242,10 +1290,10 @@ jQuery(document).ready(function($) {
 				<label class="title">Tipo de desconto (NFS-e)</label>
 			</p>
 			<select name="tipo_desconto" id="tipo_desconto">
-				<option value="0" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '0') echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
-				<option value="3" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '3') echo 'selected'; ?> ><?php _e( 'Nenhum', $this->domain ); ?></option>
-				<option value="1" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '1') echo 'selected'; ?> ><?php _e( 'Desconto incondicional', $this->domain ); ?></option>
-				<option value="2" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '2') echo 'selected'; ?> ><?php _e( 'Desconto condicional', $this->domain ); ?></option>
+				<option value="0" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '0') echo 'selected'; ?> ><?php esc_html_e( 'Selecionar', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="3" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '3') echo 'selected'; ?> ><?php esc_html_e( 'Nenhum', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="1" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '1') echo 'selected'; ?> ><?php esc_html_e( 'Desconto incondicional', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+				<option value="2" <?php if (is_numeric($tipo_desconto) && $tipo_desconto == '2') echo 'selected'; ?> ><?php esc_html_e( 'Desconto condicional', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
 			</select>
 		</div>
 		<div class="field nfe_volume_weight" style="margin-bottom:10px;">
@@ -1298,13 +1346,13 @@ jQuery(document).ready(function($) {
 				<p class="label">
 					<label class="title">Vencimento (DD/MM/AAAA)</label>
 				</p>
-				<input type="text" name="nfe_installments_due_date[]" value="<?php echo ($nfe_installments_due_date) ? esc_attr( (string) $nfe_installments_due_date[0] ) : ''; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo esc_attr( (string) ( $nfe_installments_due_date[0] ?? '' ) ); ?>" style="width:100%;">
 			</div>
 			<div class="field">
 				<p class="label">
 					<label class="title">Valor (R$)</label>
 				</p>
-				<input type="text" name="nfe_installments_value[]" value="<?php echo ($nfe_installments_value) ? esc_attr( (string) $nfe_installments_value[0] ) : ''; ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_value[]" value="<?php echo esc_attr( (string) ( $nfe_installments_value[0] ?? '' ) ); ?>" style="width:100%;">
 			</div>
 		</div>
 
@@ -1318,13 +1366,13 @@ jQuery(document).ready(function($) {
 				<p class="label">
 					<label class="title">Vencimento (DD/MM/AAAA)</label>
 				</p>
-				<input type="text" name="nfe_installments_due_date[]" value="<?php echo esc_attr( (string) $nfe_installments_due_date[$i] ); ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_due_date[]" value="<?php echo esc_attr( (string) ( $nfe_installments_due_date[$i] ?? '' ) ); ?>" style="width:100%;">
 			</div>
 			<div class="field">
 				<p class="label">
 					<label class="title">Valor (R$)</label>
 				</p>
-				<input type="text" name="nfe_installments_value[]" value="<?php echo esc_attr( (string) $nfe_installments_value[$i] ); ?>" style="width:100%;">
+				<input type="text" name="nfe_installments_value[]" value="<?php echo esc_attr( (string) ( $nfe_installments_value[$i] ?? '' ) ); ?>" style="width:100%;">
 			</div>
 		</div>
 
@@ -1567,16 +1615,16 @@ jQuery(document).ready(function($) {
 				$origem = get_post_meta($post->ID, '_nfe_origem', true);
 			?>
 			<select name="origem">
-					<option value="null" <?php if (!is_numeric($origem)) echo 'selected'; ?> ><?php _e( 'Selecionar Origem do Produto', $this->domain ); ?></option>
-					<option value="0" <?php if (is_numeric($origem) && $origem == 0) echo 'selected'; ?> ><?php _e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', $this->domain ); ?></option>
-					<option value="1" <?php if ($origem == 1) echo 'selected'; ?> ><?php _e( '1 - Estrangeira - Importação direta, exceto a indicada no código 6', $this->domain ); ?></option>
-					<option value="2" <?php if ($origem == 2) echo 'selected'; ?> ><?php _e( '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7', $this->domain ); ?></option>
-					<option value="3" <?php if ($origem == 3) echo 'selected'; ?> ><?php _e( '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%', $this->domain ); ?></option>
-					<option value="4" <?php if ($origem == 4) echo 'selected'; ?> ><?php _e( '4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes', $this->domain ); ?></option>
-					<option value="5" <?php if ($origem == 5) echo 'selected'; ?> ><?php _e( '5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%', $this->domain ); ?></option>
-					<option value="6" <?php if ($origem == 6) echo 'selected'; ?> ><?php _e( '6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural', $this->domain ); ?></option>
-					<option value="7" <?php if ($origem == 7) echo 'selected'; ?> ><?php _e( '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural' ,$this->domain ); ?></option>
-					<option value="8" <?php if ($origem == 8) echo 'selected'; ?> ><?php _e( '8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%', $this->domain ); ?></option>
+					<option value="null" <?php if (!is_numeric($origem)) echo 'selected'; ?> ><?php esc_html_e( 'Selecionar Origem do Produto', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="0" <?php if (is_numeric($origem) && $origem == 0) echo 'selected'; ?> ><?php esc_html_e( '0 - Nacional, exceto as indicadas nos códigos 3, 4, 5 e 8', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="1" <?php if ($origem == 1) echo 'selected'; ?> ><?php esc_html_e( '1 - Estrangeira - Importação direta, exceto a indicada no código 6', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="2" <?php if ($origem == 2) echo 'selected'; ?> ><?php esc_html_e( '2 - Estrangeira - Adquirida no mercado interno, exceto a indicada no código 7', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="3" <?php if ($origem == 3) echo 'selected'; ?> ><?php esc_html_e( '3 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 40% e inferior ou igual a 70%', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="4" <?php if ($origem == 4) echo 'selected'; ?> ><?php esc_html_e( '4 - Nacional, cuja produção tenha sido feita em conformidade com os processos produtivos básicos de que tratam as legislações citadas nos Ajustes', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="5" <?php if ($origem == 5) echo 'selected'; ?> ><?php esc_html_e( '5 - Nacional, mercadoria ou bem com Conteúdo de Importação inferior ou igual a 40%', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="6" <?php if ($origem == 6) echo 'selected'; ?> ><?php esc_html_e( '6 - Estrangeira - Importação direta, sem similar nacional, constante em lista da CAMEX e gás natural', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="7" <?php if ($origem == 7) echo 'selected'; ?> ><?php esc_html_e( '7 - Estrangeira - Adquirida no mercado interno, sem similar nacional, constante lista CAMEX e gás natural' ,'nota-fiscal-eletronica-woocommerce' ); ?></option>
+					<option value="8" <?php if ($origem == 8) echo 'selected'; ?> ><?php esc_html_e( '8 - Nacional, mercadoria ou bem com Conteúdo de Importação superior a 70%', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
 			</select>
 			<input type="hidden" name="wp_admin_nfe" value="1" />
 	</div>
@@ -1613,9 +1661,9 @@ jQuery(document).ready(function($) {
 					$ind_escala = get_post_meta( $post->ID, '_nfe_ind_escala', true );
 				?>
 				<select name="ind_escala">
-						<option value="" <?php if (!$ind_escala) echo 'selected'; ?> ><?php _e( 'Selecionar', $this->domain ); ?></option>
-						<option value="S" <?php if ($ind_escala == 'S') echo 'selected'; ?> ><?php _e( 'S - Produzido em Escala Relevante', $this->domain ); ?></option>
-						<option value="N" <?php if ($ind_escala == 'N') echo 'selected'; ?> ><?php _e( 'N - Produzido em Escala NÃO Relevante', $this->domain ); ?></option>
+						<option value="" <?php if (!$ind_escala) echo 'selected'; ?> ><?php esc_html_e( 'Selecionar', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+						<option value="S" <?php if ($ind_escala == 'S') echo 'selected'; ?> ><?php esc_html_e( 'S - Produzido em Escala Relevante', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
+						<option value="N" <?php if ($ind_escala == 'N') echo 'selected'; ?> ><?php esc_html_e( 'N - Produzido em Escala NÃO Relevante', 'nota-fiscal-eletronica-woocommerce' ); ?></option>
 				</select>
 				<input type="hidden" name="wp_admin_nfe" value="1" />
 		</div>
@@ -1648,7 +1696,7 @@ jQuery(document).ready(function($) {
 			$new_columns[ $column_name ] = $column_info;
 
 			if ( 'order_status' == $column_name ) {
-				$new_columns['nfe'] = __( 'Status Fiscal' );
+				$new_columns['nfe'] = __( 'Status Fiscal', 'nota-fiscal-eletronica-woocommerce' );
 			}
 
 		}
@@ -1724,7 +1772,7 @@ jQuery(document).ready(function($) {
 	 */
 	function add_order_meta_box_actions( $actions ) {
 
-		$actions['wc_nfe_emitir'] = __( 'Emitir Nota Fiscal' );
+		$actions['wc_nfe_emitir'] = __( 'Emitir Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' );
 
 		return $actions;
 
@@ -1739,17 +1787,19 @@ jQuery(document).ready(function($) {
 
 		global $typenow;
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display routing; bulk action processing verifies its nonce separately.
 		if ( $typenow == 'shop_order' || isset($_GET['page']) && $_GET['page'] == 'wc-orders') {
 
-			if ( isset($_GET['status']) && in_array($_GET['status'], ['trash', 'wc-cancelled', 'wc-pending']))
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display routing; bulk action processing verifies its nonce separately.
+		if ( isset($_GET['status']) && in_array($_GET['status'], ['trash', 'wc-cancelled', 'wc-pending']))
 				return false;
 			?>
 			<script type="text/javascript">
 				jQuery( document ).ready( function ( $ ) {
-					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php _e( 'Emitir Nota Fiscal' ); ?>');
-					var $imprimir_danfe = $('<option>').val('wc_nfe_imprimir_danfe').text('<?php _e( 'Imprimir Danfe' ); ?>');
-					var $imprimir_simplificada = $('<option>').val('wc_nfe_imprimir_simplificada').text('<?php _e( 'Imprimir Danfe Simples' ); ?>');
-					var $imprimir_etiqueta = $('<option>').val('wc_nfe_imprimir_etiqueta').text('<?php _e( 'Imprimir Danfe Etiqueta' ); ?>');
+					var $emitir_nfe = $('<option>').val('wc_nfe_emitir').text('<?php echo esc_js( __( 'Emitir Nota Fiscal', 'nota-fiscal-eletronica-woocommerce' ) ); ?>');
+					var $imprimir_danfe = $('<option>').val('wc_nfe_imprimir_danfe').text('<?php echo esc_js( __( 'Imprimir Danfe', 'nota-fiscal-eletronica-woocommerce' ) ); ?>');
+					var $imprimir_simplificada = $('<option>').val('wc_nfe_imprimir_simplificada').text('<?php echo esc_js( __( 'Imprimir Danfe Simples', 'nota-fiscal-eletronica-woocommerce' ) ); ?>');
+					var $imprimir_etiqueta = $('<option>').val('wc_nfe_imprimir_etiqueta').text('<?php echo esc_js( __( 'Imprimir Danfe Etiqueta', 'nota-fiscal-eletronica-woocommerce' ) ); ?>');
 					$( 'select[name^="action"]' ).append( $emitir_nfe );
 					$( 'select[name^="action"]' ).append( $imprimir_danfe );
 					$( 'select[name^="action"]' ).append( $imprimir_simplificada );
@@ -1811,7 +1861,7 @@ jQuery(document).ready(function($) {
 			return false;
 		}
 
-		$order_list = $_GET['post_type'] ?? $_GET['page'] ?? [];
+		$order_list = sanitize_text_field( wp_unslash( $_GET['post_type'] ?? $_GET['page'] ?? '' ) );
 
 		if (!$order_list) return;
 
@@ -1833,26 +1883,30 @@ jQuery(document).ready(function($) {
 			// Security: Verify nonce ONLY for plugin actions (prevents notice spam on action=-1)
 			$bulk_nonce = isset( $_GET['wmbr_bulk_order_actions_nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['wmbr_bulk_order_actions_nonce'] ) ) : '';
 			if ( ! $bulk_nonce || ! wp_verify_nonce( $bulk_nonce, 'wmbr_bulk_order_actions' ) ) {
-				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível validar a ação. Atualize a página e tente novamente.', $this->domain );
+				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível validar a ação. Atualize a página e tente novamente.', 'nota-fiscal-eletronica-woocommerce' );
 				$this->add_error( $reason );
 				return false;
 			}
 
 			// Verify order IDs
-			$order_ids_raw = $_GET['id'] ?? $_GET['post'] ?? [];
+			$order_ids_raw = array_map( 'sanitize_text_field', wp_unslash( (array) ( $_GET['id'] ?? $_GET['post'] ?? array() ) ) );
 			if ( ! is_array( $order_ids_raw ) ) {
 				$order_ids_raw = array( $order_ids_raw );
 			}
-			$order_ids = array_filter( array_map( 'absint', $order_ids_raw ) );
+			$order_ids = array_filter( array_map( array( 'WooCommerceNFe_Security', 'validate_order_id' ), $order_ids_raw ) );
 
 			if ( !$order_ids ){
-				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação.');
+				$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Selecione <strong>no mínimo um pedido</strong> para executar esta ação.', 'nota-fiscal-eletronica-woocommerce' );
 				$this->add_error($reason);
 				return false;
 			}
 
-			foreach ( $order_ids as $order_id){
-				$order = wc_get_order($order_id);
+			foreach ( $order_ids as $order_id ) {
+				$order = wc_get_order( $order_id );
+				if ( ! $order || ! current_user_can( 'edit_shop_order', $order_id ) || in_array( $order->get_status(), array( 'trash', 'cancelled', 'pending' ), true ) ) {
+					$this->add_error( 'Pedido inválido ou sem permissão para executar esta ação.' );
+					return false;
+				}
 				$order_status = $order->get_status();
 			}
 
@@ -1865,7 +1919,8 @@ jQuery(document).ready(function($) {
 				];
 				if (in_array($order_status, array_keys($status))) {
 					$description = $status[$order_status];
-					$reason = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível executar esta ação. O pedido <strong>' . $order_id . '</strong> encontra-se <strong>' . $description . '</strong>');
+					/* translators: 1: Order ID, 2: translated order status. */
+					$reason = sprintf( __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Não foi possível executar esta ação. O pedido <strong>%1$d</strong> encontra-se <strong>%2$s</strong>', 'nota-fiscal-eletronica-woocommerce' ), $order_id, esc_html( $description ) );
 					$this->add_error($reason);
 					return false;
 				}
@@ -1902,19 +1957,14 @@ jQuery(document).ready(function($) {
 	 *
 	 * @return void
 	 */
-	function process_order_meta_box_actions( $post ){
-
-		$order_id = $post->id;
-		$post_status = $post->post_status;
-
-		if ($post_status == 'trash' || $post_status == 'wc-cancelled')
+	function process_order_meta_box_actions( $post ) {
+		$order_id = is_a( $post, 'WC_Order' ) ? $post->get_id() : 0;
+		if ( ! $order_id || ! WooCommerceNFe_Security::can_edit_invoice( $order_id ) || in_array( $post->get_status(), array( 'trash', 'cancelled' ), true ) ) {
 			return false;
-
+		}
 		$nf = new WooCommerceNFeIssue;
 		$nf->send( array( $order_id ) );
-
 	}
-
 	/**
 	 * Customer meta fields
 	 *
@@ -1923,38 +1973,38 @@ jQuery(document).ready(function($) {
   function customer_meta_fields( $fields ) {
 
 		// Billing fields
-		$new_fields['billing']['title'] = __( 'Endereço de Cobrança', $this->domain );
+		$new_fields['billing']['title'] = __( 'Endereço de Cobrança', 'nota-fiscal-eletronica-woocommerce' );
 		$new_fields['billing']['fields']['billing_first_name'] = $fields['billing']['fields']['billing_first_name'];
 		$new_fields['billing']['fields']['billing_last_name']  = $fields['billing']['fields']['billing_last_name'];
 		$new_fields['billing']['fields']['billing_cpf'] = array(
-				'label' => __( 'CPF', $this->domain ),
+				'label' => __( 'CPF', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_cnpj'] = array(
-				'label' => __( 'CNPJ', $this->domain ),
+				'label' => __( 'CNPJ', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_company'] = $fields['billing']['fields']['billing_company'];
 		$new_fields['billing']['fields']['billing_ie'] = array(
-				'label' => __( 'Inscrição Estadual', $this->domain ),
+				'label' => __( 'Inscrição Estadual', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_birthdate'] = array(
-				'label' => __( 'Nascimento', $this->domain ),
+				'label' => __( 'Nascimento', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_sex'] = array(
-				'label' => __( 'Sexo', $this->domain ),
+				'label' => __( 'Sexo', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_address_1'] = $fields['billing']['fields']['billing_address_1'];
 		$new_fields['billing']['fields']['billing_number'] = array(
-			'label' => __( 'Número', $this->domain ),
+			'label' => __( 'Número', 'nota-fiscal-eletronica-woocommerce' ),
 			'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_address_2'] = $fields['billing']['fields']['billing_address_2'];
 		$new_fields['billing']['fields']['billing_neighborhood'] = array(
-			'label' => __( 'Bairro', $this->domain ),
+			'label' => __( 'Bairro', 'nota-fiscal-eletronica-woocommerce' ),
 			'description' => ''
 		);
 		$new_fields['billing']['fields']['billing_city']     = $fields['billing']['fields']['billing_city'];
@@ -1964,25 +2014,25 @@ jQuery(document).ready(function($) {
 		$new_fields['billing']['fields']['billing_phone']    = str_replace("?", "", $fields['billing']['fields']['billing_phone']);
 		if ( isset( $settings['cell_phone'] ) ) {
 			$new_fields['billing']['fields']['billing_cellphone'] = array(
-				'label' => __( 'Celular', $this->domain ),
+				'label' => __( 'Celular', 'nota-fiscal-eletronica-woocommerce' ),
 				'description' => ''
 			);
 		}
 		$new_fields['billing']['fields']['billing_email'] = $fields['billing']['fields']['billing_email'];
 
 		// Shipping fields.
-		$new_fields['shipping']['title'] = __( 'Customer Shipping Address', $this->domain );
+		$new_fields['shipping']['title'] = __( 'Customer Shipping Address', 'nota-fiscal-eletronica-woocommerce' );
 		$new_fields['shipping']['fields']['shipping_first_name'] = $fields['shipping']['fields']['shipping_first_name'];
 		$new_fields['shipping']['fields']['shipping_last_name']  = $fields['shipping']['fields']['shipping_last_name'];
 		$new_fields['shipping']['fields']['shipping_company']    = $fields['shipping']['fields']['shipping_company'];
 		$new_fields['shipping']['fields']['shipping_address_1']  = $fields['shipping']['fields']['shipping_address_1'];
 		$new_fields['shipping']['fields']['shipping_number'] = array(
-			'label' => __( 'Número', $this->domain ),
+			'label' => __( 'Número', 'nota-fiscal-eletronica-woocommerce' ),
 			'description' => ''
 		);
 		$new_fields['shipping']['fields']['shipping_address_2']  = $fields['shipping']['fields']['shipping_address_2'];
 		$new_fields['shipping']['fields']['shipping_neighborhood'] = array(
-			'label' => __( 'Bairro', $this->domain ),
+			'label' => __( 'Bairro', 'nota-fiscal-eletronica-woocommerce' ),
 			'description' => ''
 		);
 		$new_fields['shipping']['fields']['shipping_city']     = $fields['shipping']['fields']['shipping_city'];
@@ -2031,92 +2081,92 @@ jQuery(document).ready(function($) {
   function shop_order_billing_fields( $data ) {
 
 		$billing_data['first_name'] = array(
-			'label' => __( 'Nome', $this->domain ),
+			'label' => __( 'Nome', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['last_name'] = array(
-			'label' => __( 'Sobrenome', $this->domain ),
+			'label' => __( 'Sobrenome', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
     $billing_data['persontype'] = array(
 			'type'    => 'select',
-			'label'   => __( 'Tipo Pessoa', $this->domain ),
+			'label'   => __( 'Tipo Pessoa', 'nota-fiscal-eletronica-woocommerce' ),
 			'options' => array(
-				'0' => __( 'Selecionar', $this->domain ),
-				'1' => __( 'Pessoa Física', $this->domain ),
-				'2' => __( 'Pessoa Jurídica', $this->domain )
+				'0' => __( 'Selecionar', 'nota-fiscal-eletronica-woocommerce' ),
+				'1' => __( 'Pessoa Física', 'nota-fiscal-eletronica-woocommerce' ),
+				'2' => __( 'Pessoa Jurídica', 'nota-fiscal-eletronica-woocommerce' )
 			),
 			'show'  => false
     );
     $billing_data['cpf'] = array(
-			'label' => __( 'CPF', $this->domain ),
+			'label' => __( 'CPF', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $billing_data['cnpj'] = array(
-			'label' => __( 'CNPJ', $this->domain ),
+			'label' => __( 'CNPJ', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $billing_data['ie'] = array(
-			'label' => __( 'Inscrição Estadual', $this->domain ),
+			'label' => __( 'Inscrição Estadual', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $billing_data['company'] = array(
-			'label' => __( 'Empresa', $this->domain ),
+			'label' => __( 'Empresa', 'nota-fiscal-eletronica-woocommerce' ),
     );
     $billing_data['birthdate'] = array(
-			'label' => __( 'Nascimento', $this->domain ),
+			'label' => __( 'Nascimento', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $billing_data['sex'] = array(
-			'label' => __( 'Sexo', $this->domain ),
+			'label' => __( 'Sexo', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
 		$billing_data['address_1'] = array(
-			'label' => __( 'Endereço', $this->domain ),
+			'label' => __( 'Endereço', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['number'] = array(
-			'label' => __( 'Número', $this->domain ),
+			'label' => __( 'Número', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['address_2'] = array(
-			'label' => __( 'Complemento', $this->domain ),
+			'label' => __( 'Complemento', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['neighborhood'] = array(
-			'label' => __( 'Bairro', $this->domain ),
+			'label' => __( 'Bairro', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['city'] = array(
-			'label' => __( 'Cidade', $this->domain ),
+			'label' => __( 'Cidade', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['state'] = array(
-			'label' => __( 'Estado', $this->domain ),
+			'label' => __( 'Estado', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['country'] = array(
-			'label'   => __( 'País', $this->domain ),
+			'label'   => __( 'País', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'    => false,
 			'type'    => 'select',
 			'options' => array(
-				'' => __( 'Selecione um País&hellip;', $this->domain )
+				'' => __( 'Selecione um País&hellip;', 'nota-fiscal-eletronica-woocommerce' )
 			) + WC()->countries->get_allowed_countries()
 		);
 		$billing_data['postcode'] = array(
-			'label' => __( 'CEP', $this->domain ),
+			'label' => __( 'CEP', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$billing_data['phone'] = array(
-			'label' => __( 'Telefone Fixo', $this->domain ),
+			'label' => __( 'Telefone Fixo', 'nota-fiscal-eletronica-woocommerce' ),
 		);
 		if ( isset( $settings['cell_phone'] ) ) {
 			$billing_data['cellphone'] = array(
-				'label' => __( 'Celular', $this->domain ),
+				'label' => __( 'Celular', 'nota-fiscal-eletronica-woocommerce' ),
 			);
 		}
 		$billing_data['email'] = array(
-			'label' => __( 'E-mail', $this->domain ),
+			'label' => __( 'E-mail', 'nota-fiscal-eletronica-woocommerce' ),
 		);
 
 		// Return
@@ -2132,47 +2182,47 @@ jQuery(document).ready(function($) {
   function shop_order_shipping_fields( $data ) {
 
     $shipping_data['first_name'] = array(
-			'label' => __( 'Nome', $this->domain ),
+			'label' => __( 'Nome', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['last_name'] = array(
-			'label' => __( 'Sobrenome', $this->domain ),
+			'label' => __( 'Sobrenome', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['address_1'] = array(
-			'label' => __( 'Endereço', $this->domain ),
+			'label' => __( 'Endereço', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['number'] = array(
-			'label' => __( 'Número', $this->domain ),
+			'label' => __( 'Número', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['address_2'] = array(
-			'label' => __( 'Complemento', $this->domain ),
+			'label' => __( 'Complemento', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['neighborhood'] = array(
-			'label' => __( 'Bairro', $this->domain ),
+			'label' => __( 'Bairro', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['city'] = array(
-			'label' => __( 'Cidade', $this->domain ),
+			'label' => __( 'Cidade', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['state'] = array(
-			'label' => __( 'Estado', $this->domain ),
+			'label' => __( 'Estado', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 		$shipping_data['country'] = array(
-			'label'   => __( 'País', $this->domain ),
+			'label'   => __( 'País', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'    => false,
 			'type'    => 'select',
 			'options' => array(
-				'' => __( 'Selecione um País&hellip;', $this->domain )
+				'' => __( 'Selecione um País&hellip;', 'nota-fiscal-eletronica-woocommerce' )
 			) + WC()->countries->get_allowed_countries()
 		);
 		$shipping_data['postcode'] = array(
-			'label' => __( 'CEP', $this->domain ),
+			'label' => __( 'CEP', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
 		);
 
@@ -2189,24 +2239,24 @@ jQuery(document).ready(function($) {
 
     $shipping_data['persontype'] = array(
 			'type'    => 'select',
-			'label'   => __( 'Tipo Pessoa', $this->domain ),
+			'label'   => __( 'Tipo Pessoa', 'nota-fiscal-eletronica-woocommerce' ),
 			'options' => array(
-				'3' => __( 'Utilizar dados de cobrança', $this->domain ),
-				'1' => __( 'Pessoa Física', $this->domain ),
-				'2' => __( 'Pessoa Jurídica', $this->domain )
+				'3' => __( 'Utilizar dados de cobrança', 'nota-fiscal-eletronica-woocommerce' ),
+				'1' => __( 'Pessoa Física', 'nota-fiscal-eletronica-woocommerce' ),
+				'2' => __( 'Pessoa Jurídica', 'nota-fiscal-eletronica-woocommerce' )
 			),
 			'show'  => false
     );
     $shipping_data['cpf'] = array(
-			'label' => __( 'CPF', $this->domain ),
+			'label' => __( 'CPF', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $shipping_data['cnpj'] = array(
-			'label' => __( 'CNPJ', $this->domain ),
+			'label' => __( 'CNPJ', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
     $shipping_data['ie'] = array(
-			'label' => __( 'Inscrição Estadual', $this->domain ),
+			'label' => __( 'Inscrição Estadual', 'nota-fiscal-eletronica-woocommerce' ),
 			'show'  => false
     );
 
@@ -2221,8 +2271,11 @@ jQuery(document).ready(function($) {
 	 */
   function customer_details_ajax( $customer_data ) {
 
-    $user_id      = (int) trim( stripslashes( $_POST['user_id'] ) );
-		$type_to_load = esc_attr( trim( stripslashes( $_POST['type_to_load'] ) ) );
+    if ( ! check_ajax_referer( 'get-customer-details', 'security', false ) ) { return $customer_data; }
+    $user_id = isset( $_POST['user_id'] ) && is_string( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+    $type_to_load = isset( $_POST['type_to_load'] ) && is_string( $_POST['type_to_load'] ) ? sanitize_key( wp_unslash( $_POST['type_to_load'] ) ) : '';
+    if ( ! current_user_can( 'manage_woocommerce' ) || ! in_array( $type_to_load, array( 'billing', 'shipping' ), true ) ) { return $customer_data; }
+
 		$custom_data = array(
 			$type_to_load . '_number'       => get_user_meta( $user_id, $type_to_load . '_number', true ),
 			$type_to_load . '_neighborhood' => get_user_meta( $user_id, $type_to_load . '_neighborhood', true ),
@@ -2245,20 +2298,18 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
   function save_custom_shop_data( $post_id ) {
-
+		// The authenticated WooCommerce order-save action verifies its CPT/HPOS nonce first.
+		$input = WooCommerceNFe_Security::admin_order_input( $post_id );
+		if ( $input === false ) { return; }
 		$order = wc_get_order( $post_id );
-		isset($_POST['_billing_number']) ? $order->update_meta_data( '_billing_number', wc_clean( $_POST['_billing_number'] ) ) : '';
-		isset($_POST['_billing_neighborhood']) ? $order->update_meta_data( '_billing_neighborhood', wc_clean( $_POST['_billing_neighborhood'] ) ) : '';
-		isset($_POST['_shipping_number']) ? $order->update_meta_data(  '_shipping_number', wc_clean( $_POST['_shipping_number'] ) ) : '';
-		isset($_POST['_shipping_neighborhood']) ? $order->update_meta_data( '_shipping_neighborhood', wc_clean( $_POST['_shipping_neighborhood'] ) ) : '';
-		isset($_POST['_billing_persontype']) ? $order->update_meta_data( '_billing_persontype', wc_clean( $_POST['_billing_persontype'] ) ) : '';
-		isset($_POST['_billing_cpf']) ? $order->update_meta_data( '_billing_cpf', wc_clean( $_POST['_billing_cpf'] ) ) : '';
-		isset($_POST['_billing_cnpj']) ? $order->update_meta_data( '_billing_cnpj', wc_clean( $_POST['_billing_cnpj'] ) ) : '';
-		isset($_POST['_billing_ie']) ? $order->update_meta_data( '_billing_ie', wc_clean( $_POST['_billing_ie'] ) ) : '';
-		isset($_POST['_billing_birthdate']) ? $order->update_meta_data( '_billing_birthdate', wc_clean( $_POST['_billing_birthdate'] ) ) : '';
-		isset($_POST['_billing_sex']) ? $order->update_meta_data( '_billing_sex', wc_clean( $_POST['_billing_sex'] ) ) : '';
-		isset($_POST['_billing_cellphone']) ? $order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $_POST['_billing_cellphone']) ) ) : '';
-
+		if ( ! $order || ! current_user_can( 'edit_shop_order', $post_id ) ) { return; }
+		foreach ( array( '_billing_number', '_billing_neighborhood', '_shipping_number', '_shipping_neighborhood', '_billing_persontype', '_billing_cpf', '_billing_cnpj', '_billing_ie', '_billing_birthdate', '_billing_sex', '_billing_cellphone' ) as $key ) {
+			if ( isset( $input[ $key ] ) && is_string( $input[ $key ] ) ) {
+				$value = sanitize_text_field( $input[ $key ] );
+				$order->update_meta_data( $key, $key === '_billing_cellphone' ? str_replace( '?', '', $value ) : $value );
+			}
+		}
+		$order->save_meta_data();
 	}
 
 	/**
@@ -2269,19 +2320,21 @@ jQuery(document).ready(function($) {
 	function wc_api_save_custom_shop_data($order_id, $data){
 
 		$order = wc_get_order( $order_id );
-		$billing_address = $data['customer']['billing_address'];
-		$shipping_address = $data['customer']['shipping_address'];
-		$order->update_meta_data( '_billing_number', wc_clean( $billing_address['number'] ) );
-		$order->update_meta_data( '_billing_neighborhood', wc_clean( $billing_address['neighborhood'] ) );
-		$order->update_meta_data( '_shipping_number', wc_clean( $shipping_address['number'] ) );
-		$order->update_meta_data( '_shipping_neighborhood', wc_clean( $shipping_address['neighborhood'] ) );
-		$order->update_meta_data( '_billing_persontype', wc_clean( $billing_address['persontype'] ) );
-		$order->update_meta_data( '_billing_cpf', wc_clean( $billing_address['cpf'] ) );
-		$order->update_meta_data( '_billing_cnpj', wc_clean( $billing_address['cnpj'] ) );
-		$order->update_meta_data( '_billing_ie', wc_clean( $billing_address['ie'] ) );
-		$order->update_meta_data( '_billing_birthdate', wc_clean( $billing_address['birthdate'] ) );
-		$order->update_meta_data( '_billing_sex', wc_clean( $billing_address['sex'] ) );
-		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone']) ) );
+		if ( ! $order ) { return; }
+		// Legacy REST payloads may omit any of these keys.
+		$billing_address = isset( $data['customer']['billing_address'] ) && is_array( $data['customer']['billing_address'] ) ? $data['customer']['billing_address'] : array();
+		$shipping_address = isset( $data['customer']['shipping_address'] ) && is_array( $data['customer']['shipping_address'] ) ? $data['customer']['shipping_address'] : array();
+		$order->update_meta_data( '_billing_number', wc_clean( $billing_address['number'] ?? '' ) );
+		$order->update_meta_data( '_billing_neighborhood', wc_clean( $billing_address['neighborhood'] ?? '' ) );
+		$order->update_meta_data( '_shipping_number', wc_clean( $shipping_address['number'] ?? '' ) );
+		$order->update_meta_data( '_shipping_neighborhood', wc_clean( $shipping_address['neighborhood'] ?? '' ) );
+		$order->update_meta_data( '_billing_persontype', wc_clean( $billing_address['persontype'] ?? '' ) );
+		$order->update_meta_data( '_billing_cpf', wc_clean( $billing_address['cpf'] ?? '' ) );
+		$order->update_meta_data( '_billing_cnpj', wc_clean( $billing_address['cnpj'] ?? '' ) );
+		$order->update_meta_data( '_billing_ie', wc_clean( $billing_address['ie'] ?? '' ) );
+		$order->update_meta_data( '_billing_birthdate', wc_clean( $billing_address['birthdate'] ?? '' ) );
+		$order->update_meta_data( '_billing_sex', wc_clean( $billing_address['sex'] ?? '' ) );
+		$order->update_meta_data( '_billing_cellphone', wc_clean( str_replace("?", "", $billing_address['cellphone'] ?? '') ) );
 
 	}
 
@@ -2293,29 +2346,38 @@ jQuery(document).ready(function($) {
     function save_informacoes_fiscais( $post_id ){
 
 			// Security: Check user capabilities
-			if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			if ( ! current_user_can( wc_get_order( $post_id ) ? 'edit_shop_order' : 'edit_post', $post_id ) ) {
 				return;
 			}
 
 			// Security: Verify nonce for CSRF protection
-			if ( ! isset( $_POST['nfe_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['nfe_meta_box_nonce'], 'save_nfe_meta_box_' . $post_id ) ) {
+			if ( ! isset( $_POST['nfe_meta_box_nonce'] ) || ! is_string( $_POST['nfe_meta_box_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['nfe_meta_box_nonce'] ) ), 'save_nfe_meta_box_' . $post_id ) ) {
 				return;
+			}
+
+			if ( ! empty( $_POST['wmbr_confirm_no_invoice'] ) && WooCommerceNFe_Security::can_edit_invoice( $post_id ) ) {
+				$uncertain_order = wc_get_order( $post_id );
+				if ( $uncertain_order ) {
+					$uncertain_order->delete_meta_data( '_wmbr_uncertain_nfe' );
+					$uncertain_order->delete_meta_data( '_wmbr_uncertain_nfse' );
+					$uncertain_order->save();
+				}
 			}
 
 			if (get_post_type($post_id) == 'product' && !empty($_POST['wp_admin_nfe'])){
 
 					$info = array(
-					'_nfe_tipo_produto'    => sanitize_text_field($_POST['tipo_produto'] ?? ''),
-					'_nfe_classe_imposto'  => sanitize_text_field($_POST['classe_imposto'] ?? ''),
-					'_nfe_codigo_ean'      => sanitize_text_field($_POST['codigo_ean'] ?? ''),
-					'_nfe_gtin_tributavel' => sanitize_text_field($_POST['gtin_tributavel'] ?? ''),
-					'_nfe_codigo_ncm'      => sanitize_text_field($_POST['codigo_ncm'] ?? ''),
-					'_nfe_codigo_cest'     => sanitize_text_field($_POST['codigo_cest'] ?? ''),
-					'_nfe_cnpj_fabricante' => sanitize_text_field($_POST['cnpj_fabricante'] ?? ''),
-					'_nfe_ind_escala'      => sanitize_text_field($_POST['ind_escala'] ?? ''),
-					'_nfe_produto_informacoes_adicionais' => sanitize_text_field($_POST['produto_informacoes_adicionais'] ?? ''),
-					'_nfe_unidade'         => sanitize_text_field($_POST['unidade'] ?? ''),
-					'_nfe_product_others'  => sanitize_text_field($_POST['product_others'] ?? '')
+					'_nfe_tipo_produto'    => sanitize_text_field( wp_unslash( $_POST['tipo_produto'] ?? '' ) ),
+					'_nfe_classe_imposto'  => sanitize_text_field( wp_unslash( $_POST['classe_imposto'] ?? '' ) ),
+					'_nfe_codigo_ean'      => sanitize_text_field( wp_unslash( $_POST['codigo_ean'] ?? '' ) ),
+					'_nfe_gtin_tributavel' => sanitize_text_field( wp_unslash( $_POST['gtin_tributavel'] ?? '' ) ),
+					'_nfe_codigo_ncm'      => sanitize_text_field( wp_unslash( $_POST['codigo_ncm'] ?? '' ) ),
+					'_nfe_codigo_cest'     => sanitize_text_field( wp_unslash( $_POST['codigo_cest'] ?? '' ) ),
+					'_nfe_cnpj_fabricante' => sanitize_text_field( wp_unslash( $_POST['cnpj_fabricante'] ?? '' ) ),
+					'_nfe_ind_escala'      => sanitize_text_field( wp_unslash( $_POST['ind_escala'] ?? '' ) ),
+					'_nfe_produto_informacoes_adicionais' => sanitize_text_field( wp_unslash( $_POST['produto_informacoes_adicionais'] ?? '' ) ),
+					'_nfe_unidade'         => sanitize_text_field( wp_unslash( $_POST['unidade'] ?? '' ) ),
+					'_nfe_product_others'  => sanitize_text_field( wp_unslash( $_POST['product_others'] ?? '' ) )
 					);
 
 					foreach ($info as $key => $value){
@@ -2325,7 +2387,7 @@ jQuery(document).ready(function($) {
 					}
 
 					if (!empty($_POST['ignorar_nfe'])){
-						update_post_meta( $post_id, '_nfe_ignorar_nfe', sanitize_text_field($_POST['ignorar_nfe']) );
+						update_post_meta( $post_id, '_nfe_ignorar_nfe', sanitize_text_field( wp_unslash( $_POST['ignorar_nfe'] ) ) );
 					} else {
 						update_post_meta( $post_id, '_nfe_ignorar_nfe', 0 );
 					}
@@ -2334,39 +2396,40 @@ jQuery(document).ready(function($) {
 						delete_post_meta( $post_id, '_nfe_product_others' );
 					}
 
-					if (isset($_POST['origem']) && (is_numeric($_POST['origem']) || $_POST['origem'])){
-						update_post_meta( $post_id, '_nfe_origem', sanitize_text_field($_POST['origem']) );
+					$origin = sanitize_text_field( wp_unslash( $_POST['origem'] ?? '' ) );
+					if ( $origin !== '' ) {
+						update_post_meta( $post_id, '_nfe_origem', sanitize_text_field( wp_unslash( $_POST['origem'] ) ) );
 					}
 						
 			}
 
-			if (get_post_type($post_id) == 'shop_order' && $_POST && !empty($_POST['wp_admin_nfe'])){
+			if (wc_get_order($post_id) && $_POST && !empty($_POST['wp_admin_nfe'])){
 
 				$order = wc_get_order( $post_id );
 
 				$info = array(
-					'_nfe_natureza_operacao_pedido'	=> sanitize_text_field($_POST['natureza_operacao_pedido'] ?? ''),
-					'_nfe_beneficio_fiscal_pedido'	=> sanitize_text_field($_POST['beneficio_fiscal_pedido'] ?? ''),
-					'_nfe_contribuinte' => sanitize_text_field($_POST['nfe_contribuinte'] ?? ''),
-					'_nfe_modalidade_frete'		=> sanitize_text_field($_POST['modalidade_frete'] ?? ''),
-					'_nfse_tipo_desconto'		=> sanitize_text_field($_POST['tipo_desconto'] ?? ''),
-					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? sanitize_text_field($_POST['nfe_volume_weight']) : false,
-					'_nfe_transporte_volume'		=> sanitize_text_field($_POST['transporte_volume'] ?? ''),
-					'_nfe_transporte_especie'		=> sanitize_text_field($_POST['transporte_especie'] ?? ''),
-					'_nfe_transporte_peso_bruto'    => sanitize_text_field($_POST['transporte_peso_bruto'] ?? ''),
-					'_nfe_transporte_peso_liquido'  => sanitize_text_field($_POST['transporte_peso_liquido'] ?? ''),
+					'_nfe_natureza_operacao_pedido'	=> sanitize_text_field( wp_unslash( $_POST['natureza_operacao_pedido'] ?? '' ) ),
+					'_nfe_beneficio_fiscal_pedido'	=> sanitize_text_field( wp_unslash( $_POST['beneficio_fiscal_pedido'] ?? '' ) ),
+					'_nfe_contribuinte' => sanitize_text_field( wp_unslash( $_POST['nfe_contribuinte'] ?? '' ) ),
+					'_nfe_modalidade_frete'		=> sanitize_text_field( wp_unslash( $_POST['modalidade_frete'] ?? '' ) ),
+					'_nfse_tipo_desconto'		=> sanitize_text_field( wp_unslash( $_POST['tipo_desconto'] ?? '' ) ),
+					'_nfe_volume_weight' => isset($_POST['nfe_volume_weight']) ? sanitize_text_field( wp_unslash( $_POST['nfe_volume_weight'] ) ) : false,
+					'_nfe_transporte_volume'		=> sanitize_text_field( wp_unslash( $_POST['transporte_volume'] ?? '' ) ),
+					'_nfe_transporte_especie'		=> sanitize_text_field( wp_unslash( $_POST['transporte_especie'] ?? '' ) ),
+					'_nfe_transporte_peso_bruto'    => sanitize_text_field( wp_unslash( $_POST['transporte_peso_bruto'] ?? '' ) ),
+					'_nfe_transporte_peso_liquido'  => sanitize_text_field( wp_unslash( $_POST['transporte_peso_liquido'] ?? '' ) ),
 					'_nfe_installments'  => isset($_POST['nfe_installments']) ? (bool) $_POST['nfe_installments'] : false,
 					'_nfe_installments_n'  => isset($_POST['nfe_installments_n']) ? (int) $_POST['nfe_installments_n'] : 0,
-					'_nfe_installments_due_date'  => isset($_POST['nfe_installments_due_date']) ? array_map('sanitize_text_field', (array) $_POST['nfe_installments_due_date']) : [],
-					'_nfe_installments_value'  => isset($_POST['nfe_installments_value']) ? array_map('sanitize_text_field', (array) $_POST['nfe_installments_value']) : [],
+					'_nfe_installments_due_date'  => isset($_POST['nfe_installments_due_date']) ? array_map('sanitize_text_field', (array) wp_unslash( $_POST['nfe_installments_due_date'] )) : [],
+					'_nfe_installments_value'  => isset($_POST['nfe_installments_value']) ? array_map('sanitize_text_field', (array) wp_unslash( $_POST['nfe_installments_value'] )) : [],
 					'_nfe_additional_info' => isset($_POST['nfe_additional_info']) ? (bool) $_POST['nfe_additional_info'] : false,
-					'_nfe_additional_info_text' => sanitize_text_field($_POST['nfe_additional_info_text'] ?? ''),
+					'_nfe_additional_info_text' => sanitize_text_field( wp_unslash( $_POST['nfe_additional_info_text'] ?? '' ) ),
 					'_nfe_service_info' => isset($_POST['nfe_service_info']) ? (bool) $_POST['nfe_service_info'] : false,
-					'_nfe_service_info_text' => sanitize_text_field($_POST['nfe_service_info_text'] ?? ''),
+					'_nfe_service_info_text' => sanitize_text_field( wp_unslash( $_POST['nfe_service_info_text'] ?? '' ) ),
 					'_nfe_info_intermediador' => isset($_POST['nfe_info_intermediador']) ? (bool) $_POST['nfe_info_intermediador'] : false,
-					'_nfe_info_intermediador_type' => sanitize_text_field($_POST['nfe_info_intermediador_type'] ?? ''),
-					'_nfe_info_intermediador_cnpj' => sanitize_text_field($_POST['nfe_info_intermediador_cnpj'] ?? ''),
-					'_nfe_info_intermediador_id' => sanitize_text_field($_POST['nfe_info_intermediador_id'] ?? '')
+					'_nfe_info_intermediador_type' => sanitize_text_field( wp_unslash( $_POST['nfe_info_intermediador_type'] ?? '' ) ),
+					'_nfe_info_intermediador_cnpj' => sanitize_text_field( wp_unslash( $_POST['nfe_info_intermediador_cnpj'] ?? '' ) ),
+					'_nfe_info_intermediador_id' => sanitize_text_field( wp_unslash( $_POST['nfe_info_intermediador_id'] ?? '' ) )
 				);
 
 				if (!$info['_nfe_volume_weight']){
@@ -2404,6 +2467,8 @@ jQuery(document).ready(function($) {
 
 				}
 
+				$order->save();
+
 			}
 
 	}
@@ -2414,6 +2479,7 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function add_category_ncm($taxonomy){
+		wp_nonce_field( 'woocommercenfe_save_category', 'woocommercenfe_category_nonce' );
 
 		?>
 
@@ -2433,6 +2499,7 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function edit_category_ncm($term, $taxonomy){
+		wp_nonce_field( 'woocommercenfe_save_category', 'woocommercenfe_category_nonce' );
 
 		if (function_exists('get_term_meta')) {
 			$ncm = get_term_meta($term->term_id, '_ncm', true);
@@ -2458,9 +2525,12 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function save_product_cat_ncm( $term_id, $tag_id ){
+		$nonce = isset( $_POST['woocommercenfe_category_nonce'] ) && is_string( $_POST['woocommercenfe_category_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['woocommercenfe_category_nonce'] ) ) : '';
+		if ( ! current_user_can( 'manage_product_terms' ) || ! wp_verify_nonce( $nonce, 'woocommercenfe_save_category' ) ) { return; }
 
-		if ( isset( $_POST['term-ncm'] ) ) {
-			update_term_meta( $term_id, '_ncm', sanitize_text_field( $_POST['term-ncm'] ) );
+
+		if ( isset( $_POST['term-ncm'] ) && is_string( $_POST['term-ncm'] ) ) {
+			update_term_meta( $term_id, '_ncm', sanitize_text_field( wp_unslash( $_POST['term-ncm'] ) ) );
 		}
 
 	}
@@ -2566,6 +2636,11 @@ jQuery(document).ready(function($) {
 	 **/
 	function alert_auto_invoice_errors() {
 
+		// Fiscal emission status is only for store managers, not every wp-admin user.
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
 		$ids_db = get_option('wmbr_auto_invoice_errors');
 
 		if ( empty($ids_db) ) {
@@ -2580,7 +2655,8 @@ jQuery(document).ready(function($) {
 		}
 
 		$menu_url = get_admin_url(get_current_blog_id(), '/admin.php?page=wmbr_page_auto_invoice_errors');
-		$message = __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="'.$menu_url.'">Visualizar Pedidos</a>');
+		/* translators: %s: URL of the orders with invoice errors. */
+		$message = sprintf( __( '<strong>[WebmaniaBR® Nota Fiscal] Aviso:</strong> Foram localizados pedidos com erros de emissão. <a href="%s">Visualizar Pedidos</a>', 'nota-fiscal-eletronica-woocommerce' ), esc_url( $menu_url ) );
 
 		$this->auto_invoice_notice = array(
 			'message' => $message,
@@ -2640,12 +2716,12 @@ jQuery(document).ready(function($) {
 
 		// Security: Check proper nonce and capabilities
 		if ( ! check_ajax_referer( 'wmbr_dismiss_auto_invoice_notice', 'sec_nonce', false ) ) {
-			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 
@@ -2684,12 +2760,12 @@ jQuery(document).ready(function($) {
 
 		// Security: Check proper nonce and capabilities
 		if ( ! check_ajax_referer( 'wmbr_remove_order_invoice_nonce_' . get_current_user_id(), 'sec_nonce', false ) ) {
-			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 		
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 
@@ -2716,172 +2792,12 @@ jQuery(document).ready(function($) {
 	 *
 	 * @return void
 	 */
-	function nfe_callback(){
-
-		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['order_key']) && isset($_GET['order_id'])) {
-
-			// Security: Validate and sanitize inputs
-			$raw_data = isset($_POST['data']) ? wp_unslash($_POST['data']) : '';
-			if (strlen($raw_data) > 5000) { // Limit data size
-				header( 'HTTP/1.1 413 Request Entity Too Large' );
-				exit;
-			}
-			
-			$nfe_data = json_decode($raw_data, true);
-			if (json_last_error() !== JSON_ERROR_NONE || !is_array($nfe_data) || !isset($nfe_data['ID'])) {
-				header( 'HTTP/1.1 400 Bad Request' );
-				exit;
-			}
-			
-			$nfe_order_id = (int) $nfe_data['ID'];
-			$order_key = sanitize_text_field($_GET['order_key']);
-			$order_id = (int) $_GET['order_id'];
-			$order = wc_get_order($order_id);
-
-			if (!$order || $order->get_order_key() !== $order_key || $nfe_order_id !== $order_id) {
-				header( 'HTTP/1.1 401 Unauthorized' );
-				exit;
-			}
-
-			$order_nfe_data = $order->get_meta( 'nfe', true );
-			$is_new = true;
-
-			if ( is_array($order_nfe_data) ) {
-
-				foreach($order_nfe_data as $key => $order_nfe){
-					$current_status = $order_nfe['status'];
-					$received_status = isset($_POST['status']) ? sanitize_text_field($_POST['status']) : '';
-					if($order_nfe['uuid'] == ($_POST['uuid'] ?? '') && $current_status != $received_status) {
-						$order_nfe_data[$key]['status'] = $received_status;
-					}
-					if ( $order_nfe['uuid'] == ($_POST['uuid'] ?? '') ) {
-						$is_new = false;
-					}
-				}
-
-			} else {
-
-				$order_nfe_data = array();
-
-			}
-
-			if ( $is_new ) {
-				$order_nfe_data[] = array(
-					'uuid'   => (string) sanitize_text_field($_POST['uuid'] ?? ''),
-					'status' => (string) sanitize_text_field($_POST['status'] ?? ''),
-					'modelo' => 'nfe',
-					'chave_acesso' => (string) sanitize_text_field($_POST['chave'] ?? ''),
-					'n_recibo' => (int) ($_POST['recibo'] ?? ''),
-					'n_nfe' => (int) ($_POST['nfe'] ?? 0),
-					'n_serie' => (int) ($_POST['serie'] ?? 0),
-					'url_xml' => (string) esc_url_raw($_POST['xml'] ?? ''),
-					'url_danfe' => (string) esc_url_raw($_POST['danfe'] ?? ''),
-					'url_danfe_simplificada' => (string) esc_url_raw($_POST['danfe_simples'] ?? ''),
-					'url_danfe_etiqueta' => (string) esc_url_raw($_POST['danfe_etiqueta'] ?? ''),
-					'data' => date_i18n('d/m/Y'),
-				);
-			}
-
-			$order->update_meta_data( 'nfe', $order_nfe_data );
-			$order->save();
-
-		}
-
+	function nfe_callback() {
+		WooCommerceNFe_Callback::receive( 'nfe' );
 	}
 
-	/**
-	 * Callback NFS-e
-	 *
-	 * @return void
-	 */
-	function nfse_callback(){
-
-		if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['order_key']) && isset($_GET['order_id'])) {
-
-			$order_key = sanitize_text_field($_GET['order_key']);
-			$order_id = (int) $_GET['order_id'];
-			$order = wc_get_order($order_id);
-			
-			// Security: Validate and sanitize input data
-			$raw_input = file_get_contents("php://input");
-			if (strlen($raw_input) > 10000) { // Limit input size
-				header( 'HTTP/1.1 413 Request Entity Too Large' );
-				exit;
-			}
-			
-			$response = json_decode($raw_input);
-
-			if (!$order || $order->get_order_key() !== $order_key || !$response || json_last_error() !== JSON_ERROR_NONE) {
-				header( 'HTTP/1.1 401 Unauthorized' );
-				exit;
-			}
-
-			$order_nfe_data = $order->get_meta( 'nfe', true );
-			$is_new = true;
-			$is_lote_update = false;
-
-			if ( is_array($order_nfe_data) ) {
-
-				foreach($order_nfe_data as $key => $order_nfe){
-					$current_status = $order_nfe['status'];
-					$received_status = $response->status;
-					if($order_nfe['uuid'] == $response->uuid && $current_status != $received_status) {
-						$order_nfe_data[$key]['status'] = $received_status;
-						if ($response->modelo == 'lote_rps' && $response->status == 'processado') $is_lote_update = true;
-					}
-					if ( $order_nfe['uuid'] == $response->uuid ) {
-						$is_new = false;
-					}
-				}
-
-			} else {
-
-				$order_nfe_data = array();
-
-			}
-
-			if ( $is_new ) {
-				$order_nfe_data[] = array(
-					'uuid'   => (string) $response->uuid,
-					'status' => (string) $response->status,
-					'modelo' => (string) $response->modelo,
-					'n_nfe' => (int) $response->numero ?: $response->numero_lote,
-					'n_serie' => "{$response->serie_rps}:{$response->numero_rps}",
-					'url_xml' => (string) $response->xml,
-					'url_pdf' => (string) $response->pdf_nfse ?? '', 
-					'pdf_rps' => (string) $response->pdf_rps ?? '',
-					'data' => date_i18n('d/m/Y'),
-					'motivo' => is_array($response->motivo) ? implode(' | ', $response->motivo) : $response->motivo
-				);
-				if ($response->modelo == 'lote_rps' && $response->status == 'processado') $is_lote_update = true;
-			}
-
-			if ($is_lote_update) {
-				$this->get_credentials();
-				$webmaniabr_nfse = new NFSe($this->settings['bearer_access_token']);
-				foreach ($response->info_nfse as $nfse) {
-					$result = $webmaniabr_nfse->consultaNotaFiscal($nfse->uuid);
-					if ($result->status == 'aprovado') {
-						$order_nfe_data[] = array(
-							'uuid'   => (string) $result->uuid,
-							'status' => (string) $result->status,
-							'modelo' => (string) $result->modelo,
-							'n_nfe' => (int) $result->numero,
-							'n_serie' => "{$result->serie_rps}:{$result->numero_rps}",
-							'url_xml' => (string) $result->xml,
-							'url_pdf' => (string) $result->pdf_nfse ?? '', 
-							'pdf_rps' => (string) $result->pdf_rps ?? '',
-							'data' => date_i18n('d/m/Y')
-						);
-					} 
-				}
-			}
-
-			$order->update_meta_data( 'nfe', $order_nfe_data );
-			$order->save();
-
-		}
-
+	function nfse_callback() {
+		WooCommerceNFe_Callback::receive( 'nfse' );
 	}
 
 	/**
@@ -2891,48 +2807,50 @@ jQuery(document).ready(function($) {
 	 */
 	function order_data_after_billing_address( $order ){
 
-		$html = '<style>.address{display:none;}</style>';
-		$html .= '<script>(function( $ ){
+		// Checkout stores these plugin fields as posted (WooCommerce does not restrict them to strings).
+		$meta = static function ( $key ) use ( $order ) { $value = $order->get_meta( $key, true ); return is_scalar( $value ) ? (string) $value : ''; };
+		echo '<style>.address{display:none;}</style>';
+		echo '<script>(function( $ ){
 				$(".edit_address").on("click", function(){
 					$(this).parent().parent().find(".wcbcf-address").hide();
 				});
 		})( jQuery );</script>';
-		$html .= '<div class="clear"></div>';
+		$html = '<div class="clear"></div>';
 		$html .= '<div class="wcbcf-address">';
 		if ( ! $order->get_formatted_billing_address() ) {
-			$html .= '<p class="none_set"><strong>' . __( 'Endereço', $this->domain ) . ':</strong> ' . __( 'Nenhum endereço de cobrança definido.', $this->domain ) . '</p>';
+			$html .= '<p class="none_set"><strong>' . __( 'Endereço', 'nota-fiscal-eletronica-woocommerce' ) . ':</strong> ' . __( 'Nenhum endereço de cobrança definido.', 'nota-fiscal-eletronica-woocommerce' ) . '</p>';
 		} else {
 			$html .= '<br />';
-			$html .= $order->get_formatted_billing_address();
+			$html .= wp_kses( $order->get_formatted_billing_address(), array( 'br' => array() ) );
 			$html .= '</p>';
 		}
-		$html .= '<h4>' . __( 'Informações do cliente', $this->domain ) . '</h4>';
+		$html .= '<h4>' . __( 'Informações do cliente', 'nota-fiscal-eletronica-woocommerce' ) . '</h4>';
 		$html .= '<p>';
 		// Person type information.
-		if ( 1 == $order->get_meta( '_billing_persontype', true ) ) $html .= '<strong>' . __( 'CPF', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cpf', true ) ) . '<br />';
-		if ( 2 == $order->get_meta( '_billing_persontype', true ) ) {
-			$html .= '<strong>' . __( 'Razão Social', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_company', true ) ) . '<br />';
-			$html .= '<strong>' . __( 'CNPJ', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_cnpj', true ) ) . '<br />';
-			if ( ! empty( $order->get_meta( '_billing_ie', true ) ) ) {
-				$html .= '<strong>' . __( 'I.E', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_ie', true ) ) . '<br />';
+		if ( 1 == $meta( '_billing_persontype' ) ) $html .= '<strong>' . __( 'CPF', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $meta( '_billing_cpf' ) ) . '<br />';
+		if ( 2 == $meta( '_billing_persontype' ) ) {
+			$html .= '<strong>' . __( 'Razão Social', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $order->get_billing_company() ) . '<br />';
+			$html .= '<strong>' . __( 'CNPJ', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $meta( '_billing_cnpj' ) ) . '<br />';
+			if ( ! empty( $meta( '_billing_ie' ) ) ) {
+				$html .= '<strong>' . __( 'I.E', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $meta( '_billing_ie' ) ) . '<br />';
 			}
 		}
-		if ( ! empty( $order->get_meta( '_billing_birthdate', true ) ) ) {
+		if ( ! empty( $meta( '_billing_birthdate' ) ) ) {
 			// Birthdate information.
-			$html .= '<strong>' . __( 'Data de nascimento', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_birthdate', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'Data de nascimento', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $meta( '_billing_birthdate' ) ) . '<br />';
 			// Sex Information.
-			$html .= '<strong>' . __( 'Sexo', $this->domain ) . ': </strong>' . esc_html( $order->get_meta( '_billing_sex', true ) ) . '<br />';
+			$html .= '<strong>' . __( 'Sexo', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( $meta( '_billing_sex' ) ) . '<br />';
 		}
-		$html .= '<strong>' . __( 'Telefone', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) . '<br />';
+		$html .= '<strong>' . __( 'Telefone', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( str_replace("?", "", $meta( '_billing_cellphone' ) ) ) . '<br />';
 		// Cell Phone Information.
-		if ( ! empty( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) ) {
-			$html .= '<strong>' . __( 'Telefone Cel.', $this->domain ) . ': </strong>' . esc_html( str_replace("?", "", $order->get_meta( '_billing_cellphone', true ) ) ) . '<br />';
+		if ( ! empty( str_replace("?", "", $meta( '_billing_cellphone' ) ) ) ) {
+			$html .= '<strong>' . __( 'Telefone Cel.', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . esc_html( str_replace("?", "", $meta( '_billing_cellphone' ) ) ) . '<br />';
 		}
-		$html .= '<strong>' . __( 'Email', $this->domain ) . ': </strong>' . make_clickable( esc_html( $order->get_billing_email() ) ) . '<br />';
+		$html .= '<strong>' . __( 'Email', 'nota-fiscal-eletronica-woocommerce' ) . ': </strong>' . make_clickable( esc_html( $order->get_billing_email() ) ) . '<br />';
 		$html .= '</p>';
 		$html .= '</div>';
 
-		echo $html;
+		echo wp_kses_post( $html );
 
 	}
 
@@ -2945,26 +2863,25 @@ jQuery(document).ready(function($) {
 
 		global $post;
 
-		$html = '<div class="clear"></div>';
-		$html .= '<script>(function( $ ){
+		echo '<script>(function( $ ){
 				$(".edit_address").on("click", function(){
 					$(this).parent().parent().find(".wcbcf-address").hide();
 				});
 		})( jQuery );</script>';
-		$html .= '<div class="wcbcf-address">';
+		$html = '<div class="clear"></div><div class="wcbcf-address">';
 		if ( ! $order->get_formatted_shipping_address() ) {
-			$html .= '<p class="none_set"><strong>' . __( 'Endereço', $this->domain ) . ':</strong> ' . __( 'Nenhum endereço de envio definido.', $this->domain ) . '</p>';
+			$html .= '<p class="none_set"><strong>' . __( 'Endereço', 'nota-fiscal-eletronica-woocommerce' ) . ':</strong> ' . __( 'Nenhum endereço de envio definido.', 'nota-fiscal-eletronica-woocommerce' ) . '</p>';
 		} else {
 			$html .= '<br />';
-			$html .= $order->get_formatted_shipping_address();
+			$html .= wp_kses( $order->get_formatted_shipping_address(), array( 'br' => array() ) );
 			$html .= '</p>';
 		}
 		if ( apply_filters( 'woocommerce_enable_order_notes_field', 'yes' == get_option( 'woocommerce_enable_order_comments', 'yes' ) ) && $post !== null && $post->post_excerpt ) {
-			$html .= '<p><strong>' . __( 'Nota do cliente', $this->domain ) . ':</strong><br />' . nl2br( esc_html( $post->post_excerpt ) ) . '</p>';
+			$html .= '<p><strong>' . __( 'Nota do cliente', 'nota-fiscal-eletronica-woocommerce' ) . ':</strong><br />' . nl2br( esc_html( $post->post_excerpt ) ) . '</p>';
 		}
 		$html .= '</div>';
 
-		echo $html;
+		echo wp_kses_post( $html );
 
 	}
 
@@ -2974,10 +2891,14 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function validate_certificate( $force_update = false, $return_ajax = false ){
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { return false; }
 
 		// Looking for credentials
-		$old_credentials = '';
 		$this->get_credentials();
+		$fingerprint = hash_hmac( 'sha256', wp_json_encode( $this->settings ), wp_salt( 'auth' ) );
+		$old_credentials = get_option( 'wmbr_certificate_fingerprint', '' );
+		$cached = false;
+		delete_option( 'old_credentials' );
 
 		if (!$this->settings['consumer_key'] && !$this->settings['consumer_secret'] && !$this->settings['oauth_access_token'] && !$this->settings['oauth_access_token_secret']){
 			return;
@@ -3001,13 +2922,14 @@ jQuery(document).ready(function($) {
 			if ($return_ajax)
 				return json_encode( array( 'status' => 'invalid_credentials', 'msg' => $msg ), JSON_UNESCAPED_UNICODE );
 
-			$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> ' . $msg, $this->domain) );
+			/* translators: %s: credential validation error message. */
+			$this->add_error( sprintf( __( '<strong>Nota Fiscal WebmaniaBR®:</strong> %s', 'nota-fiscal-eletronica-woocommerce' ), esc_html( $msg ) ) );
 			return false;
 
 		}
 
 		//Check if credentials are in cache
-		if (get_transient('validadeCertificado') && $old_credentials = get_option('old_credentials') && !$force_update) {
+		if (false !== get_transient('validadeCertificado') && hash_equals( $fingerprint, (string) $old_credentials ) && !$force_update) {
 
 			$response = get_transient('validadeCertificado');
 			$cached = true;
@@ -3015,7 +2937,7 @@ jQuery(document).ready(function($) {
 		} 
 
 		// If credentials have been changed or are not in cache, connect to API
-		if ($old_credentials != $this->settings || !$cached) {
+		if ($old_credentials !== $fingerprint || !$cached) {
 
 			$webmaniabr = new NFe( $this->settings );
 			$response = $webmaniabr->validadeCertificado();
@@ -3028,21 +2950,24 @@ jQuery(document).ready(function($) {
 			if (!$cached){
 
 				set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
-				if ($old_credentials != $this->settings) {
-					update_option('old_credentials', $this->settings);
+				if ($old_credentials !== $fingerprint) {
+					update_option( 'wmbr_certificate_fingerprint', $fingerprint, false );
 				}
 
 			}
 
-			if (strpos(strtolower($response->error), 'não encontrado') === false && strpos(strtolower($response->error), 'obrigatório') === false){
+			// strtolower() on a non-string API error would be a TypeError on PHP 8.
+			$certificate_error = is_scalar( $response->error ) ? (string) $response->error : '';
 
-				$this->add_error( __('Erro: '.$response->error, $this->domain) );
+			if ($certificate_error !== '' && strpos(strtolower($certificate_error), 'não encontrado') === false && strpos(strtolower($certificate_error), 'obrigatório') === false){
+
+				$this->add_error( esc_html( 'Erro: '.$certificate_error ) );
 
 			}
 
 			if ($return_ajax) {
 
-				return json_encode( array( 'status' => 'error', 'msg' => $response->error ), JSON_UNESCAPED_UNICODE );
+				return json_encode( array( 'status' => 'error', 'msg' => $certificate_error ), JSON_UNESCAPED_UNICODE );
 
 			}
 
@@ -3052,20 +2977,21 @@ jQuery(document).ready(function($) {
 
 			// Sucess
 			set_transient( 'validadeCertificado', $response, 24 * HOUR_IN_SECONDS );
-			if ($old_credentials != $this->settings) {
-				update_option('old_credentials', $this->settings);
+			if ($old_credentials !== $fingerprint) {
+				update_option( 'wmbr_certificate_fingerprint', $fingerprint, false );
 			}
 
 			if ($return_ajax)
 				return json_encode( array( 'status' => 'success', 'msg' => $response ), JSON_UNESCAPED_UNICODE );
 
 			if ($response < 45 && $response >= 1){
-				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital A1 - vencerá em '.$response.' dias.', $this->domain) );
+				/* translators: %d: number of days before the A1 digital certificate expires. */
+				$this->add_error( sprintf( __( '<strong>Nota Fiscal WebmaniaBR®:</strong> Emita um novo Certificado Digital A1 - vencerá em %d dias.', 'nota-fiscal-eletronica-woocommerce' ), (int) $response ) );
 				return false;
 			}
 
 			if (!$response) {
-				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', $this->domain) );
+				$this->add_error( __('<strong>Nota Fiscal WebmaniaBR®:</strong> Certificado Digital A1 vencido. Emita um novo para continuar operando.', 'nota-fiscal-eletronica-woocommerce') );
 				return false;
 			}
 
@@ -3081,10 +3007,10 @@ jQuery(document).ready(function($) {
 	**/
 	public function wmbr_compatibility_issues() {
 
-		if ( isset($_POST['action']) )
+		if ( function_exists( 'wp_doing_ajax' ) && wp_doing_ajax() )
 			return;
 
-		if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest')
+		if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_REQUESTED_WITH']))) == 'xmlhttprequest')
 			return;
 
 		$plugins_list = array(
@@ -3119,17 +3045,18 @@ jQuery(document).ready(function($) {
 
 		// Security: Verify nonce
 		if ( ! check_ajax_referer( 'woocommerce_nfe_ajax', 'security', false ) ) {
-			wp_send_json_error( array( 'message' => __( 'Security check failed', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Security check failed', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 
 		if ( ! current_user_can( 'manage_woocommerce' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'woocommerce' ) ), 403 );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'nota-fiscal-eletronica-woocommerce' ) ), 403 );
 			wp_die();
 		}
 
-		echo $this->validate_certificate( true, true );
-		die();
+		$certificate = $this->validate_certificate( true, true );
+		$response = is_string( $certificate ) ? json_decode( $certificate, true ) : null;
+		wp_send_json( is_array( $response ) ? $response : array( 'status' => 'error', 'msg' => __( 'Não foi possível consultar o Certificado Digital A1.', 'nota-fiscal-eletronica-woocommerce' ) ) );
 
 	}
 
@@ -3159,7 +3086,7 @@ jQuery(document).ready(function($) {
 		$order_data['shipping_address']['neighborhood'] = $order->get_meta( '_shipping_neighborhood' );
 
 		// Customer fields.
-		if ( 0 == $order->customer_user && isset( $order_data['customer'] ) ) {
+		if ( 0 == $order->get_customer_id() && isset( $order_data['customer'] ) ) {
 			// Customer billing fields.
 			$order_data['customer']['billing_address']['persontype']   = $this->get_person_type( $order->get_meta( '_billing_persontype' ) );
 			$order_data['customer']['billing_address']['cpf']          = $format->format_number( $order->get_meta( '_billing_cpf' ) );
@@ -3194,20 +3121,27 @@ jQuery(document).ready(function($) {
 		// Vars
 		$format = new WooCommerceNFeFormat;
 
+		// WC_Customer (WooCommerce 3.0+) has no magic properties for these fields: read the user meta
+		// directly instead of triggering "Customer properties should not be accessed directly".
+		$field = static function ( $key ) use ( $customer ) {
+			$value = is_object( $customer ) && is_callable( array( $customer, 'get_meta' ) ) ? $customer->get_meta( $key, true ) : '';
+			return is_scalar( $value ) ? (string) $value : '';
+		};
+
         // Billing fields.
-		$customer_data['billing_address']['persontype']   = $this->get_person_type( $customer->billing_persontype );
-		$customer_data['billing_address']['cpf']          = $format->format_number( $customer->billing_cpf );
-		$customer_data['billing_address']['cnpj']         = $format->format_number( $customer->billing_cnpj );
-		$customer_data['billing_address']['ie']           = $format->format_number( $customer->billing_ie );
-		$customer_data['billing_address']['birthdate']    = $format->get_formatted_birthdate( $customer->billing_birthdate, $server );
-		$customer_data['billing_address']['sex']          = substr( $customer->billing_sex, 0, 1 );
-		$customer_data['billing_address']['number']       = $customer->billing_number;
-		$customer_data['billing_address']['neighborhood'] = $customer->billing_neighborhood;
-		$customer_data['billing_address']['cellphone']    = str_replace("?", "", $customer->billing_cellphone);
+		$customer_data['billing_address']['persontype']   = $this->get_person_type( $field( 'billing_persontype' ) );
+		$customer_data['billing_address']['cpf']          = $format->format_number( $field( 'billing_cpf' ) );
+		$customer_data['billing_address']['cnpj']         = $format->format_number( $field( 'billing_cnpj' ) );
+		$customer_data['billing_address']['ie']           = $format->format_number( $field( 'billing_ie' ) );
+		$customer_data['billing_address']['birthdate']    = $format->get_formatted_birthdate( $field( 'billing_birthdate' ), $server );
+		$customer_data['billing_address']['sex']          = substr( $field( 'billing_sex' ), 0, 1 );
+		$customer_data['billing_address']['number']       = $field( 'billing_number' );
+		$customer_data['billing_address']['neighborhood'] = $field( 'billing_neighborhood' );
+		$customer_data['billing_address']['cellphone']    = str_replace("?", "", $field( 'billing_cellphone' ));
 
 		// Shipping fields.
-		$customer_data['shipping_address']['number']       = $customer->shipping_number;
-		$customer_data['shipping_address']['neighborhood'] = $customer->shipping_neighborhood;
+		$customer_data['shipping_address']['number']       = $field( 'shipping_number' );
+		$customer_data['shipping_address']['neighborhood'] = $field( 'shipping_neighborhood' );
 
 		if ( $fields ) {
 			$customer_data = WC()->api->WC_API_Customers->filter_response_fields( $customer_data, $customer, $fields );
@@ -3246,10 +3180,14 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function save_ncm_field_product_variation( $variation_id, $i ) {
+		$nonce = isset( $_POST['woocommerce_meta_nonce'] ) && is_string( $_POST['woocommerce_meta_nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['woocommerce_meta_nonce'] ) ) : '';
+		$ajax_nonce = isset( $_POST['security'] ) && is_string( $_POST['security'] ) ? sanitize_text_field( wp_unslash( $_POST['security'] ) ) : '';
+		if ( ! current_user_can( 'edit_post', $variation_id ) || ( ! wp_verify_nonce( $nonce, 'woocommerce_save_data' ) && ! wp_verify_nonce( $ajax_nonce, 'save-variations' ) ) ) { return; }
+
 		
 		// Security: Sanitize input
-		if ( isset($_POST['variable_ncm'][$i]) ) {
-			$ncm = sanitize_text_field( $_POST['variable_ncm'][$i] );
+		if ( isset($_POST['variable_ncm'][$i]) && is_string($_POST['variable_ncm'][$i]) ) {
+			$ncm = sanitize_text_field( wp_unslash( $_POST['variable_ncm'][$i] ) );
 			update_post_meta( $variation_id, 'variable_ncm', $ncm );
 		}
 
@@ -3264,12 +3202,14 @@ jQuery(document).ready(function($) {
 
 		if (!$order) return;
 
-		// Get data
-		$nfe_doc = get_transient('cached_nfe_doc_'.$order_nfe['uuid']);
+		// Get data (no shared cache entry for records without UUID; checkout values may be arrays)
+		$uuid = isset( $order_nfe['uuid'] ) && is_string( $order_nfe['uuid'] ) ? $order_nfe['uuid'] : '';
+		$nfe_doc = $uuid !== '' ? get_transient('cached_nfe_doc_'.$uuid) : false;
 		$cpf = $order->get_meta('_billing_cpf');
 		$cnpj = $order->get_meta('_billing_cnpj');
 		$person_type = $order->get_meta('_billing_persontype');
 		$post_doc = ($person_type == '1') ? ($cpf ?: '') : ($cnpj ?: '');
+		$post_doc = is_scalar( $post_doc ) ? (string) $post_doc : '';
 		$nfes = $order->get_meta('nfe');
 
 		// Returns if found in cache
@@ -3289,8 +3229,13 @@ jQuery(document).ready(function($) {
 
 		// Searches for the document in the XML
 		$print = new WooCommerceNFePrint;
-		$return = $print->curl_get_file_contents($order_nfe['url_xml']);
-		$sxml = simplexml_load_string($return);
+		$return = $print->curl_get_file_contents($order_nfe['url_xml'], $order->get_id());
+		if ( ! is_string( $return ) || preg_match( '/<!\s*(DOCTYPE|ENTITY)/i', $return ) ) { return $post_doc; }
+		$previous = libxml_use_internal_errors( true );
+		$sxml = simplexml_load_string( $return, 'SimpleXMLElement', LIBXML_NONET );
+		libxml_clear_errors();
+		libxml_use_internal_errors( $previous );
+		if ( false === $sxml ) { return $post_doc; }
 		$sxml = json_encode($sxml, JSON_PRETTY_PRINT);
 		$json = json_decode(str_replace('@attributes', 'attributes', $sxml));
 
@@ -3325,7 +3270,8 @@ jQuery(document).ready(function($) {
 
 		$order->update_meta_data('nfe', $nfes);
 		$order->save();
-		set_transient( 'cached_nfe_doc_'.$order_nfe['uuid'], $doc, 24 * HOUR_IN_SECONDS );
+		if ( $uuid !== '' ) { set_transient( 'cached_nfe_doc_'.$uuid, $doc, 24 * HOUR_IN_SECONDS ); }
+		return $doc;
 	}
 
 	/**
@@ -3334,7 +3280,8 @@ jQuery(document).ready(function($) {
 	 * @return void
 	 */
 	function createSecureTokenDFe( $password, $uuid ){
-		$password = trim(preg_replace('/[^a-zA-Z0-9 ]/', '', $password));
+		$password = trim(preg_replace('/[^a-zA-Z0-9 ]/', '', is_scalar( $password ) ? (string) $password : ''));
+		$uuid = is_scalar( $uuid ) ? (string) $uuid : '';
     	$password = explode(' ', $password);
     	$password = mb_strtolower($password[0]);
 		$key = hash('sha256', $password . ':' . $uuid, true);

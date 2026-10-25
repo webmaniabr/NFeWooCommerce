@@ -1,4 +1,7 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+return ( static function () {
 $type='cidfont0';
 $name='HYSMyeongJoStd-Medium-Acro'; // AdobeMyungjoStd-Medium-Acro in acrobat 6
 $displayname = 'MyungJo Medium (Korean)';
@@ -46,3 +49,6 @@ foreach($_cr as $_r) {
 	}
 }
 // --- EOF ---
+
+return get_defined_vars();
+} )();

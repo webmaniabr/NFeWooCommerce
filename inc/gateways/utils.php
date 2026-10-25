@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+
 class UtilsGateways {
 
   /**
@@ -80,7 +84,7 @@ class UtilsGateways {
       );
 
       // Add 30 days to next installment
-      $order_date = date('Y-m-d', strtotime("+1 month", strtotime($order_date)));
+      $order_date = ( new DateTimeImmutable( $order_date, new DateTimeZone( 'UTC' ) ) )->modify( '+1 month' )->format( 'Y-m-d' );
 
     }
 

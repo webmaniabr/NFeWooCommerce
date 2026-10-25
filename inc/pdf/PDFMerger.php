@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * addPDF function, same as the pages. If you put pages 12-14 before 1-5 then
  * 12-15 will be placed first in the output.
  *
- * @uses tcpdf 6.2.12 by Nicola Asuni
+ * @uses tcpdf 6.11.4 by Nicola Asuni
  * @link https://github.com/tecnickcom/TCPDF/tree/master official clone of lib
  * @uses tcpdi_parser 1.0 by Paul Nicholls, patched by own TCPdiParserException
  * @link https://github.com/pauln/tcpdi_parser source of tcpdi_parser.php
@@ -38,7 +38,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * or page annotations (anything not a part of the page content stream).
  */
 
-class PDFMerger extends WooCommerceNFe
+class WooCommerceNFe_PDFMerger extends WooCommerceNFe
 {
     private $_files;    //['form.pdf']  ["1,2,4, 5-19"]
     private $_fpdi;
@@ -49,6 +49,11 @@ class PDFMerger extends WooCommerceNFe
      */
     public function __construct()
     {
+        if (!defined('WOOCOMMERCE_NFE_PDF_K_TCPDF_THROW_EXCEPTION_ERROR')) { define('WOOCOMMERCE_NFE_PDF_K_TCPDF_THROW_EXCEPTION_ERROR', true); }
+
+        if (!defined('WOOCOMMERCE_NFE_PDF_TCPDF_SILENCE_DEPRECATION')) { define('WOOCOMMERCE_NFE_PDF_TCPDF_SILENCE_DEPRECATION', true); }
+
+        require_once __DIR__ . '/class-io.php';
         require_once('tcpdf/tcpdf.php');
         require_once('tcpdf/tcpdi.php');
     }
@@ -72,7 +77,7 @@ class PDFMerger extends WooCommerceNFe
         }
         else
         {
-            throw new \exception("Could not locate PDF on '$filepath'");
+            throw new \exception('Could not locate PDF.');
         }
 
         return $this;
@@ -88,7 +93,7 @@ class PDFMerger extends WooCommerceNFe
     {
         if(!isset($this->_files) || !is_array($this->_files)): throw new exception("No PDFs to merge."); endif;
 
-    $fpdi = new \TCPDI;
+    $fpdi = new \WooCommerceNFe_PDF_TCPDI;
     $fpdi->SetPrintHeader(false);
     $fpdi->SetPrintFooter(false);
 
@@ -117,7 +122,7 @@ class PDFMerger extends WooCommerceNFe
             {
                 foreach($filepages as $page)
                 {
-                    if(!$template = $fpdi->importPage($page)): throw new exception("Could not load page '$page' in PDF '$filename'. Check that the page exists."); endif;
+                    if(!$template = $fpdi->importPage($page)): throw new exception('Could not load the selected PDF page.'); endif;
                     $size = $fpdi->getTemplateSize($template);
                     $orientation = ($size['h'] > $size['w']) ? 'P' : 'L';
 
@@ -147,7 +152,7 @@ class PDFMerger extends WooCommerceNFe
             }
             else
             {
-                throw new exception("Error outputting PDF to '$outputmode'.");
+                throw new exception('Error outputting PDF.');
                 return false;
             }
         }
@@ -202,7 +207,7 @@ class PDFMerger extends WooCommerceNFe
                 $x = $ind[0]; //start page
                 $y = $ind[1]; //end page
 
-                if($x > $y): throw new exception("Starting page, '$x' is greater than ending page '$y'."); return false; endif;
+                if($x > $y): throw new exception('Starting PDF page is greater than ending page.'); return false; endif;
 
                 //add middle pages
                 while($x <= $y): $newpages[] = (int) $x; $x++; endwhile;
@@ -216,4 +221,8 @@ class PDFMerger extends WooCommerceNFe
         return $newpages;
     }
 
+}
+// Compatibility for integrations that instantiate this plugin's old wrapper directly.
+if ( ! class_exists( 'PDFMerger', false ) ) {
+    class_alias( 'WooCommerceNFe_PDFMerger', 'PDFMerger' );
 }

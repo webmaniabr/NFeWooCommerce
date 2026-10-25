@@ -1,4 +1,7 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+return ( static function () {
 $type = 'cidfont0';
 $name = 'STSongStd-Light-Acro';
 $displayname = 'STSong Light (Simp. Chinese)';
@@ -37,3 +40,6 @@ $cw = array(
 	122 => 407, 123 => 370, 124 => 258, 125 => 370, 126 => 605
 );
 // --- EOF ---
+
+return get_defined_vars();
+} )();

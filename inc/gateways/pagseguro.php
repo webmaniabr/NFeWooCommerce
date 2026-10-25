@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+
 class NFeGatewayPagSeguro extends WooCommerceNFe {
 
   /**
@@ -41,12 +45,12 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
     if (
 			NFeGatewayPagSeguro::is_activated() &&
 			get_option('wc_settings_parcelas_ebanx') == 'yes' &&
-      $pagseguro_transaction_data &&
-      $pagseguro_transaction_data['method'] &&
+      is_array( $pagseguro_transaction_data ) &&
+      ! empty( $pagseguro_transaction_data['method'] ) &&
       !in_array( $pagseguro_transaction_data['method'], [ 'Bradesco', 'Santander', 'Itaú', 'Unibanco', 'Banco do Brasil', 'Real', 'Banrisul', 'HSBC', 'PagSeguro credit', 'Oi Paggo', 'Account deposit' ] )
 		) {
 
-			$installments = $pagseguro_transaction_data['installments'];
+			$installments = $pagseguro_transaction_data['installments'] ?? 0;
 			$installments = ($installments) ? $installments : 1;
 			$data = UtilsGateways::mount_installments_data( $post_id, $data, $order, $installments, $args );
 
@@ -67,6 +71,7 @@ class NFeGatewayPagSeguro extends WooCommerceNFe {
 
     // Vars
     $order = wc_get_order( $post_id );
+    // phpcs:ignore WordPress.WP.I18n.TextDomainMismatch -- The translated metadata key is written by PagSeguro; use its domain to preserve existing orders.
     $payment_type = $order->get_meta( __( 'Payment type', 'woocommerce-pagseguro' ) );
     $origem_state = WC_Admin_Settings::get_option( 'woocommerce_default_country' );
 

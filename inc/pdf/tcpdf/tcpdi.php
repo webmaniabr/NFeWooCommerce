@@ -1,4 +1,6 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //  
 //  TCPDI - Version 1.0
 //  Based on FPDI - Version 1.4.4
@@ -19,14 +21,14 @@
 //
 
 // Dummy shim to allow unmodified use of fpdf_tpl
-class FPDF extends TCPDF {}
+class WooCommerceNFe_PDF_FPDF extends WooCommerceNFe_PDF_TCPDF {}
 
 require_once('fpdf_tpl.php');
 
 require_once('tcpdi_parser.php');
 
 
-class TCPDI extends FPDF_TPL {
+class WooCommerceNFe_PDF_TCPDI extends WooCommerceNFe_PDF_FPDF_TPL {
     /**
      * Actual filename
      * @var string
@@ -103,7 +105,7 @@ class TCPDI extends FPDF_TPL {
         $this->current_filename = $filename;
         
         if (!isset($this->parsers[$filename]))
-            $this->parsers[$filename] = new tcpdi_parser($pdfdata, $filename, PDF_PARSER_ERROR_HANDLER_EXCEPTION);
+            $this->parsers[$filename] = new WooCommerceNFe_PDF_tcpdi_parser($pdfdata, $filename, WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_EXCEPTION);
         $this->current_parser =& $this->parsers[$filename];
         $this->setPDFVersion(max($this->getPDFVersion(), $this->current_parser->getPDFVersion()));
         
@@ -118,7 +120,7 @@ class TCPDI extends FPDF_TPL {
      */
     function _getPdfParser($filename) {
         $data = file_get_contents($filename);
-    	return new tcpdi_parser($data, $filename, PDF_PARSER_ERROR_HANDLER_EXCEPTION);
+    	return new WooCommerceNFe_PDF_tcpdi_parser($data, $filename, WOOCOMMERCE_NFE_PDF_PDF_PARSER_ERROR_HANDLER_EXCEPTION);
     }
     
     /**
@@ -260,7 +262,7 @@ class TCPDI extends FPDF_TPL {
 						
                         $this->_newobj($this->_obj_stack[$filename][$n][0]);
                         
-                        if ($nObj[0] == PDF_TYPE_STREAM) {
+                        if ($nObj[0] == WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM) {
 							$this->pdf_write_value($nObj);
                         } else {
                             $this->pdf_write_value($nObj[1]);
@@ -420,25 +422,25 @@ class TCPDI extends FPDF_TPL {
     function pdf_write_value(&$value)
     {
         switch ($value[0]) {
-            case PDF_TYPE_STRING:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_STRING:
                 if ($this->encrypted) {
                     $value[1] = $this->_unescape($value[1]);
                     $value[1] = $this->_encrypt_data($this->_current_obj_id, $value[1]);
-                    $value[1] = TCPDF_STATIC::_escape($value[1]);
+                    $value[1] = WooCommerceNFe_PDF_TCPDF_STATIC::_escape($value[1]);
                 } 
                 break;
                 
-            case PDF_TYPE_STREAM:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM:
                 if ($this->encrypted) {
                     $value[2][1] = $this->_encrypt_data($this->_current_obj_id, $value[2][1]);
                     $value[1][1]['/Length'] = array(
-                        PDF_TYPE_NUMERIC,
+                        WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC,
                         strlen($value[2][1])
                     );
                 }
                 break;
                 
-            case PDF_TYPE_HEX:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX:
                 if ($this->encrypted) {
                     $value[1] = $this->hex2str($value[1]);
                     $value[1] = $this->_encrypt_data($this->_current_obj_id, $value[1]);
@@ -451,11 +453,11 @@ class TCPDI extends FPDF_TPL {
         
         switch ($value[0]) {
 
-            case PDF_TYPE_TOKEN:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_TOKEN:
                 $this->_straightOut('/'.$value[1] . ' ');
                 break;
-            case PDF_TYPE_NUMERIC:
-            case PDF_TYPE_REAL:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_NUMERIC:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_REAL:
                 if (is_float($value[1]) && $value[1] != 0) {
                     $this->_straightOut(rtrim(rtrim(sprintf('%F', $value[1]), '0'), '.') . ' ');
                 } else {
@@ -463,7 +465,7 @@ class TCPDI extends FPDF_TPL {
                 }
                 break;
                 
-            case PDF_TYPE_ARRAY:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_ARRAY:
 
                 // An array. Output the proper
                 // structure and move on.
@@ -476,7 +478,7 @@ class TCPDI extends FPDF_TPL {
                 $this->_out(']');
                 break;
 
-            case PDF_TYPE_DICTIONARY:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_DICTIONARY:
 
                 // A dictionary.
                 $this->_straightOut('<<');
@@ -491,7 +493,7 @@ class TCPDI extends FPDF_TPL {
                 $this->_straightOut('>>');
                 break;
 
-            case PDF_TYPE_OBJREF:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_OBJREF:
 
                 // An indirect object reference
                 // Fill the object stack if needed
@@ -507,14 +509,14 @@ class TCPDI extends FPDF_TPL {
                 $this->_out($objid . ' 0 R');
                 break;
 
-            case PDF_TYPE_STRING:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_STRING:
 
                 // A string.
                 $this->_straightOut('(' . $value[1] . ')');
 
                 break;
 
-            case PDF_TYPE_STREAM:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_STREAM:
 
                 // A stream. First, output the
                 // stream dictionary, then the
@@ -525,15 +527,15 @@ class TCPDI extends FPDF_TPL {
                 $this->_out('endstream');
                 break;
                 
-            case PDF_TYPE_HEX:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_HEX:
                 $this->_straightOut('<' . $value[1] . '>');
                 break;
 
-            case PDF_TYPE_BOOLEAN:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_BOOLEAN:
                 $this->_straightOut($value[1] ? 'true ' : 'false ');
                 break;
             
-            case PDF_TYPE_NULL:
+            case WOOCOMMERCE_NFE_PDF_PDF_TYPE_NULL:
                 // The null object.
 
                 $this->_straightOut('null ');

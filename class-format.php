@@ -4,7 +4,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
+require_once __DIR__ . '/inc/class-tax-id.php';
+
 class WooCommerceNFeFormat extends WooCommerceNFe {
+
+    public static function normalize_document($document) {
+        return WooCommerceNFe_TaxId::normalize_document($document);
+    }
+
+    public static function normalize_cnpj_fields($data, $depth = 0) {
+        return WooCommerceNFe_TaxId::normalize_cnpj_fields($data, $depth);
+    }
+
+    public static function normalize_access_key($key) {
+        return WooCommerceNFe_TaxId::normalize_access_key($key);
+    }
+
+	/**
+	 * Formatting helpers must not re-run the plugin bootstrap (WooCommerceNFe::__construct):
+	 * each instance would register another woocommerce_order_status_changed handler.
+	 */
+	public function __construct() {}
 
 	/**
 	 * CPF format
@@ -26,13 +46,10 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * @return string
 	 */
 	public static function cnpj( $string ){
-
-		if (!$string) return;
-		$string = self::clear( $string );
-		$string = self::mask($string,'##.###.###/####-##');
-		return $string;
-
-	}
+        $string = self::normalize_document($string);
+        if (!preg_match('/\A[A-Z0-9]{12}[0-9]{2}\z/', $string)) { return; }
+        return self::mask($string, '##.###.###/####-##');
+    }
 
 	/**
 	 * Zipcode format
@@ -54,6 +71,8 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * @return string
 	 */
 	public static function clear( $string ) {
+        $string = is_scalar($string) ? (string) $string : '';
+
 
 		$string = str_replace( array(',', '-', '!', '.', '/', '?', '(', ')', ' ', '$', 'R$', '€'), '', $string );
 		return $string;
@@ -66,6 +85,8 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * @return string
 	 */
 	public static function mask($val, $mask) {
+        $val = is_scalar($val) ? (string) $val : '';
+
 
 		$maskared = '';
 		$k = 0;
@@ -87,6 +108,9 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * @return string
 	 */
 	public static function is_cpf( $cpf ) {
+        if (!is_scalar($cpf)) { return false; }
+        $cpf = (string) $cpf;
+
 
 		$cpf = preg_replace( '/[^0-9]/', '', $cpf );
 
@@ -117,28 +141,8 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	 * @return string
 	 */
 	public static function is_cnpj( $cnpj ) {
-
-		$cnpj = sprintf( '%014s', preg_replace( '{\D}', '', $cnpj ) );
-
-		if ( 14 != ( strlen( $cnpj ) ) || ( 0 == intval( substr( $cnpj, -4 ) ) ) ) {
-			return false;
-		}
-
-		for ( $t = 11; $t < 13; ) {
-
-			for ( $d = 0, $p = 2, $c = $t; $c >= 0; $c--, ( $p < 9 ) ? $p++ : $p = 2 ) {
-				$d += $cnpj[ $c ] * $p;
-			}
-
-			if ( $cnpj[ ++$t ] != ( $d = ( ( 10 * $d ) % 11 ) % 10 ) ) {
-				return false;
-			}
-
-		}
-
-		return true;
-
-	}
+        return WooCommerceNFe_TaxId::is_cnpj($cnpj);
+    }
 
 	/**
 	 * Format number
@@ -147,7 +151,7 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	**/
 	public static function format_number( $string ) {
 
-		return str_replace( array( '.', '-', '/' ), '', $string );
+		return str_replace( array( '.', '-', '/' ), '', is_scalar( $string ) ? (string) $string : '' );
 
 	}
 
@@ -158,9 +162,10 @@ class WooCommerceNFeFormat extends WooCommerceNFe {
 	**/
 	public static function get_formatted_birthdate( $date, $server ) {
 
-		$birthdate = explode( '/', $date );
+		// The birthdate is free text from checkout (e.g. "01/02" or an array).
+		$birthdate = explode( '/', is_scalar( $date ) ? (string) $date : '' );
 
-		if ( isset( $birthdate[1] ) && ! empty( $birthdate[1] ) ) {
+		if ( isset( $birthdate[1], $birthdate[2] ) && ! empty( $birthdate[1] ) ) {
 			return $server->format_datetime( $birthdate[1] . '/' . $birthdate[0] . '/' . $birthdate[2] );
 		}
 

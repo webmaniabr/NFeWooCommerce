@@ -1,13 +1,15 @@
 <?php
+// Bundled for WordPress: never execute this file directly.
+if ( ! defined( 'ABSPATH' ) ) { exit; }
 //============================================================+
 // File name   : datamatrix.php
 // Version     : 1.0.008
 // Begin       : 2010-06-07
 // Last Update : 2014-05-06
 // Author      : Nicola Asuni - Tecnick.com LTD - www.tecnick.com - info@tecnick.com
-// License     : GNU-LGPL v3 (http://www.gnu.org/copyleft/lesser.html)
+// License     : GNU-LGPL v3 (https://www.gnu.org/copyleft/lesser.html)
 // -------------------------------------------------------------------
-// Copyright (C) 2010-2014  Nicola Asuni - Tecnick.com LTD
+// Copyright (C) 2010-2014 2026 Nicola Asuni - Tecnick.com LTD
 //
 // This file is part of TCPDF software library.
 //
@@ -22,7 +24,7 @@
 // See the GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with TCPDF.  If not, see <http://www.gnu.org/licenses/>.
+// along with TCPDF.  If not, see <https://www.gnu.org/licenses/>.
 //
 // See LICENSE.TXT file for more information.
 // -------------------------------------------------------------------
@@ -44,12 +46,12 @@
 */
 
 // custom definitions
-if (!defined('DATAMATRIXDEFS')) {
+if (!defined('WOOCOMMERCE_NFE_PDF_DATAMATRIXDEFS')) {
 
 	/**
 	 * Indicate that definitions for this class are set
 	 */
-	define('DATAMATRIXDEFS', true);
+	define('WOOCOMMERCE_NFE_PDF_DATAMATRIXDEFS', true);
 
 	// -----------------------------------------------------
 
@@ -61,42 +63,42 @@ if (!defined('DATAMATRIXDEFS')) {
 /**
 * ASCII encoding: ASCII character 0 to 127 (1 byte per CW)
 */
-define('ENC_ASCII', 0);
+define('WOOCOMMERCE_NFE_PDF_ENC_ASCII', 0);
 
 /**
 * C40 encoding: Upper-case alphanumeric (3/2 bytes per CW)
 */
-define('ENC_C40', 1);
+define('WOOCOMMERCE_NFE_PDF_ENC_C40', 1);
 
 /**
 * TEXT encoding: Lower-case alphanumeric (3/2 bytes per CW)
 */
-define('ENC_TXT', 2);
+define('WOOCOMMERCE_NFE_PDF_ENC_TXT', 2);
 
 /**
 * X12 encoding: ANSI X12 (3/2 byte per CW)
 */
-define('ENC_X12', 3);
+define('WOOCOMMERCE_NFE_PDF_ENC_X12', 3);
 
 /**
 * EDIFACT encoding: ASCII character 32 to 94 (4/3 bytes per CW)
 */
-define('ENC_EDF', 4);
+define('WOOCOMMERCE_NFE_PDF_ENC_EDF', 4);
 
 /**
 * BASE 256 encoding: ASCII character 0 to 255 (1 byte per CW)
 */
-define('ENC_BASE256', 5);
+define('WOOCOMMERCE_NFE_PDF_ENC_BASE256', 5);
 
 /**
 * ASCII extended encoding: ASCII character 128 to 255 (1/2 byte per CW)
 */
-define('ENC_ASCII_EXT', 6);
+define('WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT', 6);
 
 /**
 * ASCII number encoding: ASCII digits (2 bytes per CW)
 */
-define('ENC_ASCII_NUM', 7);
+define('WOOCOMMERCE_NFE_PDF_ENC_ASCII_NUM', 7);
 
 /**
 * @class Datamatrix
@@ -106,8 +108,9 @@ define('ENC_ASCII_NUM', 7);
 * @package com.tecnick.tcpdf
 * @author Nicola Asuni
 * @version 1.0.004
+* @deprecated TCPDF is deprecated: migrate to tecnickcom/tc-lib-pdf.
 */
-class Datamatrix {
+class WooCommerceNFe_PDF_Datamatrix {
 
 	/**
 	 * Barcode array to be returned which is readable by TCPDF.
@@ -119,7 +122,7 @@ class Datamatrix {
 	 * Store last used encoding for data codewords.
 	 * @protected
 	 */
-	protected $last_enc = ENC_ASCII;
+	protected $last_enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 
 	/**
 	 * Table of Data Matrix ECC 200 Symbol Attributes:<ul>
@@ -181,7 +184,7 @@ class Datamatrix {
 	 * Map encodation modes whit character sets.
 	 * @protected
 	 */
-	protected $chset_id = array(ENC_C40 => 'C40', ENC_TXT => 'TXT', ENC_X12 =>'X12');
+	protected $chset_id = array(WOOCOMMERCE_NFE_PDF_ENC_C40 => 'C40', WOOCOMMERCE_NFE_PDF_ENC_TXT => 'TXT', WOOCOMMERCE_NFE_PDF_ENC_X12 =>'X12');
 
 	/**
 	 * Basic set of characters for each encodation mode.
@@ -229,7 +232,7 @@ class Datamatrix {
 	/**
 	 * This is the class constructor.
 	 * Creates a datamatrix object
-	 * @param $code (string) Code to represent using Datamatrix.
+	 * @param string $code Code to represent using Datamatrix.
 	 * @public
 	 */
 	public function __construct($code) {
@@ -257,11 +260,11 @@ class Datamatrix {
 		} elseif ($params[11] > $nd) {
 			// add padding
 			if ((($params[11] - $nd) > 1) AND ($cw[($nd - 1)] != 254)) {
-				if ($this->last_enc == ENC_EDF) {
+				if ($this->last_enc == WOOCOMMERCE_NFE_PDF_ENC_EDF) {
 					// switch to ASCII encoding
 					$cw[] = 124;
 					++$nd;
-				} elseif (($this->last_enc != ENC_ASCII) AND ($this->last_enc != ENC_BASE256)) {
+				} elseif (($this->last_enc != WOOCOMMERCE_NFE_PDF_ENC_ASCII) AND ($this->last_enc != WOOCOMMERCE_NFE_PDF_ENC_BASE256)) {
 					// switch to ASCII encoding
 					$cw[] = 254;
 					++$nd;
@@ -355,11 +358,11 @@ class Datamatrix {
 
 	/**
 	 * Product of two numbers in a Power-of-Two Galois Field
-	 * @param $a (int) first number to multiply.
-	 * @param $b (int) second number to multiply.
-	 * @param $log (array) Log table.
-	 * @param $alog (array) Anti-Log table.
-	 * @param $gf (array) Number of Factors of the Reed-Solomon polynomial.
+	 * @param int $a first number to multiply.
+	 * @param int $b second number to multiply.
+	 * @param array $log Log table.
+	 * @param array $alog Anti-Log table.
+	 * @param int $gf Number of Factors of the Reed-Solomon polynomial.
 	 * @return int product
 	 * @protected
 	 */
@@ -372,12 +375,12 @@ class Datamatrix {
 
 	/**
 	 * Add error correction codewords to data codewords array (ANNEX E).
-	 * @param $wd (array) Array of datacodewords.
-	 * @param $nb (int) Number of blocks.
-	 * @param $nd (int) Number of data codewords per block.
-	 * @param $nc (int) Number of correction codewords per block.
-	 * @param $gf (int) numner of fields on log/antilog table (power of 2).
-	 * @param $pp (int) The value of its prime modulus polynomial (301 for ECC200).
+	 * @param array $wd Array of datacodewords.
+	 * @param int $nb Number of blocks.
+	 * @param int $nd Number of data codewords per block.
+	 * @param int $nc Number of correction codewords per block.
+	 * @param int $gf numner of fields on log/antilog table (power of 2).
+	 * @param int $pp The value of its prime modulus polynomial (301 for ECC200).
 	 * @return array data codewords + error codewords
 	 * @protected
 	 */
@@ -438,9 +441,9 @@ class Datamatrix {
 
 	/**
 	 * Return the 253-state codeword
-	 * @param $cwpad (int) Pad codeword.
-	 * @param $cwpos (int) Number of data codewords from the beginning of encoded data.
-	 * @return pad codeword
+	 * @param int $cwpad Pad codeword.
+	 * @param int $cwpos Number of data codewords from the beginning of encoded data.
+	 * @return int pad codeword
 	 * @protected
 	 */
 	protected function get253StateCodeword($cwpad, $cwpos) {
@@ -453,9 +456,9 @@ class Datamatrix {
 
 	/**
 	 * Return the 255-state codeword
-	 * @param $cwpad (int) Pad codeword.
-	 * @param $cwpos (int) Number of data codewords from the beginning of encoded data.
-	 * @return pad codeword
+	 * @param int $cwpad Pad codeword.
+	 * @param int $cwpos Number of data codewords from the beginning of encoded data.
+	 * @return int pad codeword
 	 * @protected
 	 */
 	protected function get255StateCodeword($cwpad, $cwpos) {
@@ -468,43 +471,43 @@ class Datamatrix {
 
 	/**
 	 * Returns true if the char belongs to the selected mode
-	 * @param $chr (int) Character (byte) to check.
-	 * @param $mode (int) Current encoding mode.
+	 * @param int $chr Character (byte) to check.
+	 * @param int $mode Current encoding mode.
 	 * @return boolean true if the char is of the selected mode.
 	 * @protected
 	 */
 	protected function isCharMode($chr, $mode) {
 		$status = false;
 		switch ($mode) {
-			case ENC_ASCII: { // ASCII character 0 to 127
+			case WOOCOMMERCE_NFE_PDF_ENC_ASCII: { // ASCII character 0 to 127
 				$status = (($chr >= 0) AND ($chr <= 127));
 				break;
 			}
-			case ENC_C40: { // Upper-case alphanumeric
+			case WOOCOMMERCE_NFE_PDF_ENC_C40: { // Upper-case alphanumeric
 				$status = (($chr == 32) OR (($chr >= 48) AND ($chr <= 57)) OR (($chr >= 65) AND ($chr <= 90)));
 				break;
 			}
-			case ENC_TXT: { // Lower-case alphanumeric
+			case WOOCOMMERCE_NFE_PDF_ENC_TXT: { // Lower-case alphanumeric
 				$status = (($chr == 32) OR (($chr >= 48) AND ($chr <= 57)) OR (($chr >= 97) AND ($chr <= 122)));
 				break;
 			}
-			case ENC_X12: { // ANSI X12
+			case WOOCOMMERCE_NFE_PDF_ENC_X12: { // ANSI X12
 				$status = (($chr == 13) OR ($chr == 42) OR ($chr == 62));
 				break;
 			}
-			case ENC_EDF: { // ASCII character 32 to 94
+			case WOOCOMMERCE_NFE_PDF_ENC_EDF: { // ASCII character 32 to 94
 				$status = (($chr >= 32) AND ($chr <= 94));
 				break;
 			}
-			case ENC_BASE256: { // Function character (FNC1, Structured Append, Reader Program, or Code Page)
+			case WOOCOMMERCE_NFE_PDF_ENC_BASE256: { // Function character (FNC1, Structured Append, Reader Program, or Code Page)
 				$status = (($chr == 232) OR ($chr == 233) OR ($chr == 234) OR ($chr == 241));
 				break;
 			}
-			case ENC_ASCII_EXT: { // ASCII character 128 to 255
+			case WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT: { // ASCII character 128 to 255
 				$status = (($chr >= 128) AND ($chr <= 255));
 				break;
 			}
-			case ENC_ASCII_NUM: { // ASCII digits
+			case WOOCOMMERCE_NFE_PDF_ENC_ASCII_NUM: { // ASCII digits
 				$status = (($chr >= 48) AND ($chr <= 57));
 				break;
 			}
@@ -514,9 +517,9 @@ class Datamatrix {
 
 	/**
 	 * The look-ahead test scans the data to be encoded to find the best mode (Annex P - steps from J to S).
-	 * @param $data (string) data to encode
-	 * @param $pos (int) current position
-	 * @param $mode (int) current encoding mode
+	 * @param string $data data to encode
+	 * @param int $pos current position
+	 * @param int $mode current encoding mode
 	 * @return int encoding mode
 	 * @protected
 	 */
@@ -527,7 +530,7 @@ class Datamatrix {
 		}
 		$charscount = 0; // count processed chars
 		// STEP J
-		if ($mode == ENC_ASCII) {
+		if ($mode == WOOCOMMERCE_NFE_PDF_ENC_ASCII) {
 			$numch = array(0, 1, 1, 1, 1, 1.25);
 		} else {
 			$numch = array(1, 2, 2, 2, 2, 2.25);
@@ -536,108 +539,108 @@ class Datamatrix {
 		while (true) {
 			// STEP K
 			if (($pos + $charscount) == $data_length) {
-				if ($numch[ENC_ASCII] <= ceil(min($numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_EDF], $numch[ENC_BASE256]))) {
-					return ENC_ASCII;
+				if ($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] <= ceil(min($numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 				}
-				if ($numch[ENC_BASE256] < ceil(min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_EDF]))) {
-					return ENC_BASE256;
+				if ($numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256] < ceil(min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_BASE256;
 				}
-				if ($numch[ENC_EDF] < ceil(min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_BASE256]))) {
-					return ENC_EDF;
+				if ($numch[WOOCOMMERCE_NFE_PDF_ENC_EDF] < ceil(min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_EDF;
 				}
-				if ($numch[ENC_TXT] < ceil(min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_X12], $numch[ENC_EDF], $numch[ENC_BASE256]))) {
-					return ENC_TXT;
+				if ($numch[WOOCOMMERCE_NFE_PDF_ENC_TXT] < ceil(min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_TXT;
 				}
-				if ($numch[ENC_X12] < ceil(min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_EDF], $numch[ENC_BASE256]))) {
-					return ENC_X12;
+				if ($numch[WOOCOMMERCE_NFE_PDF_ENC_X12] < ceil(min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_X12;
 				}
-				return ENC_C40;
+				return WOOCOMMERCE_NFE_PDF_ENC_C40;
 			}
 			// get char
 			$chr = ord($data[$pos + $charscount]);
 			$charscount++;
 			// STEP L
-			if ($this->isCharMode($chr, ENC_ASCII_NUM)) {
-				$numch[ENC_ASCII] += (1 / 2);
-			} elseif ($this->isCharMode($chr, ENC_ASCII_EXT)) {
-				$numch[ENC_ASCII] = ceil($numch[ENC_ASCII]);
-				$numch[ENC_ASCII] += 2;
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_NUM)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] += (1 / 2);
+			} elseif ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] = ceil($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII]);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] += 2;
 			} else {
-				$numch[ENC_ASCII] = ceil($numch[ENC_ASCII]);
-				$numch[ENC_ASCII] += 1;
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] = ceil($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII]);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] += 1;
 			}
 			// STEP M
-			if ($this->isCharMode($chr, ENC_C40)) {
-				$numch[ENC_C40] += (2 / 3);
-			} elseif ($this->isCharMode($chr, ENC_ASCII_EXT)) {
-				$numch[ENC_C40] += (8 / 3);
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_C40)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_C40] += (2 / 3);
+			} elseif ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_C40] += (8 / 3);
 			} else {
-				$numch[ENC_C40] += (4 / 3);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_C40] += (4 / 3);
 			}
 			// STEP N
-			if ($this->isCharMode($chr, ENC_TXT)) {
-				$numch[ENC_TXT] += (2 / 3);
-			} elseif ($this->isCharMode($chr, ENC_ASCII_EXT)) {
-				$numch[ENC_TXT] += (8 / 3);
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_TXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_TXT] += (2 / 3);
+			} elseif ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_TXT] += (8 / 3);
 			} else {
-				$numch[ENC_TXT] += (4 / 3);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_TXT] += (4 / 3);
 			}
 			// STEP O
-			if ($this->isCharMode($chr, ENC_X12) OR $this->isCharMode($chr, ENC_C40)) {
-				$numch[ENC_X12] += (2 / 3);
-			} elseif ($this->isCharMode($chr, ENC_ASCII_EXT)) {
-				$numch[ENC_X12] += (13 / 3);
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_X12) OR $this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_C40)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_X12] += (2 / 3);
+			} elseif ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_X12] += (13 / 3);
 			} else {
-				$numch[ENC_X12] += (10 / 3);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_X12] += (10 / 3);
 			}
 			// STEP P
-			if ($this->isCharMode($chr, ENC_EDF)) {
-				$numch[ENC_EDF] += (3 / 4);
-			} elseif ($this->isCharMode($chr, ENC_ASCII_EXT)) {
-				$numch[ENC_EDF] += (17 / 4);
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_EDF)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_EDF] += (3 / 4);
+			} elseif ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_EDF] += (17 / 4);
 			} else {
-				$numch[ENC_EDF] += (13 / 4);
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_EDF] += (13 / 4);
 			}
 			// STEP Q
-			if ($this->isCharMode($chr, ENC_BASE256)) {
-				$numch[ENC_BASE256] += 4;
+			if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_BASE256)) {
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256] += 4;
 			} else {
-				$numch[ENC_BASE256] += 1;
+				$numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256] += 1;
 			}
 			// STEP R
 			if ($charscount >= 4) {
-				if (($numch[ENC_ASCII] + 1) <= min($numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_EDF], $numch[ENC_BASE256])) {
-					return ENC_ASCII;
+				if (($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII] + 1) <= min($numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256])) {
+					return WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 				}
-				if ((($numch[ENC_BASE256] + 1) <= $numch[ENC_ASCII])
-					OR (($numch[ENC_BASE256] + 1) < min($numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_EDF]))) {
-					return ENC_BASE256;
+				if ((($numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256] + 1) <= $numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII])
+					OR (($numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256] + 1) < min($numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF]))) {
+					return WOOCOMMERCE_NFE_PDF_ENC_BASE256;
 				}
-				if (($numch[ENC_EDF] + 1) < min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_X12], $numch[ENC_BASE256])) {
-					return ENC_EDF;
+				if (($numch[WOOCOMMERCE_NFE_PDF_ENC_EDF] + 1) < min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256])) {
+					return WOOCOMMERCE_NFE_PDF_ENC_EDF;
 				}
-				if (($numch[ENC_TXT] + 1) < min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_X12], $numch[ENC_EDF], $numch[ENC_BASE256])) {
-					return ENC_TXT;
+				if (($numch[WOOCOMMERCE_NFE_PDF_ENC_TXT] + 1) < min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_X12], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256])) {
+					return WOOCOMMERCE_NFE_PDF_ENC_TXT;
 				}
-				if (($numch[ENC_X12] + 1) < min($numch[ENC_ASCII], $numch[ENC_C40], $numch[ENC_TXT], $numch[ENC_EDF], $numch[ENC_BASE256])) {
-					return ENC_X12;
+				if (($numch[WOOCOMMERCE_NFE_PDF_ENC_X12] + 1) < min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_C40], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256])) {
+					return WOOCOMMERCE_NFE_PDF_ENC_X12;
 				}
-				if (($numch[ENC_C40] + 1) < min($numch[ENC_ASCII], $numch[ENC_TXT], $numch[ENC_EDF], $numch[ENC_BASE256])) {
-					if ($numch[ENC_C40] < $numch[ENC_X12]) {
-						return ENC_C40;
+				if (($numch[WOOCOMMERCE_NFE_PDF_ENC_C40] + 1) < min($numch[WOOCOMMERCE_NFE_PDF_ENC_ASCII], $numch[WOOCOMMERCE_NFE_PDF_ENC_TXT], $numch[WOOCOMMERCE_NFE_PDF_ENC_EDF], $numch[WOOCOMMERCE_NFE_PDF_ENC_BASE256])) {
+					if ($numch[WOOCOMMERCE_NFE_PDF_ENC_C40] < $numch[WOOCOMMERCE_NFE_PDF_ENC_X12]) {
+						return WOOCOMMERCE_NFE_PDF_ENC_C40;
 					}
-					if ($numch[ENC_C40] == $numch[ENC_X12]) {
+					if ($numch[WOOCOMMERCE_NFE_PDF_ENC_C40] == $numch[WOOCOMMERCE_NFE_PDF_ENC_X12]) {
 						$k = ($pos + $charscount + 1);
 						while ($k < $data_length) {
 							$tmpchr = ord($data[$k]);
-							if ($this->isCharMode($tmpchr, ENC_X12)) {
-								return ENC_X12;
-							} elseif (!($this->isCharMode($tmpchr, ENC_X12) OR $this->isCharMode($tmpchr, ENC_C40))) {
+							if ($this->isCharMode($tmpchr, WOOCOMMERCE_NFE_PDF_ENC_X12)) {
+								return WOOCOMMERCE_NFE_PDF_ENC_X12;
+							} elseif (!($this->isCharMode($tmpchr, WOOCOMMERCE_NFE_PDF_ENC_X12) OR $this->isCharMode($tmpchr, WOOCOMMERCE_NFE_PDF_ENC_C40))) {
 								break;
 							}
 							++$k;
 						}
-						return ENC_C40;
+						return WOOCOMMERCE_NFE_PDF_ENC_C40;
 					}
 				}
 			}
@@ -646,36 +649,36 @@ class Datamatrix {
 
 	/**
 	 * Get the switching codeword to a new encoding mode (latch codeword)
-	 * @param $mode (int) New encoding mode.
-	 * @return (int) Switch codeword.
+	 * @param int $mode New encoding mode.
+	 * @return int Switch codeword.
 	 * @protected
 	 */
 	protected function getSwitchEncodingCodeword($mode) {
 		switch ($mode) {
-			case ENC_ASCII: { // ASCII character 0 to 127
+			case WOOCOMMERCE_NFE_PDF_ENC_ASCII: { // ASCII character 0 to 127
 				$cw = 254;
-				if ($this->last_enc == ENC_EDF) {
+				if ($this->last_enc == WOOCOMMERCE_NFE_PDF_ENC_EDF) {
 					$cw = 124;
 				}
 				break;
 			}
-			case ENC_C40: { // Upper-case alphanumeric
+			case WOOCOMMERCE_NFE_PDF_ENC_C40: { // Upper-case alphanumeric
 				$cw = 230;
 				break;
 			}
-			case ENC_TXT: { // Lower-case alphanumeric
+			case WOOCOMMERCE_NFE_PDF_ENC_TXT: { // Lower-case alphanumeric
 				$cw = 239;
 				break;
 			}
-			case ENC_X12: { // ANSI X12
+			case WOOCOMMERCE_NFE_PDF_ENC_X12: { // ANSI X12
 				$cw = 238;
 				break;
 			}
-			case ENC_EDF: { // ASCII character 32 to 94
+			case WOOCOMMERCE_NFE_PDF_ENC_EDF: { // ASCII character 32 to 94
 				$cw = 240;
 				break;
 			}
-			case ENC_BASE256: { // Function character (FNC1, Structured Append, Reader Program, or Code Page)
+			case WOOCOMMERCE_NFE_PDF_ENC_BASE256: { // Function character (FNC1, Structured Append, Reader Program, or Code Page)
 				$cw = 231;
 				break;
 			}
@@ -685,8 +688,8 @@ class Datamatrix {
 
 	/**
 	 * Choose the minimum matrix size and return the max number of data codewords.
-	 * @param $numcw (int) Number of current codewords.
-	 * @return number of data codewords in matrix
+	 * @param int $numcw Number of current codewords.
+	 * @return int number of data codewords in matrix
 	 * @protected
 	 */
 	protected function getMaxDataCodewords($numcw) {
@@ -700,13 +703,13 @@ class Datamatrix {
 
 	/**
 	 * Get high level encoding using the minimum symbol data characters for ECC 200
-	 * @param $data (string) data to encode
+	 * @param string $data data to encode
 	 * @return array of codewords
 	 * @protected
 	 */
 	protected function getHighLevelEncoding($data) {
 		// STEP A. Start in ASCII encodation.
-		$enc = ENC_ASCII; // current encoding mode
+		$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII; // current encoding mode
 		$pos = 0; // current position
 		$cw = array(); // array of codewords to be returned
 		$cw_num = 0; // number of data codewords
@@ -715,8 +718,8 @@ class Datamatrix {
 			// set last used encoding
 			$this->last_enc = $enc;
 			switch ($enc) {
-				case ENC_ASCII: { // STEP B. While in ASCII encodation
-					if (($data_length > 1) AND ($pos < ($data_length - 1)) AND ($this->isCharMode(ord($data[$pos]), ENC_ASCII_NUM) AND $this->isCharMode(ord($data[$pos + 1]), ENC_ASCII_NUM))) {
+				case WOOCOMMERCE_NFE_PDF_ENC_ASCII: { // STEP B. While in ASCII encodation
+					if (($data_length > 1) AND ($pos < ($data_length - 1)) AND ($this->isCharMode(ord($data[$pos]), WOOCOMMERCE_NFE_PDF_ENC_ASCII_NUM) AND $this->isCharMode(ord($data[$pos + 1]), WOOCOMMERCE_NFE_PDF_ENC_ASCII_NUM))) {
 						// 1. If the next data sequence is at least 2 consecutive digits, encode the next two digits as a double digit in ASCII mode.
 						$cw[] = (intval(substr($data, $pos, 2)) + 130);
 						++$cw_num;
@@ -733,7 +736,7 @@ class Datamatrix {
 							// get new byte
 							$chr = ord($data[$pos]);
 							++$pos;
-							if ($this->isCharMode($chr, ENC_ASCII_EXT)) {
+							if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_ASCII_EXT)) {
 								// 3. If the next data character is extended ASCII (greater than 127) encode it in ASCII mode first using the Upper Shift (value 235) character.
 								$cw[] = 235;
 								$cw[] = ($chr - 127);
@@ -747,9 +750,9 @@ class Datamatrix {
 					}
 					break;
 				}
-				case ENC_C40 :   // Upper-case alphanumeric
-				case ENC_TXT :   // Lower-case alphanumeric
-				case ENC_X12 : { // ANSI X12
+				case WOOCOMMERCE_NFE_PDF_ENC_C40 :   // Upper-case alphanumeric
+				case WOOCOMMERCE_NFE_PDF_ENC_TXT :   // Lower-case alphanumeric
+				case WOOCOMMERCE_NFE_PDF_ENC_X12 : { // ANSI X12
 					$temp_cw = array();
 					$p = 0;
 					$epos = $pos;
@@ -763,7 +766,7 @@ class Datamatrix {
 						++$epos;
 						// check for extended character
 						if ($chr & 0x80) {
-							if ($enc == ENC_X12) {
+							if ($enc == WOOCOMMERCE_NFE_PDF_ENC_X12) {
 								return false;
 							}
 							$chr = ($chr & 0x7f);
@@ -778,13 +781,13 @@ class Datamatrix {
 							if (isset($this->chset['SH1'][$chr])) {
 								$temp_cw[] = 0; // shift 1
 								$shiftset = $this->chset['SH1'];
-							} elseif (isset($chr, $this->chset['SH2'][$chr])) {
+							} elseif (isset($this->chset['SH2'][$chr])) {
 								$temp_cw[] = 1; // shift 2
 								$shiftset = $this->chset['SH2'];
-							} elseif (($enc == ENC_C40) AND isset($this->chset['S3C'][$chr])) {
+							} elseif (($enc == WOOCOMMERCE_NFE_PDF_ENC_C40) AND isset($this->chset['S3C'][$chr])) {
 								$temp_cw[] = 2; // shift 3
 								$shiftset = $this->chset['S3C'];
-							} elseif (($enc == ENC_TXT) AND isset($this->chset['S3T'][$chr])) {
+							} elseif (($enc == WOOCOMMERCE_NFE_PDF_ENC_TXT) AND isset($this->chset['S3T'][$chr])) {
 								$temp_cw[] = 2; // shift 3
 								$shiftset = $this->chset['S3T'];
 							} else {
@@ -808,9 +811,9 @@ class Datamatrix {
 							if ($newenc != $enc) {
 								// switch to new encoding
 								$enc = $newenc;
-								if ($enc != ENC_ASCII) {
+								if ($enc != WOOCOMMERCE_NFE_PDF_ENC_ASCII) {
 									// set unlatch character
-									$cw[] = $this->getSwitchEncodingCodeword(ENC_ASCII);
+									$cw[] = $this->getSwitchEncodingCodeword(WOOCOMMERCE_NFE_PDF_ENC_ASCII);
 									++$cw_num;
 								}
 								$cw[] = $this->getSwitchEncodingCodeword($enc);
@@ -832,7 +835,7 @@ class Datamatrix {
 							$cw[] = ($chr + 1);
 							++$cw_num;
 							$pos = $epos;
-							$enc = ENC_ASCII;
+							$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 							$this->last_enc = $enc;
 						} elseif (($cwr == 2) AND ($p == 1)) {
 							// c. If two symbol characters remain and only one C40 value (data character) remains to be encoded
@@ -842,7 +845,7 @@ class Datamatrix {
 							$cw[] = ($chr + 1);
 							$cw_num += 2;
 							$pos = $epos;
-							$enc = ENC_ASCII;
+							$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 							$this->last_enc = $enc;
 						} elseif (($cwr == 2) AND ($p == 2)) {
 							// b. If two symbol characters remain and two C40 values remain to be encoded
@@ -854,12 +857,12 @@ class Datamatrix {
 							$cw[] = ($tmp % 256);
 							$cw_num += 2;
 							$pos = $epos;
-							$enc = ENC_ASCII;
+							$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 							$this->last_enc = $enc;
 						} else {
 							// switch to ASCII encoding
-							if ($enc != ENC_ASCII) {
-								$enc = ENC_ASCII;
+							if ($enc != WOOCOMMERCE_NFE_PDF_ENC_ASCII) {
+								$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 								$this->last_enc = $enc;
 								$cw[] = $this->getSwitchEncodingCodeword($enc);
 								++$cw_num;
@@ -869,7 +872,7 @@ class Datamatrix {
 					}
 					break;
 				}
-				case ENC_EDF: { // F. While in EDIFACT (EDF) encodation
+				case WOOCOMMERCE_NFE_PDF_ENC_EDF: { // F. While in EDIFACT (EDF) encodation
 					// initialize temporary array with 0 length
 					$temp_cw = array();
 					$epos = $pos;
@@ -878,14 +881,14 @@ class Datamatrix {
 					do {
 						// 2. process the next character in EDIFACT encodation.
 						$chr = ord($data[$epos]);
-						if ($this->isCharMode($chr, ENC_EDF)) {
+						if ($this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_EDF)) {
 							++$epos;
 							$temp_cw[] = $chr;
 							++$field_length;
 						}
-						if (($field_length == 4) OR ($epos == $data_length) OR !$this->isCharMode($chr, ENC_EDF)) {
+						if (($field_length == 4) OR ($epos == $data_length) OR !$this->isCharMode($chr, WOOCOMMERCE_NFE_PDF_ENC_EDF)) {
 							if (($epos == $data_length) AND ($field_length < 3)) {
-								$enc = ENC_ASCII;
+								$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 								$cw[] = $this->getSwitchEncodingCodeword($enc);
 								++$cw_num;
 								break;
@@ -898,7 +901,7 @@ class Datamatrix {
 								for ($i = $field_length; $i < 4; ++$i) {
 									$temp_cw[] = 0;
 								}
-								$enc = ENC_ASCII;
+								$enc = WOOCOMMERCE_NFE_PDF_ENC_ASCII;
 								$this->last_enc = $enc;
 							}
 							// encodes four data characters in three codewords
@@ -920,14 +923,14 @@ class Datamatrix {
 							$temp_cw = array();
 							$pos = $epos;
 							$field_length = 0;
-							if ($enc == ENC_ASCII) {
+							if ($enc == WOOCOMMERCE_NFE_PDF_ENC_ASCII) {
 								break; // exit from EDIFACT mode
 							}
 						}
 					} while ($epos < $data_length);
 					break;
 				}
-				case ENC_BASE256: { // G. While in Base 256 (B256) encodation
+				case WOOCOMMERCE_NFE_PDF_ENC_BASE256: { // G. While in Base 256 (B256) encodation
 					// initialize temporary array with 0 length
 					$temp_cw = array();
 					$field_length = 0;
@@ -970,13 +973,13 @@ class Datamatrix {
 	/**
 	 * Places "chr+bit" with appropriate wrapping within array[].
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $row (int) Row number.
-	 * @param $col (int) Column number.
-	 * @param $chr (int) Char byte.
-	 * @param $bit (int) Bit.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $row Row number.
+	 * @param int $col Column number.
+	 * @param int $chr Char byte.
+	 * @param int $bit Bit.
 	 * @return array
 	 * @protected
 	 */
@@ -996,12 +999,12 @@ class Datamatrix {
 	/**
 	 * Places the 8 bits of a utah-shaped symbol character.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $row (int) Row number.
-	 * @param $col (int) Column number.
-	 * @param $chr (int) Char byte.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $row Row number.
+	 * @param int $col Column number.
+	 * @param int $chr Char byte.
 	 * @return array
 	 * @protected
 	 */
@@ -1020,10 +1023,10 @@ class Datamatrix {
 	/**
 	 * Places the 8 bits of the first special corner case.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $chr (int) Char byte.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $chr Char byte.
 	 * @return array
 	 * @protected
 	 */
@@ -1042,10 +1045,10 @@ class Datamatrix {
 	/**
 	 * Places the 8 bits of the second special corner case.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $chr (int) Char byte.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $chr Char byte.
 	 * @return array
 	 * @protected
 	 */
@@ -1064,10 +1067,10 @@ class Datamatrix {
 	/**
 	 * Places the 8 bits of the third special corner case.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $chr (int) Char byte.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $chr Char byte.
 	 * @return array
 	 * @protected
 	 */
@@ -1086,10 +1089,10 @@ class Datamatrix {
 	/**
 	 * Places the 8 bits of the fourth special corner case.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $marr (array) Array of symbols.
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
-	 * @param $chr (int) Char byte.
+	 * @param array $marr Array of symbols.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
+	 * @param int $chr Char byte.
 	 * @return array
 	 * @protected
 	 */
@@ -1108,8 +1111,8 @@ class Datamatrix {
 	/**
 	 * Build a placement map.
 	 * (Annex F - ECC 200 symbol character placement)
-	 * @param $nrow (int) Number of rows.
-	 * @param $ncol (int) Number of columns.
+	 * @param int $nrow Number of rows.
+	 * @param int $ncol Number of columns.
 	 * @return array
 	 * @protected
 	 */
