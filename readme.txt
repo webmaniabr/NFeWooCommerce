@@ -73,7 +73,6 @@ Sim, no emissor da Webmania cada empresa possui as suas próprias credenciais de
 4. Emissão de NF-e/NFS-e individual na página do pedido do WooCommerce.
 5. Visualização das notas emitidas dentro do pedido.
 6. Faça a impressão do Danfe.
-7. E-mail enviado para o cliente automaticamente.
 
 == Changelog ==
 
