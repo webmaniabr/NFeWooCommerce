@@ -4,7 +4,7 @@ Tags: nota fiscal, nfe, nfse, woocommerce, webmania
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 3.4.6
+Stable tag: 3.4.7
 License: GPL-3.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -75,6 +75,10 @@ Sim, no emissor da Webmania cada empresa possui as suas próprias credenciais de
 6. Faça a impressão do Danfe.
 
 == Changelog ==
+
+= 3.4.7 =
+* Corrigido erro fatal nas consultas de NF-e, NFS-e, certificado digital e status da SEFAZ ao utilizar a comunicação HTTP do WordPress.
+* Preservados o envio dos dados de consulta em JSON e os controles de segurança da comunicação com a API.
 
 = 3.4.6 =
 * Corrigidas regressões na emissão automática com transições aninhadas, nas respostas fiscais com lista de erros e na geração de códigos PDF417 e imagens PNG com Imagick.

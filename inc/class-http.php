@@ -90,7 +90,23 @@ class WooCommerceNFe_HTTP {
 		if ( $service !== 'document' ) {
 			$args['body'] = wp_json_encode( WooCommerceNFe_TaxId::normalize_cnpj_fields( $data ) );
 		}
-		$response = wp_safe_remote_request( $url, $args );
+		$json_get_body = null;
+		if ( $method === 'GET' && $service !== 'document' ) {
+			// WP_Http does not forward data_format; preserve the API's JSON GET body in Requests.
+			$json_get_body = static function ( &$request_url, &$headers, &$body, &$type, &$options ) use ( $url, $args ) {
+				if ( $request_url === $url && $type === 'GET' && $body === $args['body'] ) {
+					$options['data_format'] = 'body';
+				}
+			};
+			add_action( 'requests-requests.before_request', $json_get_body, 10, 5 );
+		}
+		try {
+			$response = wp_safe_remote_request( $url, $args );
+		} finally {
+			if ( $json_get_body !== null ) {
+				remove_action( 'requests-requests.before_request', $json_get_body, 10 );
+			}
+		}
 		$result = ! is_wp_error( $response );
 		$status = $result ? (int) wp_remote_retrieve_response_code( $response ) : 0;
 		$body = $result ? wp_remote_retrieve_body( $response ) : '';

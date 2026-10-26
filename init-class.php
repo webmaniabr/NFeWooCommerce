@@ -7,7 +7,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WooCommerceNFe {
 
 	public string $domain = 'nota-fiscal-eletronica-woocommerce';
-	public string $version = '3.4.6';
+	public string $version = '3.4.7';
 	public array $settings = [];
 	protected static ?WooCommerceNFe $_instance = null;
 
